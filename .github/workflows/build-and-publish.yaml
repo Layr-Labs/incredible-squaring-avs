@@ -27,7 +27,5 @@ jobs:
       # We build both the aggregator and the operator in the same job
       # we could separate them, but anyways they share core/ so it would get messy
       # See https://ko.build/configuration/#naming-images to understand --preserve-import-paths
-      # TODO: this currently fails when trying to read from private eigensdk-go repo...
-      #       prob need to add permission somewhere. will figure out some other time, or maybe wait until we make it public
       - run: KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build aggregator/cmd/main.go --preserve-import-paths
       - run: KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build operator/cmd/main.go --preserve-import-paths
