@@ -34,4 +34,4 @@ aggregator_server_ip_port_address: localhost:8090
 eigen_metrics_ip_port_address: localhost:9090
 use_instrumented_eth_client: false
 
-register_operator_on_startup: true
+register_operator_on_startup: false

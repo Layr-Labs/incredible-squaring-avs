@@ -111,7 +111,7 @@ func TestIntegration(t *testing.T) {
 
 	/* Prepare the config file for operator */
 	nodeConfig := types.NodeConfig{}
-	nodeConfigFilePath := "../../config-files/node_config.anvil.yaml"
+	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
 	err = sdkutils.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())

@@ -46,22 +46,22 @@ __CLI__: ##
 cli-setup-operator: send-fund cli-register-operator-with-eigenlayer cli-register-operator-bls-pubkeys cli-deposit-into-mocktoken-strategy cli-register-operator-with-avs ## registers operator with eigenlayer and avs
 
 cli-register-operator-with-eigenlayer: ## registers operator with delegationManager
-	go run cli/main.go --config config-files/node_config.anvil.yaml register-operator-with-eigenlayer
+	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-eigenlayer
 
 cli-register-operator-bls-pubkeys: ## registers operator's bls public keys with blsPublicKeyCompendium
-	go run cli/main.go --config config-files/node_config.anvil.yaml register-operator-bls-pubkeys
+	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-bls-pubkeys
 
 cli-deposit-into-mocktoken-strategy: ## 
-	go run cli/main.go --config config-files/node_config.anvil.yaml deposit-into-strategy --strategy-addr ${STRATEGY_ADDRESS} --amount 100
+	go run cli/main.go --config config-files/operator.anvil.yaml deposit-into-strategy --strategy-addr ${STRATEGY_ADDRESS} --amount 100
 
 cli-register-operator-with-avs: ## 
-	go run cli/main.go --config config-files/node_config.anvil.yaml register-operator-with-avs
+	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-avs
 
 cli-deregister-operator-with-avs: ## 
-	go run cli/main.go --config config-files/node_config.anvil.yaml deregister-operator-with-avs
+	go run cli/main.go --config config-files/operator.anvil.yaml deregister-operator-with-avs
 
 cli-print-operator-status: ## 
-	go run cli/main.go --config config-files/node_config.anvil.yaml print-operator-status
+	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
 send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 	cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
@@ -78,7 +78,7 @@ start-aggregator: ##
 		2>&1 | zap-pretty
 
 start-operator: ## 
-	go run operator/cmd/main.go --config config-files/node_config.anvil.yaml \
+	go run operator/cmd/main.go --config config-files/operator.anvil.yaml \
 		2>&1 | zap-pretty
 
 start-challenger: ## 
@@ -89,7 +89,7 @@ start-challenger: ##
 		2>&1 | zap-pretty
 
 run-plugin: ## 
-	go run plugin/cmd/main.go --config config-files/node_config.anvil.yaml
+	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml
 -----------------------------: ## 
 _____HELPER_____: ## 
 mocks: ## generates mocks for tests

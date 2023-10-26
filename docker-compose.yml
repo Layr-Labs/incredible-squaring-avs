@@ -42,11 +42,11 @@ services:
       aggregator:
         condition: service_started
     ports:
-      - "9090:9090" # prometheus metrics port (defined in node_config-docker-compose.anvil.yaml file)
+      - "9090:9090" # prometheus metrics port (defined in operator-docker-compose.anvil.yaml file)
     volumes:
       - ./:/incredible-squaring/
     working_dir: /incredible-squaring
-    command: --config config-files/node_config-docker-compose.anvil.yaml
+    command: --config config-files/operator-docker-compose.anvil.yaml
     networks:
       - incredible-squaring-network
 
@@ -59,7 +59,7 @@ services:
   #   volumes:
   #     - ./:/incredible-squaring/
   #   working_dir: /incredible-squaring
-  #   command: --config config-files/node_config-docker-compose.anvil.yaml --credible-squaring-deployment contracts/script/output/31337/credible_squaring_avs_deployment_output.json --ecdsa-private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d --bls-private-key 2
+  #   command: --config config-files/operator-docker-compose.anvil.yaml --credible-squaring-deployment contracts/script/output/31337/credible_squaring_avs_deployment_output.json --ecdsa-private-key 0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d --bls-private-key 2
   #   networks:
   #     - incredible-squaring-network
 
