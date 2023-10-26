@@ -67,7 +67,7 @@ The architecture of the AVS contains:
 
 Below is a more detailed uml diagram of the aggregator and operator processes:
 
-![](./diagrams/uml.jpeg)
+![](./diagrams/uml.png)
 
 ## Integration Tests
 
