@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
+import "@eigenlayer/contracts/libraries/BN254.sol";
+
 interface IIncredibleSquaringTaskManager {
     // EVENTS
     event NewTaskCreated(uint32 indexed taskIndex, Task task);
@@ -65,10 +67,12 @@ interface IIncredibleSquaringTaskManager {
     function taskNumber() external view returns (uint32);
 
     // // NOTE: this function raises challenge to existing tasks.
-    // function raiseAndResolveChallenge(TaskChallengeHeader calldata taskChallengeHeader) external;
-
-    // // NOTE: this function raises challenge to existing tasks.
-    // function finalizeResponse(TaskResponse calldata responseOughtToBe) external;
+    function raiseAndResolveChallenge(
+        Task calldata task,
+        TaskResponse calldata taskResponse,
+        TaskResponseMetadata calldata taskResponseMetadata,
+        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+    ) external;
 
     /// @notice Returns the TASK_RESPONSE_WINDOW_BLOCK
     function getTaskResponseWindowBlock() external view returns (uint32);

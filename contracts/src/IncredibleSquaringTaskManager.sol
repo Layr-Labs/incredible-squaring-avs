@@ -52,6 +52,8 @@ contract IncredibleSquaringTaskManager is
         _;
     }
 
+    // onlyTaskGenerator is used to restrict createNewTask from only being called by a permissioned entity
+    // in a real world scenario, this would be removed by instead making createNewTask a payable function
     modifier onlyTaskGenerator() {
         require(msg.sender == generator, "Task generator must be the caller");
         _;
