@@ -1,10 +1,8 @@
-name: Build and Publish Incredible Squaring Aggregator and Operator
+name: ko-publish-aggregator-and-operator
 
 on:
   push:
     branches: ['master']
-    paths:
-      - '**.go'
   # we can also trigger manually in case needed
   workflow_dispatch:
 
