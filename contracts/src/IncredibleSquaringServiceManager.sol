@@ -12,14 +12,11 @@ import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 contract IncredibleSquaringServiceManager is ServiceManagerBase {
     using BytesLib for bytes;
 
-    /// @notice The current task number
-    uint32 public taskNum;
-
     /// @notice Unit of measure (in blocks) for which Ethereum censorship window will last.
+    uint32 public immutable ETHEREUM_CENSORSHIP_WINDOW;
 
     IIncredibleSquaringTaskManager
         public immutable incredibleSquaringTaskManager;
-    uint32 public immutable ETHEREUM_CENSORSHIP_WINDOW;
 
     /// @notice when applied to a function, ensures that the function is only callable by the `registryCoordinator`.
     modifier onlyIncredibleSquaringTaskManager() {
@@ -41,6 +38,8 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.
+    /// @dev The Slasher contract is under active development and its interface expected to change.
+    ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function freezeOperator(
         address operatorAddr
     ) external override onlyIncredibleSquaringTaskManager {
@@ -48,7 +47,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
         //     msg.sender == address(???),
         //     "IncredibleSquaringServiceManager.freezeOperator: Only ??? can slash operators"
         // );
-        slasher.freezeOperator(operatorAddr);
+        // slasher.freezeOperator(operatorAddr);
     }
 
     /// @notice Returns the current 'taskNumber' for the middleware
@@ -57,6 +56,9 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     }
 
     /// @notice Returns the block until which operators must serve.
+    /// @dev only needed for integration with the Slasher contract (stakeRegistry calls this when making stakeUpdates)
+    ///      The Slasher contract is under active development and its interface expected to change.
+    ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function latestServeUntilBlock() public view override returns (uint32) {
         return
             uint32(block.number) +
