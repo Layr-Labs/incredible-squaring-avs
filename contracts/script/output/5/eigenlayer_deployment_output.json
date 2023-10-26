@@ -1,0 +1,29 @@
+{
+    "addresses": {
+        "ERC20Mock": "0x0f2961a3ded5806c6eeb3159fd2f433edf7e6fee",
+        "ERC20MockStrategy": "0xaac95d2e9724e52181ff0efa626088e68b1b356b",
+        "ERC20MockStrategyImplementation": "0xa19251b5a6600dafcda2708e50b76caf2776e758",
+        "delayedWithdrawalRouter": "0xDfFCB9E60Ca8A715d80baf4aB9E410a89C939dC2",
+        "delayedWithdrawalRouterImplementation": "0x6a72bb69B3f46E3954B6570b9bD723653aAdacD9",
+        "delegation": "0x7A76C4E691b18B66c05574c4f6A46462F5EEd4CB",
+        "delegationImplementation": "0x4706B90777aE50d0B48A1382FAd9aB7803A9e8D8",
+        "eigenLayerPauserReg": "0x411E4Bd233991fE0caD453A97BceABF3B1a11D5c",
+        "eigenLayerProxyAdmin": "0xf598e41C880276CE32f1Adb0B70d3ae3c8059518",
+        "eigenPodBeacon": "0xd40E59800ed28Db793fF395FF8b293A5B232Fa03",
+        "eigenPodImplementation": "0x09C9beD7daf2044f37Cb4De56f47DE968a698f44",
+        "eigenPodManager": "0x1c3D4629338308D50e6D5195C1AF29f7f473e6ec",
+        "eigenPodManagerImplementation": "0xC73FBe6634466804841b444a40c729420f026F54",
+        "emptyContract": "0x9B1990b9f2DA2270a41d281287a8C00518A2E59D",
+        "slasher": "0xCEdf609dF99F2CdA1FF392d84CE5376DeE01c7A9",
+        "slasherImplementation": "0xb24DbD3C115c61471983054A18c28619C09f96D5",
+        "strategyManager": "0x3D2b8adb7970D6201025638B7Db41ad7f85373c2",
+        "strategyManagerImplementation": "0x607c6Cc8bBC8A7c0d4cF411214F3a7b95D8c6bE0"
+    },
+    "chainInfo": {
+        "chainId": 5,
+        "deploymentBlock": 9323860
+    },
+    "parameters": {
+        "alphaMultisig": "0x95C7A3F90e80329C97A6493142Ab7923E15b8083"
+    }
+}

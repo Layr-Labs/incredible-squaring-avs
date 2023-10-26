@@ -1,0 +1,11 @@
+{
+  "addresses": {
+    "blsOperatorStateRetriever": "0xfb27d554edC71649898d9C679Fad38F1D4cDc0aF",
+    "credibleSquaringServiceManager": "0x13029cAe46A475353453E65b363C078cc4ef00d3",
+    "credibleSquaringServiceManagerImplementation": "0x70C136Cd3ae83d03e7f5Bc0174e1a41459bcD07E",
+    "credibleSquaringTaskManager": "0xB030f1205Fbb339f7fb34b85e5eb3a9740D9c08D",
+    "credibleSquaringTaskManagerImplementation": "0x31951047f228335a2d16Aa058EFb8274308Fb177",
+    "registryCoordinator": "0xDAD274ea1e0D4a8542F12d4c56CE404d5DDe9F08",
+    "registryCoordinatorImplementation": "0x3d5ab01E63057b06a54161Ff1A108DCFB2034899"
+  }
+}
