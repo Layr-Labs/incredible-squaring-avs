@@ -11,7 +11,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	contractCredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
+	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	types "github.com/ethereum/go-ethereum/core/types"
 	event "github.com/ethereum/go-ethereum/event"
 	gomock "go.uber.org/mock/gomock"
@@ -41,10 +41,10 @@ func (m *MockAvsSubscriberer) EXPECT() *MockAvsSubscribererMockRecorder {
 }
 
 // ParseTaskResponded mocks base method.
-func (m *MockAvsSubscriberer) ParseTaskResponded(arg0 types.Log) (*contractCredibleSquaringTaskManager.ContractCredibleSquaringTaskManagerTaskResponded, error) {
+func (m *MockAvsSubscriberer) ParseTaskResponded(arg0 types.Log) (*contractIncredibleSquaringTaskManager.ContractIncredibleSquaringTaskManagerTaskResponded, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParseTaskResponded", arg0)
-	ret0, _ := ret[0].(*contractCredibleSquaringTaskManager.ContractCredibleSquaringTaskManagerTaskResponded)
+	ret0, _ := ret[0].(*contractIncredibleSquaringTaskManager.ContractIncredibleSquaringTaskManagerTaskResponded)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -56,7 +56,7 @@ func (mr *MockAvsSubscribererMockRecorder) ParseTaskResponded(arg0 any) *gomock.
 }
 
 // SubscribeToNewTasks mocks base method.
-func (m *MockAvsSubscriberer) SubscribeToNewTasks(arg0 chan *contractCredibleSquaringTaskManager.ContractCredibleSquaringTaskManagerNewTaskCreated) event.Subscription {
+func (m *MockAvsSubscriberer) SubscribeToNewTasks(arg0 chan *contractIncredibleSquaringTaskManager.ContractIncredibleSquaringTaskManagerNewTaskCreated) event.Subscription {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeToNewTasks", arg0)
 	ret0, _ := ret[0].(event.Subscription)
@@ -70,7 +70,7 @@ func (mr *MockAvsSubscribererMockRecorder) SubscribeToNewTasks(arg0 any) *gomock
 }
 
 // SubscribeToTaskResponses mocks base method.
-func (m *MockAvsSubscriberer) SubscribeToTaskResponses(arg0 chan *contractCredibleSquaringTaskManager.ContractCredibleSquaringTaskManagerTaskResponded) event.Subscription {
+func (m *MockAvsSubscriberer) SubscribeToTaskResponses(arg0 chan *contractIncredibleSquaringTaskManager.ContractIncredibleSquaringTaskManagerTaskResponded) event.Subscription {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubscribeToTaskResponses", arg0)
 	ret0, _ := ret[0].(event.Subscription)
