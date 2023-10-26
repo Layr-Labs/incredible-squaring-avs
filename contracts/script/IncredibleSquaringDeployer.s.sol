@@ -17,9 +17,9 @@ import {IndexRegistry, IIndexRegistry} from "@eigenlayer-middleware/src/IndexReg
 import {StakeRegistry, IStakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import {IVoteWeigher} from "@eigenlayer-middleware/src/interfaces/IVoteWeigher.sol";
 
-import {CredibleSquaringServiceManager, IServiceManager} from "../src/CredibleSquaringServiceManager.sol";
-import {CredibleSquaringTaskManager} from "../src/CredibleSquaringTaskManager.sol";
-import {ICredibleSquaringTaskManager} from "../src/ICredibleSquaringTaskManager.sol";
+import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
+import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
+import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
@@ -65,11 +65,11 @@ contract CredibleSquaringDeployer is Script, Utils {
     IStakeRegistry public stakeRegistry;
     IStakeRegistry public stakeRegistryImplementation;
 
-    CredibleSquaringServiceManager public credibleSquaringServiceManager;
+    IncredibleSquaringServiceManager public credibleSquaringServiceManager;
     IServiceManager public credibleSquaringServiceManagerImplementation;
 
-    CredibleSquaringTaskManager public credibleSquaringTaskManager;
-    ICredibleSquaringTaskManager
+    IncredibleSquaringTaskManager public credibleSquaringTaskManager;
+    IIncredibleSquaringTaskManager
         public credibleSquaringTaskManagerImplementation;
 
     function run() external {
@@ -210,7 +210,7 @@ contract CredibleSquaringDeployer is Script, Utils {
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        credibleSquaringServiceManager = CredibleSquaringServiceManager(
+        credibleSquaringServiceManager = IncredibleSquaringServiceManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -219,7 +219,7 @@ contract CredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        credibleSquaringTaskManager = CredibleSquaringTaskManager(
+        credibleSquaringTaskManager = IncredibleSquaringTaskManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -366,7 +366,7 @@ contract CredibleSquaringDeployer is Script, Utils {
             address(indexRegistryImplementation)
         );
 
-        credibleSquaringServiceManagerImplementation = new CredibleSquaringServiceManager(
+        credibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
             registryCoordinator,
             slasher,
             credibleSquaringTaskManager,
@@ -385,7 +385,7 @@ contract CredibleSquaringDeployer is Script, Utils {
             )
         );
 
-        credibleSquaringTaskManagerImplementation = new CredibleSquaringTaskManager(
+        credibleSquaringTaskManagerImplementation = new IncredibleSquaringTaskManager(
             registryCoordinator,
             TASK_RESPONSE_WINDOW_BLOCK
         );

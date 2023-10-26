@@ -8,33 +8,33 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringServiceManager"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
 	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
+	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 )
 
 type AvsServiceBindings struct {
-	TaskManager    *cstaskmanager.ContractCredibleSquaringTaskManager
-	ServiceManager *csservicemanager.ContractCredibleSquaringServiceManager
+	TaskManager    *cstaskmanager.ContractIncredibleSquaringTaskManager
+	ServiceManager *csservicemanager.ContractIncredibleSquaringServiceManager
 	ethClient      eth.EthClient
 	logger         logging.Logger
 }
 
 func NewAvsServiceBindings(serviceManagerAddr, blsOperatorStateRetrieverAddr gethcommon.Address, ethclient eth.EthClient, logger logging.Logger) (*AvsServiceBindings, error) {
-	contractServiceManager, err := csservicemanager.NewContractCredibleSquaringServiceManager(serviceManagerAddr, ethclient)
+	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(serviceManagerAddr, ethclient)
 	if err != nil {
 		logger.Error("Failed to fetch IServiceManager contract", "err", err)
 		return nil, err
 	}
 
-	taskManagerAddr, err := contractServiceManager.CredibleSquaringTaskManager(&bind.CallOpts{})
+	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 	if err != nil {
 		logger.Error("Failed to fetch TaskManager address", "err", err)
 		return nil, err
 	}
-	contractTaskManager, err := cstaskmanager.NewContractCredibleSquaringTaskManager(taskManagerAddr, ethclient)
+	contractTaskManager, err := cstaskmanager.NewContractIncredibleSquaringTaskManager(taskManagerAddr, ethclient)
 	if err != nil {
-		logger.Error("Failed to fetch ICredibleSquaringTaskManager contract", "err", err)
+		logger.Error("Failed to fetch IIncredibleSquaringTaskManager contract", "err", err)
 		return nil, err
 	}
 

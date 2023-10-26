@@ -10,7 +10,7 @@ import (
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/mocks"
 	chtypes "github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -39,7 +39,7 @@ func TestCallChallengeModule(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.ICredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -47,11 +47,11 @@ func TestCallChallengeModule(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.ICredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			NumberSquared:      big.NewInt(2),
 		},
-		TaskResponseMetadata: cstaskmanager.ICredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -81,7 +81,7 @@ func TestRaiseChallenge(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.ICredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -89,11 +89,11 @@ func TestRaiseChallenge(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.ICredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			NumberSquared:      big.NewInt(9),
 		},
-		TaskResponseMetadata: cstaskmanager.ICredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
@@ -121,7 +121,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 
 	const TASK_INDEX = 1
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.ICredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -129,18 +129,18 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.ICredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			NumberSquared:      big.NewInt(9),
 		},
-		TaskResponseMetadata: cstaskmanager.ICredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
 	}
 
-	taskResponseLog := cstaskmanager.ContractCredibleSquaringTaskManagerTaskResponded{
+	taskResponseLog := cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded{
 		TaskResponse:         challenger.taskResponses[TASK_INDEX].TaskResponse,
 		TaskResponseMetadata: challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		Raw: gethtypes.Log{
@@ -182,10 +182,10 @@ func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomoc
 		avsReader:          mockAvsReader,
 		ethClient:          mockEthClient,
 		avsSubscriber:      mockAvsSubscriber,
-		tasks:              make(map[uint32]cstaskmanager.ICredibleSquaringTaskManagerTask),
+		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),
-		taskResponseChan:   make(chan *cstaskmanager.ContractCredibleSquaringTaskManagerTaskResponded),
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractCredibleSquaringTaskManagerNewTaskCreated),
+		taskResponseChan:   make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded),
+		newTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 	}
 	return challenger, mockAvsWriter, mockAvsReader, mockAvsSubscriber, mockEthClient, nil
 }

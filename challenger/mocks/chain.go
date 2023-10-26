@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -76,6 +76,6 @@ func MockTaskResponseLog() gethtypes.Log {
 	}
 }
 
-func MockTaskResponseReferenceTaskIndex(taskResponse cstaskmanager.ICredibleSquaringTaskManagerTaskResponse) uint32 {
+func MockTaskResponseReferenceTaskIndex(taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) uint32 {
 	return taskResponse.ReferenceTaskIndex
 }

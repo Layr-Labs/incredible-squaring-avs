@@ -16,7 +16,7 @@ import (
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 	operatormocks "github.com/Layr-Labs/incredible-squaring-avs/operator/mocks"
 )
@@ -28,9 +28,9 @@ func TestOperator(t *testing.T) {
 
 	t.Run("ProcessNewTaskCreatedLog", func(t *testing.T) {
 		var numberToBeSquared = big.NewInt(3)
-		newTaskCreatedLog := &cstaskmanager.ContractCredibleSquaringTaskManagerNewTaskCreated{
+		newTaskCreatedLog := &cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
-			Task: cstaskmanager.ICredibleSquaringTaskManagerTask{
+			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
 				NumberToBeSquared:         numberToBeSquared,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -40,7 +40,7 @@ func TestOperator(t *testing.T) {
 		}
 		got := operator.ProcessNewTaskCreatedLog(newTaskCreatedLog)
 		numberSquared := big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared)
-		want := &cstaskmanager.ICredibleSquaringTaskManagerTaskResponse{
+		want := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskIndex,
 			NumberSquared:      numberSquared,
 		}
@@ -51,9 +51,9 @@ func TestOperator(t *testing.T) {
 		var numberToBeSquared = big.NewInt(3)
 
 		// new task event
-		newTaskCreatedEvent := &cstaskmanager.ContractCredibleSquaringTaskManagerNewTaskCreated{
+		newTaskCreatedEvent := &cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
-			Task: cstaskmanager.ICredibleSquaringTaskManagerTask{
+			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
 				NumberToBeSquared:         numberToBeSquared,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -68,7 +68,7 @@ func TestOperator(t *testing.T) {
 		assert.True(t, ok)
 
 		signedTaskResponse := &aggregator.SignedTaskResponse{
-			TaskResponse: cstaskmanager.ICredibleSquaringTaskManagerTaskResponse{
+			TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 				ReferenceTaskIndex: taskIndex,
 				NumberSquared:      big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared),
 			},

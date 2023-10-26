@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 
 	contractBLSOperatorStateRetriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/BLSOperatorStateRetriever"
-	contractCredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
 	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
+	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	common "github.com/ethereum/go-ethereum/common"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -43,10 +43,10 @@ func (m *MockAvsReaderer) EXPECT() *MockAvsReadererMockRecorder {
 }
 
 // CheckSignatures mocks base method.
-func (m *MockAvsReaderer) CheckSignatures(arg0 context.Context, arg1 [32]byte, arg2 []byte, arg3 uint32, arg4 contractCredibleSquaringTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (contractCredibleSquaringTaskManager.IBLSSignatureCheckerQuorumStakeTotals, error) {
+func (m *MockAvsReaderer) CheckSignatures(arg0 context.Context, arg1 [32]byte, arg2 []byte, arg3 uint32, arg4 contractIncredibleSquaringTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (contractIncredibleSquaringTaskManager.IBLSSignatureCheckerQuorumStakeTotals, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckSignatures", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].(contractCredibleSquaringTaskManager.IBLSSignatureCheckerQuorumStakeTotals)
+	ret0, _ := ret[0].(contractIncredibleSquaringTaskManager.IBLSSignatureCheckerQuorumStakeTotals)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

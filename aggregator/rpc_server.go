@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/rpc"
 
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/CredibleSquaringTaskManager"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
@@ -38,7 +38,7 @@ func (agg *Aggregator) startServer(ctx context.Context) error {
 }
 
 type SignedTaskResponse struct {
-	TaskResponse cstaskmanager.ICredibleSquaringTaskManagerTaskResponse
+	TaskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
 	BlsSignature bls.Signature
 	OperatorId   bls.OperatorId
 }
@@ -56,7 +56,7 @@ func (agg *Aggregator) ProcessSignedTaskResponse(signedTaskResponse *SignedTaskR
 	}
 	agg.taskResponsesMu.Lock()
 	if _, ok := agg.taskResponses[taskIndex]; !ok {
-		agg.taskResponses[taskIndex] = make(map[sdktypes.TaskResponseDigest]cstaskmanager.ICredibleSquaringTaskManagerTaskResponse)
+		agg.taskResponses[taskIndex] = make(map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
 	}
 	if _, ok := agg.taskResponses[taskIndex][taskResponseDigest]; !ok {
 		agg.taskResponses[taskIndex][taskResponseDigest] = signedTaskResponse.TaskResponse
