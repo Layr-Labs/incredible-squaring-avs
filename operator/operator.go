@@ -27,11 +27,13 @@ import (
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
 	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
+	"github.com/Layr-Labs/eigensdk-go/nodeapi"
 	"github.com/Layr-Labs/eigensdk-go/signer"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
 const AVS_NAME = "incredible-squaring"
+const SEM_VER = "0.0.1"
 
 type Operator struct {
 	logger    logging.Logger
@@ -43,6 +45,7 @@ type Operator struct {
 	// writing to the chain should be done via the cli only
 	metricsReg       *prometheus.Registry
 	metrics          metrics.Metrics
+	nodeApi          *nodeapi.NodeApi
 	avsWriter        *chainio.AvsWriter
 	avsReader        chainio.AvsReaderer
 	avsSubscriber    chainio.AvsSubscriberer
@@ -75,6 +78,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	reg := prometheus.NewRegistry()
 	eigenMetrics := sdkmetrics.NewEigenMetrics(AVS_NAME, c.EigenMetricsIpPortAddress, reg, logger)
 	avsAndEigenMetrics := metrics.NewAvsAndEigenMetrics(AVS_NAME, eigenMetrics, reg)
+
+	// Setup Node Api
+	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, c.NodeApiIpPortAddress, logger)
 
 	var ethRpcClient, ethWsClient eth.EthClient
 	if c.UseInstrumentedEthClient {
@@ -224,6 +230,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger:                             logger,
 		metricsReg:                         reg,
 		metrics:                            avsAndEigenMetrics,
+		nodeApi:                            nodeApi,
 		ethClient:                          ethRpcClient,
 		avsWriter:                          avsWriter,
 		avsReader:                          avsReader,
@@ -276,6 +283,7 @@ func (o *Operator) Start(ctx context.Context) error {
 
 	o.logger.Infof("Starting operator.")
 
+	o.nodeApi.Start()
 	metricsErrChan := o.metrics.Start(ctx, o.metricsReg)
 
 	// TODO(samlaf): wrap this call with increase in avs-node-spec metric

@@ -16,4 +16,5 @@ type NodeConfig struct {
 	EigenMetricsIpPortAddress        string `yaml:"eigen_metrics_ip_port_address"`
 	RegisterOperatorOnStartup        bool   `yaml:"register_operator_on_startup"`
 	UseInstrumentedEthClient         bool   `yaml:"use_instrumented_eth_client"`
+	NodeApiIpPortAddress             string `yaml:"node_api_ip_port_address"`
 }

@@ -34,6 +34,7 @@ bls_private_key_store_path: tests/keys/test.bls.key.json
 aggregator_server_ip_port_address: incredible-squaring-aggregator:8090
 eigen_metrics_ip_port_address: 0.0.0.0:9090
 use_instrumented_eth_client: false
+node_api_ip_port_address: localhost:9010
 
 # we need to register the operator on startup when running the docker compose file
 # because unfortunately we cannot register the operator previously and save it in the anvil json file
