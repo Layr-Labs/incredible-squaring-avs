@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/Layr-Labs/eigensdk-go v0.0.7-0.20231024030907-fbc0e500c28c
+	github.com/Layr-Labs/eigensdk-go v0.0.7-0.20231025231957-23a0dfd1db78
 	github.com/ethereum/go-ethereum v1.13.4
 	github.com/prometheus/client_golang v1.17.0
 	github.com/stretchr/testify v1.8.4

@@ -290,7 +290,6 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 	var metricsErrChan <-chan error
 	if o.config.EnableMetrics {
-		o.nodeApi.Start()
 		metricsErrChan = o.metrics.Start(ctx, o.metricsReg)
 	} else {
 		metricsErrChan = make(chan error, 1)
