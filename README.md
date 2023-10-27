@@ -39,7 +39,7 @@ The architecture of the AVS contains:
 
 - [Eigenlayer core](https://github.com/Layr-Labs/eigenlayer-contracts/tree/master) contracts
 - AVS contracts
-  - [ServiceManager](contracts/src/IncredibleSquaringServiceManager.sol) which contains the [slashing](contracts/src/IncredibleSquaringServiceManager.sol#L63) logic.
+  - [ServiceManager](contracts/src/IncredibleSquaringServiceManager.sol) which will eventually contain slashing logic but for M2 is just a placeholder.
   - [TaskManager](contracts/src/IncredibleSquaringTaskManager.sol) which contains [task creation](contracts/src/IncredibleSquaringTaskManager.sol#L75) and [task response](contracts/src/IncredibleSquaringTaskManager.sol#L102) logic.
   - The [challenge](contracts/src/IncredibleSquaringTaskManager.sol#L185) logic could be separated into its own contract, but we have decided to include it in the TaskManager for this simple task.
   - Set of [registry contracts](https://github.com/Layr-Labs/eigenlayer-middleware) to manage operators opted in to this avs

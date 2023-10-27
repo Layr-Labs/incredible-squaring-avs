@@ -96,12 +96,12 @@ mocks: ## generates mocks for tests
 	go install go.uber.org/mock/mockgen@v0.3.0
 	go generate ./...
 
-tests-unit: ## runs all tests
-	go test $$(go list ./... | grep -v /integration) -covermode=atomic --timeout 15s
-
-tests-unit-cover: ## run all tests with test coverge
-	go test $$(go list ./... | grep -v /integration) -coverprofile=coverage.out -covermode=atomic -v -count=1 --timeout 15s
+tests-unit: ## runs all unit tests
+	go test $$(go list ./... | grep -v /integration) -coverprofile=coverage.out -covermode=atomic --timeout 15s
 	go tool cover -html=coverage.out -o coverage.html
+
+tests-contract: ## runs all forge tests
+	cd contracts && forge test
 
 tests-integration: ## runs all integration tests
 	go test ./tests/integration/... -v -count=1 --timeout 60s
