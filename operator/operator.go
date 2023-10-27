@@ -36,6 +36,7 @@ const AVS_NAME = "incredible-squaring"
 const SEM_VER = "0.0.1"
 
 type Operator struct {
+	config    types.NodeConfig
 	logger    logging.Logger
 	ethClient eth.EthClient
 	// TODO(samlaf): remove both avsWriter and eigenlayerWrite from operator
@@ -83,7 +84,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, c.NodeApiIpPortAddress, logger)
 
 	var ethRpcClient, ethWsClient eth.EthClient
-	if c.UseInstrumentedEthClient {
+	if c.EnableMetrics {
 		rpcCallsCollector := rpccalls.NewCollector(AVS_NAME, reg)
 		ethRpcClient, err = eth.NewInstrumentedClient(c.EthRpcUrl, rpcCallsCollector)
 		if err != nil {
@@ -227,6 +228,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	operator := &Operator{
+		config:                             c,
 		logger:                             logger,
 		metricsReg:                         reg,
 		metrics:                            avsAndEigenMetrics,
@@ -283,8 +285,16 @@ func (o *Operator) Start(ctx context.Context) error {
 
 	o.logger.Infof("Starting operator.")
 
-	o.nodeApi.Start()
-	metricsErrChan := o.metrics.Start(ctx, o.metricsReg)
+	if o.config.EnableNodeApi {
+		o.nodeApi.Start()
+	}
+	var metricsErrChan <-chan error
+	if o.config.EnableMetrics {
+		o.nodeApi.Start()
+		metricsErrChan = o.metrics.Start(ctx, o.metricsReg)
+	} else {
+		metricsErrChan = make(chan error, 1)
+	}
 
 	// TODO(samlaf): wrap this call with increase in avs-node-spec metric
 	sub := o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
