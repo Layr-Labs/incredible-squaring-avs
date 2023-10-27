@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity =0.8.12;
 
-import "@eigenlayer/contracts/interfaces/IRegistryCoordinator.sol";
+import "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
 import "@eigenlayer/contracts/strategies/StrategyBase.sol";
 import "../../src/ERC20Mock.sol";
 
