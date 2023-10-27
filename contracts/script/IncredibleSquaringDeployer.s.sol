@@ -34,7 +34,6 @@ import "forge-std/console.sol";
 contract CredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
-    uint32 public constant ETHEREUM_CENSORSHIP_WINDOW = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     uint32 public constant TASK_DURATION_BLOCKS = 0;
     // TODO: right now hardcoding these (this address is anvil's default address 9)
@@ -369,8 +368,7 @@ contract CredibleSquaringDeployer is Script, Utils {
         credibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
             registryCoordinator,
             slasher,
-            credibleSquaringTaskManager,
-            ETHEREUM_CENSORSHIP_WINDOW
+            credibleSquaringTaskManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         credibleSquaringProxyAdmin.upgradeAndCall(
