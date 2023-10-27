@@ -38,10 +38,6 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     function freezeOperator(
         address operatorAddr
     ) external override onlyIncredibleSquaringTaskManager {
-        // require(
-        //     msg.sender == address(???),
-        //     "IncredibleSquaringServiceManager.freezeOperator: Only ??? can slash operators"
-        // );
         // slasher.freezeOperator(operatorAddr);
     }
 }
