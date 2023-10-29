@@ -154,8 +154,8 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create aggregator: %s", err.Error())
 	}
 	go agg.Start(ctx)
-	log.Println("Started aggregator. Sleeping 15 seconds to give operator time to answer task 1...")
-	time.Sleep(15 * time.Second)
+	log.Println("Started aggregator. Sleeping 20 seconds to give operator time to answer task 1...")
+	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
 	avsReader, err := chainio.NewAvsReaderFromConfig(config)

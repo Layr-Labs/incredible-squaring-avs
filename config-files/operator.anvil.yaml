@@ -31,7 +31,11 @@ ecdsa_private_key_store_path: tests/keys/test.ecdsa.key.json
 bls_private_key_store_path: tests/keys/test.bls.key.json
 
 aggregator_server_ip_port_address: localhost:8090
+
+# avs node spec compliance https://eigen.nethermind.io/docs/spec/intro
 eigen_metrics_ip_port_address: localhost:9090
-use_instrumented_eth_client: false
+enable_metrics: true
+node_api_ip_port_address: localhost:9010
+enable_nodeapi: true
 
 register_operator_on_startup: false

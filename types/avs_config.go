@@ -13,7 +13,9 @@ type NodeConfig struct {
 	BlsPrivateKeyStorePath           string `yaml:"bls_private_key_store_path"`
 	EcdsaPrivateKeyStorePath         string `yaml:"ecdsa_private_key_store_path"`
 	AggregatorServerIpPortAddress    string `yaml:"aggregator_server_ip_port_address"`
-	EigenMetricsIpPortAddress        string `yaml:"eigen_metrics_ip_port_address"`
 	RegisterOperatorOnStartup        bool   `yaml:"register_operator_on_startup"`
-	UseInstrumentedEthClient         bool   `yaml:"use_instrumented_eth_client"`
+	EigenMetricsIpPortAddress        string `yaml:"eigen_metrics_ip_port_address"`
+	EnableMetrics                    bool   `yaml:"enable_metrics"`
+	NodeApiIpPortAddress             string `yaml:"node_api_ip_port_address"`
+	EnableNodeApi                    bool   `yaml:"enable_node_api"`
 }
