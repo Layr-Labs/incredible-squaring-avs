@@ -19,7 +19,7 @@ import {IVoteWeigher} from "@eigenlayer-middleware/src/interfaces/IVoteWeigher.s
 
 import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
-import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
+import {IIncredibleSquaringTaskManager} from "../src/interfaces/IIncredibleSquaringTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
@@ -33,7 +33,6 @@ import "forge-std/console.sol";
 // forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract CredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
-    uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     uint32 public constant TASK_DURATION_BLOCKS = 0;
     // TODO: right now hardcoding these (this address is anvil's default address 9)
@@ -41,6 +40,14 @@ contract CredibleSquaringDeployer is Script, Utils {
         0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
     address public constant TASK_GENERATOR_ADDR =
         0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
+
+    // axiom-related constants (hardcoded for goerli)
+    address public constant AXIOM_V2_QUERY_GOERLI_ADDR =
+        0x28CeE427fCD58e5EF1cE4C93F877b621E2Db66df;
+    // TODO: update this query schema to the query schema given by https://repl.axiom.xyz/
+    //       for the query we end up making.
+    bytes32 public constant AXIOM_QUERY_SCHEMA = 0x0;
+    uint64 public constant AXIOM_CHAIN_ID = 5;
 
     // ERC20 and Strategy: we need to deploy this erc20, create a strategy for it, and whitelist this strategy in the strategymanager
 
@@ -383,9 +390,11 @@ contract CredibleSquaringDeployer is Script, Utils {
             )
         );
 
+        // hardcoded for goerli
         credibleSquaringTaskManagerImplementation = new IncredibleSquaringTaskManager(
             registryCoordinator,
-            TASK_RESPONSE_WINDOW_BLOCK
+            TASK_RESPONSE_WINDOW_BLOCK,
+            AXIOM_V2_QUERY_GOERLI_ADDR
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
@@ -400,7 +409,8 @@ contract CredibleSquaringDeployer is Script, Utils {
                 credibleSquaringCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR,
-                QUORUM_THRESHOLD_PERCENTAGE
+                AXIOM_CHAIN_ID,
+                AXIOM_QUERY_SCHEMA
             )
         );
 

@@ -10,7 +10,8 @@ import {BLSRegistryCoordinatorWithIndices} from "@eigenlayer-middleware/src/BLSR
 import {BLSSignatureChecker, IBLSRegistryCoordinatorWithIndices} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
 import {BLSOperatorStateRetriever} from "@eigenlayer-middleware/src/BLSOperatorStateRetriever.sol";
 import "@eigenlayer/contracts/libraries/BN254.sol";
-import "./IIncredibleSquaringTaskManager.sol";
+import "./interfaces/IIncredibleSquaringTaskManager.sol";
+import {AxiomV2Client} from "./AxiomV2Client.sol";
 
 contract IncredibleSquaringTaskManager is
     Initializable,
@@ -18,7 +19,8 @@ contract IncredibleSquaringTaskManager is
     Pausable,
     BLSSignatureChecker,
     BLSOperatorStateRetriever,
-    IIncredibleSquaringTaskManager
+    IIncredibleSquaringTaskManager,
+    AxiomV2Client
 {
     using BN254 for BN254.G1Point;
 
@@ -61,8 +63,12 @@ contract IncredibleSquaringTaskManager is
 
     constructor(
         IBLSRegistryCoordinatorWithIndices _registryCoordinator,
-        uint32 _taskResponseWindowBlock
-    ) BLSSignatureChecker(_registryCoordinator) {
+        uint32 _taskResponseWindowBlock,
+        address _axiomV2QueryAddress
+    )
+        BLSSignatureChecker(_registryCoordinator)
+        AxiomV2Client(_axiomV2QueryAddress)
+    {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
     }
 
@@ -70,12 +76,16 @@ contract IncredibleSquaringTaskManager is
         IPauserRegistry _pauserRegistry,
         address initialOwner,
         address _aggregator,
-        address _generator
+        address _generator,
+        uint64 _callbackSourceChainId,
+        bytes32 _axiomCallbackQuerySchema
     ) public initializer {
         _initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
         aggregator = _aggregator;
         generator = _generator;
+        callbackSourceChainId = _callbackSourceChainId;
+        axiomCallbackQuerySchema = _axiomCallbackQuerySchema;
     }
 
     /* FUNCTIONS */
@@ -259,7 +269,7 @@ contract IncredibleSquaringTaskManager is
                 );
         }
 
-        // @dev the below code is commented out for the upcoming M2 release 
+        // @dev the below code is commented out for the upcoming M2 release
         //      in which there will be no slashing. The slasher is also being redesigned
         //      so its interface may very well change.
         // ==========================================
@@ -319,5 +329,43 @@ contract IncredibleSquaringTaskManager is
 
     function getTaskResponseWindowBlock() external view returns (uint32) {
         return TASK_RESPONSE_WINDOW_BLOCK;
+    }
+
+    // zk path - instead of checking bls sig onchain, we get axiom to prove its correctness
+    // adapted from https://github.com/axiom-crypto/autonomous-airdrop-example/blob/main/contracts/src/AutonomousAirdrop.sol
+    uint64 public callbackSourceChainId;
+    bytes32 public axiomCallbackQuerySchema;
+
+    event AxiomCallbackQuerySchemaUpdated(bytes32 axiomCallbackQuerySchema);
+
+    function updateCallbackQuerySchema(
+        bytes32 _axiomCallbackQuerySchema
+    ) public onlyOwner {
+        axiomCallbackQuerySchema = _axiomCallbackQuerySchema;
+        emit AxiomCallbackQuerySchemaUpdated(_axiomCallbackQuerySchema);
+    }
+
+    function _axiomV2Callback(
+        uint64 sourceChainId,
+        address callerAddr,
+        bytes32 querySchema,
+        uint256 queryId,
+        bytes32[] calldata axiomResults,
+        bytes calldata extraData
+    ) internal virtual override {}
+
+    function _validateAxiomV2Call(
+        uint64 sourceChainId,
+        address callerAddr,
+        bytes32 querySchema
+    ) internal virtual override {
+        require(
+            sourceChainId == callbackSourceChainId,
+            "AxiomV2: caller sourceChainId mismatch"
+        );
+        require(
+            querySchema == axiomCallbackQuerySchema,
+            "AxiomV2: query schema mismatch"
+        );
     }
 }
