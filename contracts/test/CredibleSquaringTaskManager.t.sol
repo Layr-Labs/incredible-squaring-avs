@@ -2,7 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "../src/IncredibleSquaringServiceManager.sol" as incsqsm;
-import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
+import "../src/IncredibleSquaringTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "forge-std/console.sol";
@@ -66,13 +66,41 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     }
 
     function test_axiomV2Callback() public {
+        // first create a new task in the task manager
+        uint256 numberToBeSquared = 2;
+        uint32 quorumThresholdPercentage = 100;
+        bytes memory quorumNumbers = new bytes(0);
+        cheats.prank(generator);
+        tm.createNewTask(
+            numberToBeSquared,
+            quorumThresholdPercentage,
+            quorumNumbers
+        );
+        IIncredibleSquaringTaskManager.Task
+            memory task = IIncredibleSquaringTaskManager.Task(
+                numberToBeSquared,
+                // block number should be the one from when tm.createNewTask was created
+                // that call doesn't seem to create a new block so we're fine doing this.
+                uint32(block.number),
+                quorumNumbers,
+                quorumThresholdPercentage
+            );
+
+        // then create the taskResponse that operators would sign off on
+        IIncredibleSquaringTaskManager.TaskResponse
+            memory taskResponse = IIncredibleSquaringTaskManager.TaskResponse(
+                0,
+                numberToBeSquared * numberToBeSquared
+            );
+
+        // then we create the axiomResults and extraData arguments that would constructed by the axiom prover
+        // and be passed to the callback
         uint256 queryId = 0;
-        // TODO: make this an actual result
+        // not adding nonsigners or checking the quorumThresholdPercentage here b/c
+        // those are checked in the zk proof in the axiom contract
         bytes32[] memory axiomResults = new bytes32[](1);
-        axiomResults[
-            0
-        ] = 0x00000000000000000000000000000000000000000000000100000000009707DF;
-        bytes memory extraData = new bytes(0);
+        axiomResults[0] = keccak256(abi.encode(taskResponse));
+        bytes memory extraData = abi.encode(task, taskResponse);
         cheats.prank(AXIOM_V2_QUERY_GOERLI_ADDR);
         tm.axiomV2Callback(
             AXIOM_CHAIN_ID,
@@ -82,7 +110,6 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
             axiomResults,
             extraData
         );
-        // TODO: check that something changed in the contract..
-        // assertEq(counter.number(), 1);
+        // TODO: should we check that taskResponseDigests was updated?
     }
 }

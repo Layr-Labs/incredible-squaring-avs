@@ -38,10 +38,10 @@ contract IncredibleSquaringTaskManager is
     // when a task is created, task hash is stored here,
     // and responses need to pass the actual task,
     // which is hashed onchain and checked against this mapping
-    mapping(uint32 => bytes32) public allTaskHashes;
+    mapping(uint32 => bytes32) public taskDigests;
 
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
-    mapping(uint32 => bytes32) public allTaskResponses;
+    mapping(uint32 => bytes32) public taskResponseDigests;
 
     mapping(uint32 => bool) public taskSuccesfullyChallenged;
 
@@ -103,7 +103,7 @@ contract IncredibleSquaringTaskManager is
         newTask.quorumNumbers = quorumNumbers;
 
         // store hash of task onchain, emit event, and increase taskNum
-        allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
+        taskDigests[latestTaskNum] = keccak256(abi.encode(newTask));
         emit NewTaskCreated(latestTaskNum, newTask);
         latestTaskNum = latestTaskNum + 1;
     }
@@ -121,12 +121,12 @@ contract IncredibleSquaringTaskManager is
         // check that the task is valid, hasn't been responsed yet, and is being responsed in time
         require(
             keccak256(abi.encode(task)) ==
-                allTaskHashes[taskResponse.referenceTaskIndex],
+                taskDigests[taskResponse.referenceTaskIndex],
             "supplied task does not match the one recorded in the contract"
         );
         // some logical checks
         require(
-            allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0),
+            taskResponseDigests[taskResponse.referenceTaskIndex] == bytes32(0),
             "Aggregator has already responded to the task"
         );
         require(
@@ -168,7 +168,7 @@ contract IncredibleSquaringTaskManager is
             hashOfNonSigners
         );
         // updating the storage with task responsea
-        allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(
+        taskResponseDigests[taskResponse.referenceTaskIndex] = keccak256(
             abi.encode(taskResponse, taskResponseMetadata)
         );
 
@@ -193,11 +193,11 @@ contract IncredibleSquaringTaskManager is
         uint256 numberToBeSquared = task.numberToBeSquared;
         // some logical checks
         require(
-            allTaskResponses[referenceTaskIndex] != bytes32(0),
+            taskResponseDigests[referenceTaskIndex] != bytes32(0),
             "Task hasn't been responded to yet"
         );
         require(
-            allTaskResponses[referenceTaskIndex] ==
+            taskResponseDigests[referenceTaskIndex] ==
                 keccak256(abi.encode(taskResponse, taskResponseMetadata)),
             "Task response does not match the one recorded in the contract"
         );
@@ -345,6 +345,11 @@ contract IncredibleSquaringTaskManager is
         emit AxiomCallbackQuerySchemaUpdated(_axiomCallbackQuerySchema);
     }
 
+    // _axiomV2Callback replaces the respondToTask() function,
+    // instead of sending to respondToTask() directly, the aggregator will send his response to the
+    // axiom query contract, which will request a proof be generated from the axiom prover,
+    // and upon receipt of that proof (in the query contract), it will call this callback
+    // see the flow diagram in https://docs-v2.axiom.xyz/introduction/concepts/query#compute-query-axiomrepl
     function _axiomV2Callback(
         uint64 sourceChainId,
         address callerAddr,
@@ -352,7 +357,53 @@ contract IncredibleSquaringTaskManager is
         uint256 queryId,
         bytes32[] calldata axiomResults,
         bytes calldata extraData
-    ) internal virtual override {}
+    ) internal virtual override {
+        // axiomResults contains the taskResponseDigest and array of nonsignersAddrs
+        bytes32 taskResponseDigest = axiomResults[0];
+        // we don't convert to addr because we only use these to compute the hash of the non-signers below
+        bytes32[] memory nonsignersAddrs = axiomResults[1:];
+
+        // extraData contains the task and taskResponse.
+        (Task memory task, TaskResponse memory taskResponse) = abi.decode(
+            extraData,
+            (Task, TaskResponse)
+        );
+        // we need to verify the authenticity of the extraData what was verified in the zk circuit (axiomResults)
+        // 1. verify the taskResponse (make sure its hash matches the one signed on and verified in the zk circuit)
+        require(
+            taskResponseDigest == keccak256(abi.encode(taskResponse)),
+            "taskResponseDigest (public output of zk circuit) does not match extraData.taskResponse"
+        );
+        // 2. verify the task (make sure its digest is the one stored onchain, and pointed to by the taskResponse)
+        require(
+            keccak256(abi.encode(task)) ==
+                taskDigests[taskResponse.referenceTaskIndex],
+            "supplied task does not match the one recorded in the contract"
+        );
+
+        // We also verify that the task has not already been responded to
+        require(
+            taskResponseDigests[taskResponse.referenceTaskIndex] == bytes32(0),
+            "task has already been responded to"
+        );
+        // and that it is being responded to in time
+        require(
+            uint32(block.number) <=
+                task.taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
+            "task response time window has expired"
+        );
+
+        // once all the checks have passed, we record the taskResponseDigest and emit the event
+        bytes32 nonSignersRecordDigest = keccak256(abi.encodePacked(task.taskCreatedBlock, nonsignersAddrs));
+        TaskResponseMetadata memory taskResponseMetadata = TaskResponseMetadata(
+            uint32(block.number),
+            nonSignersRecordDigest
+        );
+        taskResponseDigests[taskResponse.referenceTaskIndex] = keccak256(
+            abi.encode(taskResponse, taskResponseMetadata)
+        );
+        emit TaskResponded(taskResponse, taskResponseMetadata);
+    }
 
     function _validateAxiomV2Call(
         uint64 sourceChainId,
