@@ -4,6 +4,15 @@
 
 Basic repo demoing a simple AVS middleware with full eigenlayer integration. See this [video walkthrough](https://www.loom.com/share/50314b3ec0f34e2ba386d45724602d76?sid=9d68d8cb-d2d5-4123-bd06-776de2076de0).
 
+## Dependencies
+
+You will need [foundry](https://book.getfoundry.sh/getting-started/installation) and [zap-pretty](https://github.com/maoueh/zap-pretty) to run the examples below.
+```
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+go install github.com/maoueh/zap-pretty@latest
+```
+
 ## Running via make
 
 This simple session illustrates the basic flow of the AVS. The makefile commands are hardcoded for a single operator, but it's however easy to create new operator config files, and start more operators manually (see the actual commands that the makefile calls).
@@ -68,6 +77,18 @@ The architecture of the AVS contains:
 Below is a more detailed uml diagram of the aggregator and operator processes:
 
 ![](./diagrams/uml.png)
+
+## Avs node spec compliance
+
+Every AVS node implementation is required to abide by the [Eigenlayer AVS Node Specification](https://eigen.nethermind.io/). We suggest reading through the whole spec, including the keys management section, but the hard requirements are currently only to:
+- implement the [AVS Node API](https://eigen.nethermind.io/docs/category/avs-node-api)
+- implement the [eigen prometheus metrics](https://eigen.nethermind.io/docs/category/metrics)
+
+If you are using golang, you can use our [metrics](https://github.com/Layr-Labs/eigensdk-go/tree/master/metrics) and [nodeapi](https://github.com/Layr-Labs/eigensdk-go/tree/master/nodeapi) implementation in the [eigensdk](https://github.com/Layr-Labs/eigensdk-go), just like this repo does. Otherwise, you will have to implement it on your own.
+
+## StakeUpdates Cronjob
+
+AVS Registry contracts have a stale view of operator shares in the delegation manager contract. In order to update their stake table, they need to periodically call the [StakeRegistry.updateStakes()](https://github.com/Layr-Labs/eigenlayer-middleware/blob/f171a0812126bbb0bb6d44f53c622591a643e987/src/StakeRegistry.sol#L76) function. We are currently writing a cronjob binary to do this for you, will be open sourced soon!
 
 ## Integration Tests
 
