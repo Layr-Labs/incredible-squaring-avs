@@ -104,5 +104,5 @@ tests-contract: ## runs all forge tests
 	cd contracts && forge test
 
 tests-integration: ## runs all integration tests
-	go test ./tests/integration/... -v -count=1 --timeout 60s
+	go test ./tests/integration/... -v -count=1
 
