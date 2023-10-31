@@ -1,0 +1,41 @@
+# this sets the logger level (true = info, false = debug)
+production: true
+
+operator_address: 0xBcDE0AdA340C525630DFd38cD88E7D9d60ad0326
+
+# EigenLayer Slasher contract address
+
+# This is the address of the slasher which is deployed in the anvil saved state
+# The saved eigenlayer state is located in tests/integration/eigenlayer-deployed-anvil-state.json
+el_slasher_address: 0x909D0Feb60ca9a4a069BaD5B1cb842b995BdD823
+avs_service_manager_address: 0x9791072e1dA40147c0976B623fa6EA4eFb3d4AfA
+bls_operator_state_retriever_address: 0xaA0268F230ff472f9E7614da44Bf1093072fc319
+bls_public_key_compendium_address: 0x40971B1c11c71D60e0e18E0B400a4ADD2485961F
+
+# ETH RPC URL
+eth_rpc_url: https://ethereum-goerli.publicnode.com
+eth_ws_url: wss://ethereum-goerli.publicnode.com
+
+# If you running this using eigenlayer CLI and the provided AVS packaging structure,
+# this should be /operator_keys/ecdsa_key.json as the host path will be asked while running
+#
+# If you are running locally using go run main.go, this should be full path to your local ecdsa key file
+ecdsa_private_key_store_path: ecdsa.key.json
+
+# If you running this using eigenlayer CLI and the provided AVS packaging structure,
+# this should be /operator_keys/bls_key.json as the host path will be asked while running
+#
+# We are using bn254 curve for bls keys
+#
+# If you are running locally using go run main.go, this should be full path to your local bls key file
+bls_private_key_store_path: tests/keys/test.bls.key.json
+
+aggregator_server_ip_port_address: localhost:8090
+
+# avs node spec compliance https://eigen.nethermind.io/docs/spec/intro
+eigen_metrics_ip_port_address: localhost:9090
+enable_metrics: true
+node_api_ip_port_address: localhost:9010
+enable_nodeapi: true
+
+register_operator_on_startup: false

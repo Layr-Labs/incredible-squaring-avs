@@ -26,3 +26,6 @@ logs.txt
 
 # just for example
 id_rsa
+
+# keys
+ecdsa.key.json
