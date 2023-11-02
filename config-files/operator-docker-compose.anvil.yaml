@@ -37,7 +37,7 @@ aggregator_server_ip_port_address: incredible-squaring-aggregator:8090
 eigen_metrics_ip_port_address: 0.0.0.0:9090
 enable_metrics: true
 node_api_ip_port_address: 0.0.0.0:9010
-enable_nodeapi: true
+enable_node_api: true
 
 # we need to register the operator on startup when running the docker compose file
 # because unfortunately we cannot register the operator previously and save it in the anvil json file
