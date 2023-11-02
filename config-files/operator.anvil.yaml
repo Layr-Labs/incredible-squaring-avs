@@ -36,6 +36,6 @@ aggregator_server_ip_port_address: localhost:8090
 eigen_metrics_ip_port_address: localhost:9090
 enable_metrics: true
 node_api_ip_port_address: localhost:9010
-enable_nodeapi: true
+enable_node_api: true
 
 register_operator_on_startup: false
