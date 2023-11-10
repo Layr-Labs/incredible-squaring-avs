@@ -47,6 +47,6 @@ jobs:
 
       # Build And Push Image
       - name: Build Docker image
-        run: docker compose -f docker-compose-build.yaml build
+        run: docker compose -f docker/docker-compose-build.yaml build
       - name: Push Docker image
-        run: docker compose -f docker-compose-build.yaml push
+        run: docker compose -f docker/docker-compose-build.yaml push
