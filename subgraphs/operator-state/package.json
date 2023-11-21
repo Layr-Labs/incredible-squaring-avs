@@ -1,0 +1,19 @@
+{
+  "name": "operator-state",
+  "license": "UNLICENSED",
+  "scripts": {
+    "all": "npm run codegen && npm run build && npm run create && npm run deploy",
+    "codegen": "graph codegen",
+    "build": "graph build --network anvil",
+    "create": "graph create --node http://localhost:8020/ Layr-Labs/operator-state",
+    "deploy": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 --network anvil --version-label v0.0.1 Layr-Labs/operator-state",
+    "remove": "graph remove --node http://localhost:8020/ Layr-Labs/operator-state",
+    "test": "graph test"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.59.0",
+    "@graphprotocol/graph-ts": "^0.31.0",
+    "matchstick-as": "^0.5.2"
+
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "anvil": {
+    "BLSRegistryCoordinatorWithIndices": {
+      "address": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
+      "startBlock": 0
+    },
+    "BLSRegistryCoordinatorWithIndices_Operator": {
+      "address": "0x9E545E3C0baAB3E08CdfD552C960A1050f373042",
+      "startBlock": 0
+    },
+    "BLSPubkeyRegistry": {
+      "address": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
+      "startBlock": 0
+    },
+    "BLSPubkeyRegistry_QuorumApkUpdates": {
+      "address": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
+      "startBlock": 0
+    },
+    "BLSPubkeyCompendium": {
+      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+      "startBlock": 0
+    },
+    "BLSPubkeyCompendium_Operator": {
+      "address": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
+      "startBlock": 0
+    }
+  },
+  "goerli": {
+    "BLSRegistryCoordinatorWithIndices": {
+      "address": "0x376B46C69bf1eD9e6EF32115c644650517F1265B",
+      "startBlock": 10015410
+    },
+    "BLSPubkeyRegistry": {
+      "address": "0xB64F362EA5216c17cffE5964710c7C9E824af8aD",
+      "startBlock": 10015410
+    },
+    "BLSPubkeyCompendium": {
+      "address": "0xE0de168E81C8f31A3b91cDC1C8eE033f6f1cC012",
+      "startBlock": 10015410
+    },
+    "BLSPubkeyCompendium_Operator": {
+      "address": "0xE0de168E81C8f31A3b91cDC1C8eE033f6f1cC012",
+      "startBlock": 10015410
+    },
+    "BLSRegistryCoordinatorWithIndices_Operator": {
+      "address": "0x376B46C69bf1eD9e6EF32115c644650517F1265B",
+      "startBlock": 10015410
+    },
+    "BLSPubkeyRegistry_QuorumApkUpdates": {
+      "address": "0xB64F362EA5216c17cffE5964710c7C9E824af8aD",
+      "startBlock": 10015410
+    }
+  }
+}

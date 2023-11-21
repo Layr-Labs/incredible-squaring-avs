@@ -70,6 +70,11 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
+start-graph-node: ## starts graph-node docker containers
+	docker compose -f docker/thegraph-docker-compose.yaml up
+stop-graph-node: ## stops graph-node docker containers
+	docker compose -f docker/thegraph-docker-compose.yaml down
+
 start-aggregator: ## 
 	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
