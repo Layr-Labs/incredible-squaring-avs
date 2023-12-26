@@ -10,7 +10,6 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 el_slasher_address: 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
 avs_service_manager_address: 0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690
 bls_operator_state_retriever_address: 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f
-bls_public_key_compendium_address: 0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545

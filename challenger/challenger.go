@@ -30,17 +30,17 @@ type Challenger struct {
 
 func NewChallenger(c *config.Config) (*Challenger, error) {
 
-	avsWriter, err := chainio.NewAvsWriterFromConfig(c)
+	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
 	if err != nil {
 		c.Logger.Error("Cannot create EthWriter", "err", err)
 		return nil, err
 	}
-	avsReader, err := chainio.NewAvsReaderFromConfig(c)
+	avsReader, err := chainio.BuildAvsReaderFromConfig(c)
 	if err != nil {
 		c.Logger.Error("Cannot create EthReader", "err", err)
 		return nil, err
 	}
-	avsSubscriber, err := chainio.NewAvsSubscriberFromConfig(c)
+	avsSubscriber, err := chainio.BuildAvsSubscriberFromConfig(c)
 	if err != nil {
 		c.Logger.Error("Cannot create EthSubscriber", "err", err)
 		return nil, err

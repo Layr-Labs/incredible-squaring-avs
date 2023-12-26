@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
-	clientconstructor "github.com/Layr-Labs/eigensdk-go/chainio/constructor"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/eigensdk-go/signer"
+	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
@@ -26,7 +27,7 @@ import (
 )
 
 type IntegrationClients struct {
-	Sdkclients clientconstructor.Clients
+	Sdkclients clients.Clients
 }
 
 func TestIntegration(t *testing.T) {
@@ -48,13 +49,9 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
-	var credibleSquaringDeploymentRaw config.CredibleSquaringDeploymentRaw
+	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
 	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
-
-	var sharedAvsContractsDeploymentRaw config.SharedAvsContractsRaw
-	sharedAvsContractsDeploymentFilePath := "../../contracts/script/output/31337/shared_avs_contracts_deployment_output.json"
-	sdkutils.ReadJsonConfig(sharedAvsContractsDeploymentFilePath, &sharedAvsContractsDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
 	if err != nil {
@@ -88,25 +85,24 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Cannot get chainId: %s", err.Error())
 	}
 
-	privateKeySigner, err := signer.NewPrivateKeySigner(ecdsaPrivateKey, chainId)
+	privateKeySigner, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: ecdsaPrivateKey}, chainId)
 	if err != nil {
 		t.Fatalf("Cannot create signer: %s", err.Error())
 	}
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, privateKeySigner, common.Address{})
 
 	config := &config.Config{
-		EcdsaPrivateKey:                      ecdsaPrivateKey,
-		Logger:                               logger,
-		EthRpcUrl:                            aggConfigRaw.EthRpcUrl,
-		EthHttpClient:                        ethRpcClient,
-		EthWsClient:                          ethWsClient,
-		BlsOperatorStateRetrieverAddr:        common.HexToAddress(sharedAvsContractsDeploymentRaw.BlsOperatorStateRetrieverAddr),
-		IncredibleSquaringServiceManagerAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManagerAddr),
-		SlasherAddr:                          common.HexToAddress(""),
-		AggregatorServerIpPortAddr:           aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:            aggConfigRaw.RegisterOperatorOnStartup,
-		Signer:                               privateKeySigner,
-		OperatorAddress:                      operatorAddr,
-		BlsPublicKeyCompendiumAddress:        common.HexToAddress(aggConfigRaw.BLSPubkeyCompendiumAddr),
+		EcdsaPrivateKey:            ecdsaPrivateKey,
+		Logger:                     logger,
+		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
+		EthHttpClient:              ethRpcClient,
+		EthWsClient:                ethWsClient,
+		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
+		TxMgr:                                     txMgr,
+		OperatorAddress:                           operatorAddr,
 	}
 
 	/* Prepare the config file for operator */
@@ -158,7 +154,7 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
-	avsReader, err := chainio.NewAvsReaderFromConfig(config)
+	avsReader, err := chainio.BuildAvsReaderFromConfig(config)
 	if err != nil {
 		t.Fatalf("Cannot create AVS Reader: %s", err.Error())
 	}
