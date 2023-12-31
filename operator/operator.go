@@ -151,7 +151,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
 	}
 	sdkClients, err := clients.BuildAll(chainioConfig, signerV2, logger)
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, common.Address{})
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, common.HexToAddress(c.OperatorAddress))
 
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),

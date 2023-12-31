@@ -26,7 +26,7 @@ deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
 deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	anvil --load-state tests/integration/avs-and-eigenlayer-deployed-anvil-state.json
+	./tests/integration/start-anvil-chain-with-el-and-avs-deployed.sh
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh

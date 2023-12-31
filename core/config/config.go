@@ -121,7 +121,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	if err != nil {
 		panic(err)
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, common.Address{})
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, operatorAddr)
 
 	config := &Config{
 		EcdsaPrivateKey:            ecdsaPrivateKey,
@@ -164,11 +164,6 @@ var (
 		Required: true,
 		Usage:    "Load credible squaring contract addresses from `FILE`",
 	}
-	SharedAvsContractsDeploymentFileFlag = cli.StringFlag{
-		Name:     "shared-avs-contracts-deployment",
-		Required: true,
-		Usage:    "Load shared avs contract addresses from `FILE`",
-	}
 	EcdsaPrivateKeyFlag = cli.StringFlag{
 		Name:     "ecdsa-private-key",
 		Usage:    "Ethereum private key",
@@ -181,7 +176,6 @@ var (
 var requiredFlags = []cli.Flag{
 	ConfigFileFlag,
 	CredibleSquaringDeploymentFileFlag,
-	SharedAvsContractsDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
 }
 

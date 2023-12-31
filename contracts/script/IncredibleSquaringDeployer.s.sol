@@ -379,8 +379,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 incredibleSquaringPauserReg,
                 incredibleSquaringCommunityMultisig,
                 AGGREGATOR_ADDR,
-                TASK_GENERATOR_ADDR,
-                QUORUM_THRESHOLD_PERCENTAGE
+                TASK_GENERATOR_ADDR
             )
         );
 
