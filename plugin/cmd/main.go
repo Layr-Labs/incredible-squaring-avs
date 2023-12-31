@@ -121,7 +121,7 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	clients, err := sdkclients.BuildAll(buildClientConfig, signerV2, logger)
+	clients, err := sdkclients.BuildAll(buildClientConfig, common.HexToAddress(avsConfig.OperatorAddress), signerV2, logger)
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),

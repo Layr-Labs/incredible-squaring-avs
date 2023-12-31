@@ -37,7 +37,7 @@ type Config struct {
 	AggregatorServerIpPortAddr                string
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
-	Signer          signerv2.SignerFn `json:"-"`
+	SignerFn        signerv2.SignerFn `json:"-"`
 	TxMgr           txmgr.TxManager
 	OperatorAddress common.Address
 }
@@ -134,7 +134,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
-		Signer:                                    signerV2,
+		SignerFn:                                  signerV2,
 		TxMgr:                                     txMgr,
 		OperatorAddress:                           operatorAddr,
 	}

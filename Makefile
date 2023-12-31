@@ -40,13 +40,10 @@ docker-start-everything: docker-build-and-publish-images ## starts aggregator an
 
 __CLI__: ## 
 
-cli-setup-operator: send-fund cli-register-operator-with-eigenlayer cli-register-operator-bls-pubkeys cli-deposit-into-mocktoken-strategy cli-register-operator-with-avs ## registers operator with eigenlayer and avs
+cli-setup-operator: send-fund cli-register-operator-with-eigenlayer cli-deposit-into-mocktoken-strategy cli-register-operator-with-avs ## registers operator with eigenlayer and avs
 
 cli-register-operator-with-eigenlayer: ## registers operator with delegationManager
 	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-eigenlayer
-
-cli-register-operator-bls-pubkeys: ## registers operator's bls public keys with blsPublicKeyCompendium
-	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-bls-pubkeys
 
 cli-deposit-into-mocktoken-strategy: ## 
 	go run cli/main.go --config config-files/operator.anvil.yaml deposit-into-strategy --strategy-addr ${STRATEGY_ADDRESS} --amount 100

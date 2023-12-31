@@ -4,8 +4,7 @@ type NodeConfig struct {
 	// used to set the logger level (true = info, false = debug)
 	Production                    bool   `yaml:"production"`
 	OperatorAddress               string `yaml:"operator_address"`
-	ELSlasherAddress              string `yaml:"el_slasher_address"`
-	OperatorStateRetrieverAddress string `yaml:"bls_operator_state_retriever_address"`
+	OperatorStateRetrieverAddress string `yaml:"operator_state_retriever_address"`
 	AVSRegistryCoordinatorAddress string `yaml:"avs_registry_coordinator_address"`
 	EthRpcUrl                     string `yaml:"eth_rpc_url"`
 	EthWsUrl                      string `yaml:"eth_ws_url"`

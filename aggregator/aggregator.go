@@ -99,7 +99,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		AvsName:                    avsName,
 		PromMetricsIpPortAddress:   ":9090",
 	}
-	clients, err := clients.BuildAll(chainioConfig, c.Signer, c.Logger)
+	clients, err := clients.BuildAll(chainioConfig, c.OperatorAddress, c.SignerFn, c.Logger)
 	if err != nil {
 		c.Logger.Errorf("Cannot create sdk clients", "err", err)
 		return nil, err
