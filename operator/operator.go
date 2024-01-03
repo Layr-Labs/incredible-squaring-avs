@@ -221,14 +221,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	if c.RegisterOperatorOnStartup {
-		operatorEcdsaPrivKey, err := sdkecdsa.ReadKey(
+		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
 			c.EcdsaPrivateKeyStorePath,
 			ecdsaKeyPassword,
 		)
 		if err != nil {
 			return nil, err
 		}
-		operator.registerOperatorOnStartup(operatorEcdsaPrivKey)
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.

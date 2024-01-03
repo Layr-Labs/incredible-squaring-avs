@@ -23,7 +23,7 @@ import (
 )
 
 func (o *Operator) registerOperatorOnStartup(
-	operatorEcdsaKeyPair *ecdsa.PrivateKey,
+	operatorEcdsaPrivateKey *ecdsa.PrivateKey,
 ) {
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
@@ -42,7 +42,7 @@ func (o *Operator) registerOperatorOnStartup(
 	}
 	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterOperatorWithAvs(operatorEcdsaKeyPair)
+	err = o.RegisterOperatorWithAvs(operatorEcdsaPrivateKey)
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}

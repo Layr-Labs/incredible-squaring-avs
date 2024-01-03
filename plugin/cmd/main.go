@@ -6,12 +6,14 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	"github.com/Layr-Labs/eigensdk-go/utils"
@@ -150,7 +152,16 @@ func plugin(ctx *cli.Context) {
 	if operationType == "opt-in" {
 		blsKeyPassword := ctx.GlobalString(BlsKeyPasswordFlag.Name)
 
-		keypair, err := bls.ReadPrivateKeyFromFile(avsConfig.BlsPrivateKeyStorePath, blsKeyPassword)
+		blsKeypair, err := bls.ReadPrivateKeyFromFile(avsConfig.BlsPrivateKeyStorePath, blsKeyPassword)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
+			avsConfig.EcdsaPrivateKeyStorePath,
+			ecdsaKeyPassword,
+		)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -159,10 +170,14 @@ func plugin(ctx *cli.Context) {
 		// Register with registry coordination
 		quorumNumbers := []byte{0}
 		socket := "Not Needed"
-
+		sigValidForSeconds := int64(1_000_000)
+		operatorToAvsRegistrationSigSalt := [32]byte{123}
+		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
 		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
 		r, err := clients.AvsRegistryChainWriter.RegisterOperatorWithAVSRegistryCoordinator(
-			goCtx, keypair, common.HexToAddress(avsConfig.OperatorAddress), quorumNumbers, socket,
+			goCtx,
+			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
+			blsKeypair, quorumNumbers, socket,
 		)
 		if err != nil {
 			logger.Errorf("Error assembling CreateNewTask tx")
