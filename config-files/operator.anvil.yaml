@@ -6,7 +6,7 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 # EigenLayer Slasher contract address
 
 # This is the address of the slasher which is deployed in the anvil saved state
-# The saved eigenlayer state is located in tests/integration/credible_squaring_avs_deployment_output.json
+# The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
 avs_registry_coordinator_address: 0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690
 operator_state_retriever_address: 0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8

@@ -7,6 +7,7 @@ package operator
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -21,7 +22,9 @@ import (
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 )
 
-func (o *Operator) registerOperatorOnStartup() {
+func (o *Operator) registerOperatorOnStartup(
+	operatorEcdsaKeyPair *ecdsa.PrivateKey,
+) {
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
 		// This error might only be that the operator was already registered with eigenlayer, so we don't want to fatal
@@ -39,7 +42,7 @@ func (o *Operator) registerOperatorOnStartup() {
 	}
 	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterOperatorWithAvs()
+	err = o.RegisterOperatorWithAvs(operatorEcdsaKeyPair)
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}
@@ -84,17 +87,37 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 
 	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
 	if err != nil {
-		o.logger.Errorf("Error depositing into strategy")
+		o.logger.Errorf("Error depositing into strategy", "err", err)
 		return err
 	}
 	return nil
 }
 
 // Registration specific functions
-func (o *Operator) RegisterOperatorWithAvs() error {
+func (o *Operator) RegisterOperatorWithAvs(
+	operatorEcdsaKeyPair *ecdsa.PrivateKey,
+) error {
+	// hardcode these things for now
 	quorumNumbers := []byte{0}
 	socket := "Not Needed"
-	_, err := o.avsWriter.RegisterOperatorWithAVSRegistryCoordinator(context.Background(), o.blsKeypair, o.operatorAddr, quorumNumbers, socket)
+	operatorToAvsRegistrationSigSalt := [32]byte{123}
+	curBlockNum, err := o.ethClient.BlockNumber(context.Background())
+	if err != nil {
+		o.logger.Errorf("Unable to get current block number")
+		return err
+	}
+	curBlock, err := o.ethClient.BlockByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
+	if err != nil {
+		o.logger.Errorf("Unable to get current block")
+		return err
+	}
+	sigValidForSeconds := int64(1_000_000)
+	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time()) + sigValidForSeconds)
+	_, err = o.avsWriter.RegisterOperatorWithAVSRegistryCoordinator(
+		context.Background(),
+		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
+		o.blsKeypair, quorumNumbers, socket,
+	)
 	if err != nil {
 		o.logger.Errorf("Unable to register operator with avs registry coordinator")
 		return err

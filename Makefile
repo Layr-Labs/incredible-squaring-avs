@@ -18,15 +18,15 @@ DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 ___CONTRACTS___: ## 
 
 deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
-	./tests/integration/deploy-eigenlayer-save-anvil-state.sh
+	./tests/anvil/deploy-eigenlayer-save-anvil-state.sh
 
 deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
-	./tests/integration/deploy-avs-save-anvil-state.sh
+	./tests/anvil/deploy-avs-save-anvil-state.sh
 
 deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	./tests/integration/start-anvil-chain-with-el-and-avs-deployed.sh
+	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
@@ -46,7 +46,7 @@ cli-register-operator-with-eigenlayer: ## registers operator with delegationMana
 	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-eigenlayer
 
 cli-deposit-into-mocktoken-strategy: ## 
-	go run cli/main.go --config config-files/operator.anvil.yaml deposit-into-strategy --strategy-addr ${STRATEGY_ADDRESS} --amount 100
+	./scripts/deposit-into-mocktoken-strategy.sh
 
 cli-register-operator-with-avs: ## 
 	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-avs

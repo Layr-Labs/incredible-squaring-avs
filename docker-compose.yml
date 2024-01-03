@@ -15,7 +15,7 @@ services:
     # changed entrypoint because the default 'bash -c' entrypoint wasn't working the intended way...
     entrypoint: anvil
     volumes:
-      - ./tests/integration/avs-and-eigenlayer-deployed-anvil-state.json:/root/.anvil/state.json
+      - ./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json:/root/.anvil/state.json
     command: --host 0.0.0.0 --load-state /root/.anvil/state.json
     networks:
       - incredible-squaring-network

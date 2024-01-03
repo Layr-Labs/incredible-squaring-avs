@@ -22,6 +22,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
@@ -220,7 +221,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup()
+		operatorEcdsaPrivKey, err := sdkecdsa.ReadKey(
+			c.EcdsaPrivateKeyStorePath,
+			ecdsaKeyPassword,
+		)
+		if err != nil {
+			return nil, err
+		}
+		operator.registerOperatorOnStartup(operatorEcdsaPrivKey)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
