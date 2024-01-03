@@ -66,16 +66,15 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
 
-	ecdsaPrivateKeyString := "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-	if ecdsaPrivateKeyString[:2] == "0x" {
-		ecdsaPrivateKeyString = ecdsaPrivateKeyString[2:]
+	aggregatorEcdsaPrivateKeyString := "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+	if aggregatorEcdsaPrivateKeyString[:2] == "0x" {
+		aggregatorEcdsaPrivateKeyString = aggregatorEcdsaPrivateKeyString[2:]
 	}
-	ecdsaPrivateKey, err := crypto.HexToECDSA(ecdsaPrivateKeyString)
+	aggregatorEcdsaPrivateKey, err := crypto.HexToECDSA(aggregatorEcdsaPrivateKeyString)
 	if err != nil {
 		t.Fatalf("Cannot parse ecdsa private key: %s", err.Error())
 	}
-
-	operatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(ecdsaPrivateKey)
+	aggregatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(aggregatorEcdsaPrivateKey)
 	if err != nil {
 		t.Fatalf("Cannot get operator address: %s", err.Error())
 	}
@@ -85,24 +84,25 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Cannot get chainId: %s", err.Error())
 	}
 
-	privateKeySigner, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: ecdsaPrivateKey}, chainId)
+	privateKeySigner, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: aggregatorEcdsaPrivateKey}, chainId)
 	if err != nil {
 		t.Fatalf("Cannot create signer: %s", err.Error())
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, privateKeySigner, common.Address{})
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, privateKeySigner, aggregatorAddr)
 
 	config := &config.Config{
-		EcdsaPrivateKey:            ecdsaPrivateKey,
+		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
 		Logger:                     logger,
 		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
 		EthHttpClient:              ethRpcClient,
+		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
 		TxMgr:                                     txMgr,
-		OperatorAddress:                           operatorAddr,
+		AggregatorAddress:                         aggregatorAddr,
 	}
 
 	/* Prepare the config file for operator */
@@ -180,6 +180,7 @@ func TestIntegration(t *testing.T) {
 
 }
 
+// TODO(samlaf): have to advance chain to a block where the task is answered
 func startAnvilTestContainer() testcontainers.Container {
 	integrationDir, err := os.Getwd()
 	if err != nil {

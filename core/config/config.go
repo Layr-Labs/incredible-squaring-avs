@@ -37,9 +37,9 @@ type Config struct {
 	AggregatorServerIpPortAddr                string
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
-	SignerFn        signerv2.SignerFn `json:"-"`
-	TxMgr           txmgr.TxManager
-	OperatorAddress common.Address
+	SignerFn          signerv2.SignerFn `json:"-"`
+	TxMgr             txmgr.TxManager
+	AggregatorAddress common.Address
 }
 
 // These are read from ConfigFileFlag
@@ -105,7 +105,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	operatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(ecdsaPrivateKey)
+	aggregatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(ecdsaPrivateKey)
 	if err != nil {
 		logger.Error("Cannot get operator address", "err", err)
 		return nil, err
@@ -121,7 +121,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	if err != nil {
 		panic(err)
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, operatorAddr)
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, aggregatorAddr)
 
 	config := &Config{
 		EcdsaPrivateKey:            ecdsaPrivateKey,
@@ -136,7 +136,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
 		SignerFn:                                  signerV2,
 		TxMgr:                                     txMgr,
-		OperatorAddress:                           operatorAddr,
+		AggregatorAddress:                         aggregatorAddr,
 	}
 	config.validate()
 	return config, nil
