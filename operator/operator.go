@@ -228,7 +228,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		if err != nil {
 			return nil, err
 		}
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey)
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.

@@ -24,6 +24,7 @@ import (
 
 func (o *Operator) registerOperatorOnStartup(
 	operatorEcdsaPrivateKey *ecdsa.PrivateKey,
+	mockTokenStrategyAddr common.Address,
 ) {
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
@@ -33,8 +34,7 @@ func (o *Operator) registerOperatorOnStartup(
 		o.logger.Infof("Registered operator with eigenlayer")
 	}
 
-	// TODO(samlaf): these shouldn't be hardcoded
-	mockTokenStrategyAddr := common.HexToAddress("0x7a2088a1bFc9d81c55368AE168C2C02570cB814F")
+	// TODO(samlaf): shouldn't hardcode number here
 	amount := big.NewInt(1000)
 	err = o.DepositIntoStrategy(mockTokenStrategyAddr, amount)
 	if err != nil {

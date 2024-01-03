@@ -37,4 +37,7 @@ enable_metrics: true
 node_api_ip_port_address: localhost:9010
 enable_node_api: true
 
-register_operator_on_startup: false
+register_operator_on_startup: true
+# address of token to deposit tokens into when registering on startup
+# addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
+token_strategy_addr: 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f
