@@ -37,4 +37,4 @@ enable_metrics: true
 node_api_ip_port_address: localhost:9010
 enable_node_api: true
 
-register_operator_on_startup: true
+register_operator_on_startup: false
