@@ -192,7 +192,7 @@ func startAnvilTestContainer() testcontainers.Container {
 		Mounts: testcontainers.ContainerMounts{
 			testcontainers.ContainerMount{
 				Source: testcontainers.GenericBindMountSource{
-					HostPath: filepath.Join(integrationDir, "avs-and-eigenlayer-deployed-anvil-state.json"),
+					HostPath: filepath.Join(integrationDir, "../anvil/avs-and-eigenlayer-deployed-anvil-state.json"),
 				},
 				Target: "/root/.anvil/state.json",
 			},
