@@ -2,8 +2,10 @@ package integration_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -210,5 +212,27 @@ func startAnvilTestContainer() testcontainers.Container {
 	if err != nil {
 		panic(err)
 	}
+	// this is needed temporarily because anvil restarts at 0 block when we load a state...
+	// see comment in start-anvil-chain-with-el-and-avs-deployed.sh
+	advanceChain(anvilC)
 	return anvilC
+}
+
+func advanceChain(anvilC testcontainers.Container) {
+	anvilEndpoint, err := anvilC.Endpoint(context.Background(), "")
+	if err != nil {
+		panic(err)
+	}
+	rpcUrl := "http://" + anvilEndpoint
+	privateKey := "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+	cmd := exec.Command("bash", "-c",
+		fmt.Sprintf(
+			`forge script script/utils/Utils.sol --sig "advanceChainByNBlocks(uint256)" 100 --rpc-url %s --private-key %s --broadcast`,
+			rpcUrl, privateKey),
+	)
+	cmd.Dir = "../../contracts"
+	err = cmd.Run()
+	if err != nil {
+		panic(err)
+	}
 }
