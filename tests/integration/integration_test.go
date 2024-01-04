@@ -219,14 +219,6 @@ func startAnvilTestContainer() testcontainers.Container {
 }
 
 func advanceChain(anvilC testcontainers.Container) {
-	// for debugging
-	pwdCmd := exec.Command(("pwd"))
-	out, err := pwdCmd.CombinedOutput()
-	if err != nil {
-		panic(err)
-	}
-	log.Printf("pwd: %s", out)
-
 	anvilEndpoint, err := anvilC.Endpoint(context.Background(), "")
 	if err != nil {
 		panic(err)
