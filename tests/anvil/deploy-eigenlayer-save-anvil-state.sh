@@ -2,7 +2,7 @@
 
 # cd to the directory of this script so that this can be run from anywhere
 parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
-# At this point we are in tests/integration
+# At this point we are in tests/anvil
 cd "$parent_path"
 
 # start an empty anvil chain in the background and dump its state to a json file upon exit

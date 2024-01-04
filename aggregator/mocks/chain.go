@@ -3,7 +3,7 @@ package mocks
 import (
 	"math/big"
 
-	opstateretriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/BLSOperatorStateRetriever"
+	opstateretriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -51,15 +51,15 @@ func (r *MockRegistry) GetOperatorsTotalStake() *big.Int {
 
 // returns an array of operator states for each quorum number (only [0][] is used since we use a single quorum only)
 // currently hardcoded for a single operator
-func (r *MockRegistry) MockGetOperatorStateCall() [][]opstateretriever.BLSOperatorStateRetrieverOperator {
-	quorum0OperatorStakes := make([]opstateretriever.BLSOperatorStateRetrieverOperator, len(r.OperatorsState))
+func (r *MockRegistry) MockGetOperatorStateCall() [][]opstateretriever.OperatorStateRetrieverOperator {
+	quorum0OperatorStakes := make([]opstateretriever.OperatorStateRetrieverOperator, len(r.OperatorsState))
 	for i, operatorState := range r.OperatorsState {
-		quorum0OperatorStakes[i] = opstateretriever.BLSOperatorStateRetrieverOperator{
+		quorum0OperatorStakes[i] = opstateretriever.OperatorStateRetrieverOperator{
 			OperatorId: operatorState.OperatorId,
 			Stake:      operatorState.Stake,
 		}
 	}
-	return [][]opstateretriever.BLSOperatorStateRetrieverOperator{
+	return [][]opstateretriever.OperatorStateRetrieverOperator{
 		quorum0OperatorStakes,
 	}
 }

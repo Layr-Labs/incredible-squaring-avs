@@ -6,11 +6,10 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 # EigenLayer Slasher contract address
 
 # This is the address of the slasher which is deployed in the anvil saved state
-# The saved eigenlayer state is located in tests/integration/eigenlayer-deployed-anvil-state.json
-el_slasher_address: 0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
-avs_service_manager_address: 0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690
-bls_operator_state_retriever_address: 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f
-bls_public_key_compendium_address: 0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44
+# The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
+# TODO(samlaf): automate updating these addresses when we deploy new contracts
+avs_registry_coordinator_address: 0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690
+operator_state_retriever_address: 0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
@@ -38,4 +37,7 @@ enable_metrics: true
 node_api_ip_port_address: localhost:9010
 enable_node_api: true
 
-register_operator_on_startup: false
+register_operator_on_startup: true
+# address of token to deposit tokens into when registering on startup
+# addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
+token_strategy_addr: 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f

@@ -2,16 +2,19 @@ package integration_test
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
-	clientconstructor "github.com/Layr-Labs/eigensdk-go/chainio/constructor"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/eigensdk-go/signer"
+	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
@@ -26,7 +29,7 @@ import (
 )
 
 type IntegrationClients struct {
-	Sdkclients clientconstructor.Clients
+	Sdkclients clients.Clients
 }
 
 func TestIntegration(t *testing.T) {
@@ -48,13 +51,9 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
-	var credibleSquaringDeploymentRaw config.CredibleSquaringDeploymentRaw
+	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
 	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
-
-	var sharedAvsContractsDeploymentRaw config.SharedAvsContractsRaw
-	sharedAvsContractsDeploymentFilePath := "../../contracts/script/output/31337/shared_avs_contracts_deployment_output.json"
-	sdkutils.ReadJsonConfig(sharedAvsContractsDeploymentFilePath, &sharedAvsContractsDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
 	if err != nil {
@@ -69,16 +68,15 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
 
-	ecdsaPrivateKeyString := "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-	if ecdsaPrivateKeyString[:2] == "0x" {
-		ecdsaPrivateKeyString = ecdsaPrivateKeyString[2:]
+	aggregatorEcdsaPrivateKeyString := "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+	if aggregatorEcdsaPrivateKeyString[:2] == "0x" {
+		aggregatorEcdsaPrivateKeyString = aggregatorEcdsaPrivateKeyString[2:]
 	}
-	ecdsaPrivateKey, err := crypto.HexToECDSA(ecdsaPrivateKeyString)
+	aggregatorEcdsaPrivateKey, err := crypto.HexToECDSA(aggregatorEcdsaPrivateKeyString)
 	if err != nil {
 		t.Fatalf("Cannot parse ecdsa private key: %s", err.Error())
 	}
-
-	operatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(ecdsaPrivateKey)
+	aggregatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(aggregatorEcdsaPrivateKey)
 	if err != nil {
 		t.Fatalf("Cannot get operator address: %s", err.Error())
 	}
@@ -88,25 +86,25 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Cannot get chainId: %s", err.Error())
 	}
 
-	privateKeySigner, err := signer.NewPrivateKeySigner(ecdsaPrivateKey, chainId)
+	privateKeySigner, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: aggregatorEcdsaPrivateKey}, chainId)
 	if err != nil {
 		t.Fatalf("Cannot create signer: %s", err.Error())
 	}
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, privateKeySigner, aggregatorAddr)
 
 	config := &config.Config{
-		EcdsaPrivateKey:                      ecdsaPrivateKey,
-		Logger:                               logger,
-		EthRpcUrl:                            aggConfigRaw.EthRpcUrl,
-		EthHttpClient:                        ethRpcClient,
-		EthWsClient:                          ethWsClient,
-		BlsOperatorStateRetrieverAddr:        common.HexToAddress(sharedAvsContractsDeploymentRaw.BlsOperatorStateRetrieverAddr),
-		IncredibleSquaringServiceManagerAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManagerAddr),
-		SlasherAddr:                          common.HexToAddress(""),
-		AggregatorServerIpPortAddr:           aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:            aggConfigRaw.RegisterOperatorOnStartup,
-		Signer:                               privateKeySigner,
-		OperatorAddress:                      operatorAddr,
-		BlsPublicKeyCompendiumAddress:        common.HexToAddress(aggConfigRaw.BLSPubkeyCompendiumAddr),
+		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
+		Logger:                     logger,
+		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
+		EthHttpClient:              ethRpcClient,
+		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
+		EthWsClient:                ethWsClient,
+		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
+		TxMgr:                                     txMgr,
+		AggregatorAddress:                         aggregatorAddr,
 	}
 
 	/* Prepare the config file for operator */
@@ -158,7 +156,7 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
-	avsReader, err := chainio.NewAvsReaderFromConfig(config)
+	avsReader, err := chainio.BuildAvsReaderFromConfig(config)
 	if err != nil {
 		t.Fatalf("Cannot create AVS Reader: %s", err.Error())
 	}
@@ -184,6 +182,7 @@ func TestIntegration(t *testing.T) {
 
 }
 
+// TODO(samlaf): have to advance chain to a block where the task is answered
 func startAnvilTestContainer() testcontainers.Container {
 	integrationDir, err := os.Getwd()
 	if err != nil {
@@ -196,7 +195,7 @@ func startAnvilTestContainer() testcontainers.Container {
 		Mounts: testcontainers.ContainerMounts{
 			testcontainers.ContainerMount{
 				Source: testcontainers.GenericBindMountSource{
-					HostPath: filepath.Join(integrationDir, "avs-and-eigenlayer-deployed-anvil-state.json"),
+					HostPath: filepath.Join(integrationDir, "../anvil/avs-and-eigenlayer-deployed-anvil-state.json"),
 				},
 				Target: "/root/.anvil/state.json",
 			},
@@ -213,5 +212,27 @@ func startAnvilTestContainer() testcontainers.Container {
 	if err != nil {
 		panic(err)
 	}
+	// this is needed temporarily because anvil restarts at 0 block when we load a state...
+	// see comment in start-anvil-chain-with-el-and-avs-deployed.sh
+	advanceChain(anvilC)
 	return anvilC
+}
+
+func advanceChain(anvilC testcontainers.Container) {
+	anvilEndpoint, err := anvilC.Endpoint(context.Background(), "")
+	if err != nil {
+		panic(err)
+	}
+	rpcUrl := "http://" + anvilEndpoint
+	privateKey := "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+	cmd := exec.Command("bash", "-c",
+		fmt.Sprintf(
+			`forge script script/utils/Utils.sol --sig "advanceChainByNBlocks(uint256)" 100 --rpc-url %s --private-key %s --broadcast`,
+			rpcUrl, privateKey),
+	)
+	cmd.Dir = "../../contracts"
+	err = cmd.Run()
+	if err != nil {
+		panic(err)
+	}
 }

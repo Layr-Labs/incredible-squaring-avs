@@ -7,14 +7,12 @@ import (
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/eigensdk-go/signer"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/services/avsregistry"
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
-	pubkeycompserv "github.com/Layr-Labs/eigensdk-go/services/pubkeycompendium"
+	oppubkeysserv "github.com/Layr-Labs/eigensdk-go/services/operatorpubkeys"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
@@ -30,6 +28,7 @@ const (
 	// ideally be fetched from the contracts
 	taskChallengeWindowBlock = 100
 	blockTimeSeconds         = 12 * time.Second
+	avsName                  = "incredible-squaring"
 )
 
 // Aggregator sends tasks (numbers to square) onchain, then listens for operator signed TaskResponses.
@@ -80,62 +79,34 @@ type Aggregator struct {
 // NewAggregator creates a new Aggregator with the provided config.
 func NewAggregator(c *config.Config) (*Aggregator, error) {
 
-	avsReader, err := chainio.NewAvsReaderFromConfig(c)
+	avsReader, err := chainio.BuildAvsReaderFromConfig(c)
 	if err != nil {
-		c.Logger.Error("Cannot create EthReader", "err", err)
+		c.Logger.Error("Cannot create avsReader", "err", err)
 		return nil, err
 	}
 
-	chainId, err := c.EthHttpClient.ChainID(context.Background())
+	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
 	if err != nil {
-		c.Logger.Error("Cannot get chainId", "err", err)
+		c.Logger.Errorf("Cannot create avsWriter", "err", err)
 		return nil, err
 	}
 
-	privateKeySigner, err := signer.NewPrivateKeySigner(c.EcdsaPrivateKey, chainId)
-	if err != nil {
-		c.Logger.Error("Cannot create signer", "err", err)
-		return nil, err
+	chainioConfig := sdkclients.BuildAllConfig{
+		EthHttpUrl:                 c.EthHttpRpcUrl,
+		EthWsUrl:                   c.EthWsRpcUrl,
+		RegistryCoordinatorAddr:    c.IncredibleSquaringRegistryCoordinatorAddr.String(),
+		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
+		AvsName:                    avsName,
+		PromMetricsIpPortAddress:   ":9090",
 	}
-	c.Signer = privateKeySigner
-
-	avsWriter, err := chainio.NewAvsWriterFromConfig(c)
+	clients, err := clients.BuildAll(chainioConfig, c.AggregatorAddress, c.SignerFn, c.Logger)
 	if err != nil {
-		c.Logger.Errorf("Cannot create EthSubscriber", "err", err)
-		return nil, err
-	}
-
-	c.Logger.Info("SlasherAddr", "SlasherAddr", c.SlasherAddr)
-
-	// TODO (Soubhik): This is a hack to get the slasher address. We should be able to get it from the config.
-	slasherAddr, err := avsWriter.AvsContractBindings.ServiceManager.Slasher(&bind.CallOpts{})
-	if err != nil {
-		c.Logger.Error("Cannot get slasher address", "err", err)
-		return nil, err
-	}
-	c.Logger.Info("BlsPublicKeyCompendiumAddress", "BlsPublicKeyCompendiumAddress", c.BlsPublicKeyCompendiumAddress)
-
-	elContractsClient, err := sdkclients.NewELContractsChainClient(slasherAddr, c.BlsPublicKeyCompendiumAddress, c.EthHttpClient, c.EthWsClient, c.Logger)
-	if err != nil {
-		c.Logger.Error("Cannot create ELContractsChainClient", "err", err)
-		return nil, err
-	}
-	eigenlayerReader, err := sdkelcontracts.NewELChainReader(elContractsClient, c.Logger, c.EthHttpClient)
-	if err != nil {
-		c.Logger.Error("Cannot create EigenlayerReader", "err", err)
-		return nil, err
-	}
-	eigenlayerSubscriber, err := sdkelcontracts.NewELChainSubscriber(
-		elContractsClient,
-		c.Logger,
-	)
-	if err != nil {
-		c.Logger.Error("Cannot create EigenlayerEthSubscriber", "err", err)
+		c.Logger.Errorf("Cannot create sdk clients", "err", err)
 		return nil, err
 	}
 
-	pubkeyCompendiumService := pubkeycompserv.NewPubkeyCompendiumInMemory(context.Background(), eigenlayerSubscriber, eigenlayerReader, c.Logger)
-	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, eigenlayerReader, pubkeyCompendiumService, c.Logger)
+	operatorPubkeysService := oppubkeysserv.NewOperatorPubkeysServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, c.Logger)
+	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, operatorPubkeysService, c.Logger)
 	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, c.Logger)
 
 	return &Aggregator{

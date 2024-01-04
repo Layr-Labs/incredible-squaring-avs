@@ -18,18 +18,15 @@ DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 ___CONTRACTS___: ## 
 
 deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
-	./tests/integration/deploy-eigenlayer-save-anvil-state.sh
-
-deploy-shared-avs-contracts-to-anvil-and-save-state: ## Deploy blspubkeycompendium and blsstateoperatorretriever
-	./tests/integration/deploy-shared-avs-contracts-save-anvil-state.sh
+	./tests/anvil/deploy-eigenlayer-save-anvil-state.sh
 
 deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
-	./tests/integration/deploy-avs-save-anvil-state.sh
+	./tests/anvil/deploy-avs-save-anvil-state.sh
 
-deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-shared-avs-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
+deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	anvil --load-state tests/integration/avs-and-eigenlayer-deployed-anvil-state.json
+	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
@@ -43,16 +40,13 @@ docker-start-everything: docker-build-and-publish-images ## starts aggregator an
 
 __CLI__: ## 
 
-cli-setup-operator: send-fund cli-register-operator-with-eigenlayer cli-register-operator-bls-pubkeys cli-deposit-into-mocktoken-strategy cli-register-operator-with-avs ## registers operator with eigenlayer and avs
+cli-setup-operator: send-fund cli-register-operator-with-eigenlayer cli-deposit-into-mocktoken-strategy cli-register-operator-with-avs ## registers operator with eigenlayer and avs
 
 cli-register-operator-with-eigenlayer: ## registers operator with delegationManager
 	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-eigenlayer
 
-cli-register-operator-bls-pubkeys: ## registers operator's bls public keys with blsPublicKeyCompendium
-	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-bls-pubkeys
-
 cli-deposit-into-mocktoken-strategy: ## 
-	go run cli/main.go --config config-files/operator.anvil.yaml deposit-into-strategy --strategy-addr ${STRATEGY_ADDRESS} --amount 100
+	./scripts/deposit-into-mocktoken-strategy.sh
 
 cli-register-operator-with-avs: ## 
 	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-avs
@@ -73,7 +67,6 @@ ____OFFCHAIN_SOFTWARE___: ##
 start-aggregator: ## 
 	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
-		--shared-avs-contracts-deployment ${DEPLOYMENT_FILES_DIR}/shared_avs_contracts_deployment_output.json \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
@@ -84,7 +77,6 @@ start-operator: ##
 start-challenger: ## 
 	go run challenger/cmd/main.go --config config-files/challenger.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
-		--shared-avs-contracts-deployment ${DEPLOYMENT_FILES_DIR}/shared_avs_contracts_deployment_output.json \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 

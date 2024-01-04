@@ -17,18 +17,19 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 
-	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/avsregistry"
-	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
-	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/elcontracts"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
 	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
 	"github.com/Layr-Labs/eigensdk-go/nodeapi"
-	"github.com/Layr-Labs/eigensdk-go/signer"
+	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
@@ -65,6 +66,9 @@ type Operator struct {
 	credibleSquaringServiceManagerAddr common.Address
 }
 
+// TODO(samlaf): config is a mess right now, since the chainio client constructors
+//
+//	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	var logLevel logging.LogLevel
 	if c.Production {
@@ -132,84 +136,49 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger.Warnf("OPERATOR_ECDSA_KEY_PASSWORD env var not set. using empty string")
 	}
 
-	sgn, err := signer.NewPrivateKeyFromKeystoreSigner(c.EcdsaPrivateKeyStorePath, ecdsaKeyPassword, chainId)
+	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{
+		KeystorePath: c.EcdsaPrivateKeyStorePath,
+		Password:     ecdsaKeyPassword,
+	}, chainId)
 	if err != nil {
-		logger.Errorf("Cannot create signer", "err", err)
-		return nil, err
+		panic(err)
 	}
+	chainioConfig := clients.BuildAllConfig{
+		EthHttpUrl:                 c.EthRpcUrl,
+		EthWsUrl:                   c.EthWsUrl,
+		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
+		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
+		AvsName:                    AVS_NAME,
+		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
+	}
+	sdkClients, err := clients.BuildAll(chainioConfig, common.HexToAddress(c.OperatorAddress), signerV2, logger)
+	if err != nil {
+		panic(err)
+	}
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, common.HexToAddress(c.OperatorAddress))
 
-	avsWriter, err := chainio.NewAvsWriter(sgn, common.HexToAddress(c.AVSServiceManagerAddress),
-		common.HexToAddress(c.BLSOperatorStateRetrieverAddress), ethRpcClient, logger,
+	avsWriter, err := chainio.BuildAvsWriter(
+		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRpcClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
 		return nil, err
 	}
 
-	avsServiceBindings, err := chainio.NewAvsServiceBindings(
-		common.HexToAddress(c.AVSServiceManagerAddress),
-		common.HexToAddress(c.BLSOperatorStateRetrieverAddress),
-		ethRpcClient,
-		logger,
-	)
-	if err != nil {
-		return nil, err
-	}
-	blsRegistryCoordinatorAddr, err := avsServiceBindings.ServiceManager.RegistryCoordinator(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
-	stakeRegistryAddr, err := avsServiceBindings.ServiceManager.StakeRegistry(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
-	blsPubkeyRegistryAddr, err := avsServiceBindings.ServiceManager.BlsPubkeyRegistry(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
-	avsRegistryContractClient, err := sdkclients.NewAvsRegistryContractsChainClient(
-		blsRegistryCoordinatorAddr, common.HexToAddress(c.BLSOperatorStateRetrieverAddress), stakeRegistryAddr, blsPubkeyRegistryAddr, ethRpcClient, logger,
-	)
-	if err != nil {
-		return nil, err
-	}
-	avsRegistryReader, err := sdkavsregistry.NewAvsRegistryReader(avsRegistryContractClient, logger, ethRpcClient)
-	if err != nil {
-		return nil, err
-	}
-	avsReader, err := chainio.NewAvsReader(avsRegistryReader, avsServiceBindings, logger)
+	avsReader, err := chainio.BuildAvsReader(
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		ethRpcClient, logger)
 	if err != nil {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
 	}
-	avsSubscriber, err := chainio.NewAvsSubscriber(common.HexToAddress(c.AVSServiceManagerAddress),
-		common.HexToAddress(c.BLSOperatorStateRetrieverAddress), ethWsClient, logger,
+	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsSubscriber", "err", err)
-		return nil, err
-	}
-
-	slasherAddr, err := avsReader.AvsServiceBindings.ServiceManager.Slasher(&bind.CallOpts{})
-	if err != nil {
-		logger.Error("Cannot get slasher address", "err", err)
-		return nil, err
-	}
-
-	elContractsClient, err := sdkclients.NewELContractsChainClient(slasherAddr, common.HexToAddress(c.BlsPublicKeyCompendiumAddress), ethRpcClient, ethWsClient, logger)
-	if err != nil {
-		logger.Error("Cannot create ELContractsChainClient", "err", err)
-		return nil, err
-	}
-
-	eigenlayerWriter := sdkelcontracts.NewELChainWriter(elContractsClient, ethRpcClient, sgn, logger, eigenMetrics)
-	if err != nil {
-		logger.Error("Cannot create EigenLayerWriter", "err", err)
-		return nil, err
-	}
-	eigenlayerReader, err := sdkelcontracts.NewELChainReader(elContractsClient, logger, ethRpcClient)
-	if err != nil {
-		logger.Error("Cannot create EigenLayerReader", "err", err)
 		return nil, err
 	}
 
@@ -218,7 +187,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	quorumNames := map[sdktypes.QuorumNum]string{
 		0: "quorum0",
 	}
-	economicMetricsCollector := economic.NewCollector(eigenlayerReader, avsRegistryReader, AVS_NAME, logger, common.HexToAddress(c.OperatorAddress), quorumNames)
+	economicMetricsCollector := economic.NewCollector(
+		sdkClients.ElChainReader, sdkClients.AvsRegistryChainReader,
+		AVS_NAME, logger, common.HexToAddress(c.OperatorAddress), quorumNames)
 	reg.MustRegister(economicMetricsCollector)
 
 	aggregatorRpcClient, err := NewAggregatorRpcClient(c.AggregatorServerIpPortAddress, logger, avsAndEigenMetrics)
@@ -237,24 +208,31 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		avsWriter:                          avsWriter,
 		avsReader:                          avsReader,
 		avsSubscriber:                      avsSubscriber,
-		eigenlayerReader:                   eigenlayerReader,
-		eigenlayerWriter:                   eigenlayerWriter,
+		eigenlayerReader:                   sdkClients.ElChainReader,
+		eigenlayerWriter:                   sdkClients.ElChainWriter,
 		blsKeypair:                         blsKeyPair,
 		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
 		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
 		aggregatorRpcClient:                aggregatorRpcClient,
 		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
-		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSServiceManagerAddress),
+		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
 
 	}
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(common.HexToAddress(c.BlsPublicKeyCompendiumAddress))
+		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
+			c.EcdsaPrivateKeyStorePath,
+			ecdsaKeyPassword,
+		)
+		if err != nil {
+			return nil, err
+		}
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
-	operatorId, err := avsRegistryReader.GetOperatorId(context.Background(), operator.operatorAddr)
+	operatorId, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.operatorAddr)
 	if err != nil {
 		logger.Error("Cannot get operator id", "err", err)
 		return nil, err
@@ -272,7 +250,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 }
 
 func (o *Operator) Start(ctx context.Context) error {
-	operatorIsRegistered, err := o.avsReader.IsOperatorRegistered(ctx, o.operatorAddr)
+	operatorIsRegistered, err := o.avsReader.IsOperatorRegistered(&bind.CallOpts{}, o.operatorAddr)
 	if err != nil {
 		o.logger.Error("Error checking if operator is registered", "err", err)
 		return err
