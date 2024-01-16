@@ -358,7 +358,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(incredibleSquaringServiceManagerImplementation),
             abi.encodeWithSelector(
                 incredibleSquaringServiceManager.initialize.selector,
-                incredibleSquaringPauserReg,
                 incredibleSquaringCommunityMultisig
             )
         );
