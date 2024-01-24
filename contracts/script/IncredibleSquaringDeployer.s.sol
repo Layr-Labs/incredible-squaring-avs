@@ -10,12 +10,10 @@ import {ISlasher} from "@eigenlayer/contracts/interfaces/ISlasher.sol";
 import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBaseTVLLimits.sol";
 import "@eigenlayer/test/mocks/EmptyContract.sol";
 
-import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
-import {IBLSApkRegistry, IIndexRegistry, IStakeRegistry} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
-import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
-import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
-import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
+import "@eigenlayer-middleware/src/experimental/ECDSARegistryCoordinator.sol" as regcoord;
+import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAStakeRegistry.sol";
+// TODO(samlaf): do we need a new OperatorStateRetriever for ecdsa?
+import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
 import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
@@ -51,17 +49,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
     ProxyAdmin public incredibleSquaringProxyAdmin;
     PauserRegistry public incredibleSquaringPauserReg;
 
-    regcoord.RegistryCoordinator public registryCoordinator;
-    regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
+    regcoord.ECDSARegistryCoordinator public registryCoordinator;
+    regcoord.ECDSARegistryCoordinator public registryCoordinatorImplementation;
 
-    IBLSApkRegistry public blsApkRegistry;
-    IBLSApkRegistry public blsApkRegistryImplementation;
-
-    IIndexRegistry public indexRegistry;
-    IIndexRegistry public indexRegistryImplementation;
-
-    IStakeRegistry public stakeRegistry;
-    IStakeRegistry public stakeRegistryImplementation;
+    ECDSAStakeRegistry public stakeRegistry;
+    ECDSAStakeRegistry public stakeRegistryImplementation;
 
     OperatorStateRetriever public operatorStateRetriever;
 
@@ -207,7 +199,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        registryCoordinator = regcoord.RegistryCoordinator(
+        registryCoordinator = regcoord.ECDSARegistryCoordinator(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -216,25 +208,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        blsApkRegistry = IBLSApkRegistry(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
-                    ""
-                )
-            )
-        );
-        indexRegistry = IIndexRegistry(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
-                    ""
-                )
-            )
-        );
-        stakeRegistry = IStakeRegistry(
+        stakeRegistry = ECDSAStakeRegistry(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -248,7 +222,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         // Second, deploy the *implementation* contracts, using the *proxy contracts* as inputs
         {
-            stakeRegistryImplementation = new StakeRegistry(
+            stakeRegistryImplementation = new ECDSAStakeRegistry(
                 registryCoordinator,
                 delegationManager
             );
@@ -257,63 +231,29 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
-
-            blsApkRegistryImplementation = new BLSApkRegistry(
-                registryCoordinator
-            );
-
-            incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
-                address(blsApkRegistryImplementation)
-            );
-
-            indexRegistryImplementation = new IndexRegistry(
-                registryCoordinator
-            );
-
-            incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(indexRegistry))),
-                address(indexRegistryImplementation)
-            );
         }
 
-        registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
+        registryCoordinatorImplementation = new regcoord.ECDSARegistryCoordinator(
             incredibleSquaringServiceManager,
-            regcoord.IStakeRegistry(address(stakeRegistry)),
-            regcoord.IBLSApkRegistry(address(blsApkRegistry)),
-            regcoord.IIndexRegistry(address(indexRegistry))
+            regcoord.IStakeRegistry(address(stakeRegistry))
         );
 
         {
             uint numQuorums = 1;
             // for each quorum to setup, we need to define
-            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
-            regcoord.IRegistryCoordinator.OperatorSetParam[]
-                memory quorumsOperatorSetParams = new regcoord.IRegistryCoordinator.OperatorSetParam[](
-                    numQuorums
-                );
-            for (uint i = 0; i < numQuorums; i++) {
-                // hard code these for now
-                quorumsOperatorSetParams[i] = regcoord
-                    .IRegistryCoordinator
-                    .OperatorSetParam({
-                        maxOperatorCount: 10000,
-                        kickBIPsOfOperatorStake: 15000,
-                        kickBIPsOfTotalStake: 100
-                    });
-            }
+            // minimumStakeForQuorum, and strategyParams
             // set to 0 for every quorum
             uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            IStakeRegistry.StrategyParams[][]
-                memory quorumsStrategyParams = new IStakeRegistry.StrategyParams[][](
+            regcoord.IStakeRegistry.StrategyParams[][]
+                memory quorumsStrategyParams = new regcoord.IStakeRegistry.StrategyParams[][](
                     numQuorums
                 );
             for (uint i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new IStakeRegistry.StrategyParams[](
+                quorumsStrategyParams[i] = new regcoord.IStakeRegistry.StrategyParams[](
                     numStrategies
                 );
                 for (uint j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = IStakeRegistry
+                    quorumsStrategyParams[i][j] = regcoord.IStakeRegistry
                         .StrategyParams({
                             strategy: deployedStrategyArray[j],
                             // setting this to 1 ether since the divisor is also 1 ether
@@ -330,14 +270,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 ),
                 address(registryCoordinatorImplementation),
                 abi.encodeWithSelector(
-                    regcoord.RegistryCoordinator.initialize.selector,
-                    // we set churnApprover and ejector to communityMultisig because we don't need them
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
+                    regcoord.ECDSARegistryCoordinator.initialize.selector,
+                    // we set ejector to communityMultisig
                     incredibleSquaringCommunityMultisig,
                     incredibleSquaringPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
-                    quorumsOperatorSetParams,
                     quorumsMinimumStake,
                     quorumsStrategyParams
                 )

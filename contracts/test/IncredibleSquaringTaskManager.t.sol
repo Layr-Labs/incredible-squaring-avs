@@ -22,7 +22,7 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
         _setUpBLSMockAVSDeployer();
 
         tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)),
+            incsqsm.ECDSARegistryCoordinator(address(registryCoordinator)),
             TASK_RESPONSE_WINDOW_BLOCK
         );
 

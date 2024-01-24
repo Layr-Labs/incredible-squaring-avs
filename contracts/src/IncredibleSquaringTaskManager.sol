@@ -3,25 +3,24 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin-upgrades/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
+
 import "@eigenlayer/contracts/permissions/Pausable.sol";
+
 import "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
-import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
+import {ECDSARegistryCoordinator} from "@eigenlayer-middleware/src/experimental/ECDSARegistryCoordinator.sol";
+import {ECDSASignatureChecker} from "@eigenlayer-middleware/src/experimental/ECDSASignatureChecker.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
-import "@eigenlayer-middleware/src/libraries/BN254.sol";
+
 import "./IIncredibleSquaringTaskManager.sol";
 
 contract IncredibleSquaringTaskManager is
     Initializable,
     OwnableUpgradeable,
     Pausable,
-    BLSSignatureChecker,
+    ECDSASignatureChecker,
     OperatorStateRetriever,
     IIncredibleSquaringTaskManager
 {
-    using BN254 for BN254.G1Point;
-
     /* CONSTANT */
     // The number of blocks from the task initialization within which the aggregator has to respond to
     uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK;
@@ -60,9 +59,9 @@ contract IncredibleSquaringTaskManager is
     }
 
     constructor(
-        IRegistryCoordinator _registryCoordinator,
+        ECDSARegistryCoordinator _registryCoordinator,
         uint32 _taskResponseWindowBlock
-    ) BLSSignatureChecker(_registryCoordinator) {
+    ) ECDSASignatureChecker(_registryCoordinator) {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
     }
 
@@ -102,7 +101,8 @@ contract IncredibleSquaringTaskManager is
     function respondToTask(
         Task calldata task,
         TaskResponse calldata taskResponse,
-        NonSignerStakesAndSignature memory nonSignerStakesAndSignature
+        bytes32[] memory signerIds,
+        bytes[] memory signatures
     ) external onlyAggregator {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
@@ -127,18 +127,19 @@ contract IncredibleSquaringTaskManager is
 
         /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
         // calculate message which operators signed
-        bytes32 message = keccak256(abi.encode(taskResponse));
+        bytes32 msgHash = keccak256(abi.encode(taskResponse));
 
         // check the BLS signature
-        (
-            QuorumStakeTotals memory quorumStakeTotals,
-            bytes32 hashOfNonSigners
-        ) = checkSignatures(
-                message,
-                quorumNumbers,
-                taskCreatedBlock,
-                nonSignerStakesAndSignature
-            );
+        (QuorumStakeTotals memory quorumStakeTotals, bytes32 hashOfNonSigners) = checkSignatures(
+            msgHash,
+            quorumNumbers,
+            // TODO(samlaf): checkSignatures in ecdsa doesn't check against a taskCreatedBlock...
+            // think this is an oversight but need to double check
+            // see https://github.com/Layr-Labs/eigenlayer-middleware/pull/123#discussion_r1464043086
+            // taskCreatedBlock,
+            signerIds,
+            signatures
+        );
 
         // check that signatories own at least a threshold percentage of each quourm
         for (uint i = 0; i < quorumNumbers.length; i++) {
@@ -177,7 +178,7 @@ contract IncredibleSquaringTaskManager is
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+        bytes32[] memory signerIds
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
         uint256 numberToBeSquared = task.numberToBeSquared;
@@ -214,41 +215,16 @@ contract IncredibleSquaringTaskManager is
             return;
         }
 
-        // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
-        bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](
-            pubkeysOfNonSigningOperators.length
-        );
-        for (uint i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            hashesOfPubkeysOfNonSigningOperators[
-                i
-            ] = pubkeysOfNonSigningOperators[i].hashG1Point();
-        }
-
-        // verify whether the pubkeys of "claimed" non-signers supplied by challenger are actually non-signers as recorded before
+        // verify whether the signerIds supplied by challenger are actually signers as recorded before
         // when the aggregator responded to the task
-        // currently inlined, as the MiddlewareUtils.computeSignatoryRecordHash function was removed from BLSSignatureChecker
-        // in this PR: https://github.com/Layr-Labs/eigenlayer-contracts/commit/c836178bf57adaedff37262dff1def18310f3dce#diff-8ab29af002b60fc80e3d6564e37419017c804ae4e788f4c5ff468ce2249b4386L155-L158
-        // TODO(samlaf): contracts team will add this function back in the BLSSignatureChecker, which we should use to prevent potential bugs from code duplication
+        // this matches what is returned by the ECDSASignatureChecker.checkSignatures function
         bytes32 signatoryRecordHash = keccak256(
-            abi.encodePacked(
-                task.taskCreatedBlock,
-                hashesOfPubkeysOfNonSigningOperators
-            )
+            abi.encodePacked(task.taskCreatedBlock, signerIds)
         );
         require(
             signatoryRecordHash == taskResponseMetadata.hashOfNonSigners,
             "The pubkeys of non-signing operators supplied by the challenger are not correct."
         );
-
-        // get the address of operators who didn't sign
-        address[] memory addresssOfNonSigningOperators = new address[](
-            pubkeysOfNonSigningOperators.length
-        );
-        for (uint i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addresssOfNonSigningOperators[i] = BLSApkRegistry(
-                address(blsApkRegistry)
-            ).pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
-        }
 
         // @dev the below code is commented out for the upcoming M2 release
         //      in which there will be no slashing. The slasher is also being redesigned
