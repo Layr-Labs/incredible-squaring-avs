@@ -28,7 +28,7 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+// forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract IncredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
@@ -271,7 +271,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 address(registryCoordinatorImplementation),
                 abi.encodeWithSelector(
                     regcoord.ECDSARegistryCoordinator.initialize.selector,
-                    // we set ejector to communityMultisig
+                    // we set initialOwner and ejector to communityMultisig
+                    incredibleSquaringCommunityMultisig,
                     incredibleSquaringCommunityMultisig,
                     incredibleSquaringPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
