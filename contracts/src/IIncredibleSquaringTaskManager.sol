@@ -66,7 +66,7 @@ interface IIncredibleSquaringTaskManager {
     function respondToTask(
         Task calldata task,
         TaskResponse calldata taskResponse,
-        bytes32[] memory signerIds,
+        address[] memory signerIds,
         bytes[] memory signatures
     ) external;
 
@@ -78,7 +78,7 @@ interface IIncredibleSquaringTaskManager {
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        bytes32[] memory signerIds
+        address[] memory signerIds
     ) external;
 
     /// @notice Returns the TASK_RESPONSE_WINDOW_BLOCK

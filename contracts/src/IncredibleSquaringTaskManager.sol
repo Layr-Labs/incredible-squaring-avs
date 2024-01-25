@@ -101,7 +101,7 @@ contract IncredibleSquaringTaskManager is
     function respondToTask(
         Task calldata task,
         TaskResponse calldata taskResponse,
-        bytes32[] memory signerIds,
+        address[] memory signerIds,
         bytes[] memory signatures
     ) external onlyAggregator {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
@@ -178,7 +178,7 @@ contract IncredibleSquaringTaskManager is
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        bytes32[] memory signerIds
+        address[] memory signerIds
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
         uint256 numberToBeSquared = task.numberToBeSquared;

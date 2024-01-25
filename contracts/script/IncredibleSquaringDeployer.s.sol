@@ -235,7 +235,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         registryCoordinatorImplementation = new regcoord.ECDSARegistryCoordinator(
             incredibleSquaringServiceManager,
-            regcoord.IStakeRegistry(address(stakeRegistry))
+            regcoord.ECDSAStakeRegistry(address(stakeRegistry))
         );
 
         {
@@ -244,16 +244,16 @@ contract IncredibleSquaringDeployer is Script, Utils {
             // minimumStakeForQuorum, and strategyParams
             // set to 0 for every quorum
             uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            regcoord.IStakeRegistry.StrategyParams[][]
-                memory quorumsStrategyParams = new regcoord.IStakeRegistry.StrategyParams[][](
+            regcoord.ECDSAStakeRegistry.StrategyParams[][]
+                memory quorumsStrategyParams = new regcoord.ECDSAStakeRegistry.StrategyParams[][](
                     numQuorums
                 );
             for (uint i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new regcoord.IStakeRegistry.StrategyParams[](
+                quorumsStrategyParams[i] = new regcoord.ECDSAStakeRegistry.StrategyParams[](
                     numStrategies
                 );
                 for (uint j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = regcoord.IStakeRegistry
+                    quorumsStrategyParams[i][j] = regcoord.ECDSAStakeRegistry
                         .StrategyParams({
                             strategy: deployedStrategyArray[j],
                             // setting this to 1 ether since the divisor is also 1 ether
