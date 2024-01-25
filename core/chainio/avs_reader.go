@@ -19,7 +19,7 @@ type AvsReaderer interface {
 	sdkavsregistry.AvsRegistryReader
 
 	CheckSignatures(
-		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, signerIds [][32]byte, signatures [][]byte,
+		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, signerIds []gethcommon.Address, signatures [][]byte,
 	) (cstaskmanager.ECDSASignatureCheckerQuorumStakeTotals, error)
 	GetErc20Mock(ctx context.Context, tokenAddr gethcommon.Address) (*erc20mock.ContractERC20Mock, error)
 }
@@ -55,7 +55,7 @@ func NewAvsReader(avsRegistryReader sdkavsregistry.AvsRegistryReader, avsService
 }
 
 func (r *AvsReader) CheckSignatures(
-	ctx context.Context, msgHash [32]byte, quorumNumbers []byte, signerIds [][32]byte, signatures [][]byte,
+	ctx context.Context, msgHash [32]byte, quorumNumbers []byte, signerIds []gethcommon.Address, signatures [][]byte,
 ) (cstaskmanager.ECDSASignatureCheckerQuorumStakeTotals, error) {
 	stakeTotalsPerQuorum, _, err := r.AvsServiceBindings.TaskManager.CheckSignatures(
 		&bind.CallOpts{}, msgHash, quorumNumbers, signerIds, signatures,

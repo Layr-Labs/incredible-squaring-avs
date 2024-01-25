@@ -30,12 +30,12 @@ type AvsWriterer interface {
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
 		taskResponseMetadata cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata,
-		signerIds [][32]byte,
+		signerIds []gethcommon.Address,
 	) (*types.Receipt, error)
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-		signerIds [][32]byte,
+		signerIds []gethcommon.Address,
 		signatures [][]byte,
 	) (*types.Receipt, error)
 }
@@ -103,7 +103,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 func (w *AvsWriter) SendAggregatedResponse(
 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-	signerIds [][32]byte,
+	signerIds []gethcommon.Address,
 	signatures [][]byte,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
@@ -129,7 +129,7 @@ func (w *AvsWriter) RaiseChallenge(
 	task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
 	taskResponseMetadata cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata,
-	signerIds [][32]byte,
+	signerIds []gethcommon.Address,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
