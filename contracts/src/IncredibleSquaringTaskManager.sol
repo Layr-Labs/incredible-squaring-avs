@@ -101,8 +101,7 @@ contract IncredibleSquaringTaskManager is
     function respondToTask(
         Task calldata task,
         TaskResponse calldata taskResponse,
-        address[] memory signerIds,
-        bytes[] memory signatures
+        SignerStakeIndicesAndSignatures memory signerStakeIndicesAndSignatures
     ) external onlyAggregator {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
@@ -130,16 +129,15 @@ contract IncredibleSquaringTaskManager is
         bytes32 msgHash = keccak256(abi.encode(taskResponse));
 
         // check the BLS signature
-        (QuorumStakeTotals memory quorumStakeTotals, bytes32 hashOfNonSigners) = checkSignatures(
-            msgHash,
-            quorumNumbers,
-            // TODO(samlaf): checkSignatures in ecdsa doesn't check against a taskCreatedBlock...
-            // think this is an oversight but need to double check
-            // see https://github.com/Layr-Labs/eigenlayer-middleware/pull/123#discussion_r1464043086
-            // taskCreatedBlock,
-            signerIds,
-            signatures
-        );
+        (
+            QuorumStakeTotals memory quorumStakeTotals,
+            bytes32 hashOfNonSigners
+        ) = checkSignatures(
+                msgHash,
+                quorumNumbers,
+                taskCreatedBlock,
+                signerStakeIndicesAndSignatures
+            );
 
         // check that signatories own at least a threshold percentage of each quourm
         for (uint i = 0; i < quorumNumbers.length; i++) {

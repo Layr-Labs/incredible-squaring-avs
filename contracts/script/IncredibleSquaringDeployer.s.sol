@@ -12,6 +12,7 @@ import "@eigenlayer/test/mocks/EmptyContract.sol";
 
 import "@eigenlayer-middleware/src/experimental/ECDSARegistryCoordinator.sol" as regcoord;
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAStakeRegistry.sol";
+import {ECDSAIndexRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAIndexRegistry.sol";
 // TODO(samlaf): do we need a new OperatorStateRetriever for ecdsa?
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
@@ -54,6 +55,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
     ECDSAStakeRegistry public stakeRegistry;
     ECDSAStakeRegistry public stakeRegistryImplementation;
+
+    ECDSAIndexRegistry public indexRegistry;
+    ECDSAIndexRegistry public indexRegistryImplementation;
 
     OperatorStateRetriever public operatorStateRetriever;
 
@@ -217,6 +221,15 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
+        indexRegistry = ECDSAIndexRegistry(
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract),
+                    address(incredibleSquaringProxyAdmin),
+                    ""
+                )
+            )
+        );
 
         operatorStateRetriever = new OperatorStateRetriever();
 
@@ -231,11 +244,21 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
+
+            indexRegistryImplementation = new ECDSAIndexRegistry(
+                registryCoordinator
+            );
+
+            incredibleSquaringProxyAdmin.upgrade(
+                TransparentUpgradeableProxy(payable(address(indexRegistry))),
+                address(indexRegistryImplementation)
+            );
         }
 
         registryCoordinatorImplementation = new regcoord.ECDSARegistryCoordinator(
             incredibleSquaringServiceManager,
-            regcoord.ECDSAStakeRegistry(address(stakeRegistry))
+            regcoord.ECDSAStakeRegistry(address(stakeRegistry)),
+            regcoord.ECDSAIndexRegistry(address(indexRegistry))
         );
 
         {
@@ -249,11 +272,14 @@ contract IncredibleSquaringDeployer is Script, Utils {
                     numQuorums
                 );
             for (uint i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new regcoord.ECDSAStakeRegistry.StrategyParams[](
+                quorumsStrategyParams[
+                    i
+                ] = new regcoord.ECDSAStakeRegistry.StrategyParams[](
                     numStrategies
                 );
                 for (uint j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = regcoord.ECDSAStakeRegistry
+                    quorumsStrategyParams[i][j] = regcoord
+                        .ECDSAStakeRegistry
                         .StrategyParams({
                             strategy: deployedStrategyArray[j],
                             // setting this to 1 ether since the divisor is also 1 ether
