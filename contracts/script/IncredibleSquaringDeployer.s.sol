@@ -13,8 +13,7 @@ import "@eigenlayer/test/mocks/EmptyContract.sol";
 import "@eigenlayer-middleware/src/experimental/ECDSARegistryCoordinator.sol" as regcoord;
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAStakeRegistry.sol";
 import {ECDSAIndexRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAIndexRegistry.sol";
-// TODO(samlaf): do we need a new OperatorStateRetriever for ecdsa?
-import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
+import {ECDSAOperatorStateRetriever} from "@eigenlayer-middleware/src/experimental/ECDSAOperatorStateRetriever.sol";
 
 import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
@@ -59,7 +58,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
     ECDSAIndexRegistry public indexRegistry;
     ECDSAIndexRegistry public indexRegistryImplementation;
 
-    OperatorStateRetriever public operatorStateRetriever;
+    ECDSAOperatorStateRetriever public operatorStateRetriever;
 
     IncredibleSquaringServiceManager public incredibleSquaringServiceManager;
     IServiceManager public incredibleSquaringServiceManagerImplementation;
@@ -231,7 +230,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             )
         );
 
-        operatorStateRetriever = new OperatorStateRetriever();
+        operatorStateRetriever = new ECDSAOperatorStateRetriever();
 
         // Second, deploy the *implementation* contracts, using the *proxy contracts* as inputs
         {
