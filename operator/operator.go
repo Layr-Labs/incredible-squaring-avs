@@ -328,9 +328,9 @@ func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquar
 	}
 	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
 	signedTaskResponse := &aggregator.SignedTaskResponse{
-		TaskResponse: *taskResponse,
-		BlsSignature: *blsSignature,
-		OperatorId:   o.operatorId,
+		TaskResponse:   *taskResponse,
+		EcdsaSignature: *blsSignature,
+		OperatorId:     o.operatorId,
 	}
 	o.logger.Debug("Signed task response", "signedTaskResponse", signedTaskResponse)
 	return signedTaskResponse, nil

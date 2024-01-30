@@ -72,7 +72,7 @@ func TestOperator(t *testing.T) {
 				ReferenceTaskIndex: taskIndex,
 				NumberSquared:      big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared),
 			},
-			BlsSignature: bls.Signature{
+			EcdsaSignature: bls.Signature{
 				G1Point: bls.NewG1Point(X, Y),
 			},
 			OperatorId: operator.operatorId,
