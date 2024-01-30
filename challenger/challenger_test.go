@@ -10,7 +10,7 @@ import (
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/mocks"
 	chtypes "github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	incsqtaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -18,11 +18,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
-var MOCK_OPERATOR_STAKE = big.NewInt(100)
-var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
-
-// @samlaf I tried pulling the MockTask struct froma ggregator_test but getting error: "undefined: aggregator.MockTask"
+// @samlaf I tried pulling the MockTask struct from aggregator_test but getting error: "undefined: aggregator.MockTask"
 type MockTask struct {
 	TaskNum        uint32
 	BlockNumber    uint32
@@ -39,7 +35,7 @@ func TestCallChallengeModule(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = incsqtaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -47,15 +43,15 @@ func TestCallChallengeModule(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			NumberSquared:      big.NewInt(2),
 		},
-		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
-		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
+		SignersIds: []common.Address{},
 	}
 
 	mockAvsWriterer.EXPECT().RaiseChallenge(
@@ -63,7 +59,7 @@ func TestCallChallengeModule(t *testing.T) {
 		challenger.tasks[TASK_INDEX],
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
-		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
+		challenger.taskResponses[TASK_INDEX].SignersIds,
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
 
 	msg := challenger.callChallengeModule(TASK_INDEX)
@@ -81,7 +77,7 @@ func TestRaiseChallenge(t *testing.T) {
 	const TASK_INDEX = 1
 	const BLOCK_NUMBER = uint32(100)
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = incsqtaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -89,15 +85,15 @@ func TestRaiseChallenge(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			NumberSquared:      big.NewInt(9),
 		},
-		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
-		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
+		SignersIds: []common.Address{},
 	}
 
 	mockAvsWriterer.EXPECT().RaiseChallenge(
@@ -105,7 +101,7 @@ func TestRaiseChallenge(t *testing.T) {
 		challenger.tasks[TASK_INDEX],
 		challenger.taskResponses[TASK_INDEX].TaskResponse,
 		challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
-		challenger.taskResponses[TASK_INDEX].NonSigningOperatorPubKeys,
+		challenger.taskResponses[TASK_INDEX].SignersIds,
 	).Return(mocks.MockRaiseAndResolveChallengeCall(BLOCK_NUMBER, TASK_INDEX), nil)
 
 	err = challenger.raiseChallenge(TASK_INDEX)
@@ -121,7 +117,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 
 	const TASK_INDEX = 1
 
-	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
+	challenger.tasks[TASK_INDEX] = incsqtaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
 		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
@@ -129,18 +125,18 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
-		TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		TaskResponse: incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: TASK_INDEX,
 			NumberSquared:      big.NewInt(9),
 		},
-		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+		TaskResponseMetadata: incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
 			TaskResponsedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
-		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
+		SignersIds: []common.Address{},
 	}
 
-	taskResponseLog := cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded{
+	taskResponseLog := incsqtaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded{
 		TaskResponse:         challenger.taskResponses[TASK_INDEX].TaskResponse,
 		TaskResponseMetadata: challenger.taskResponses[TASK_INDEX].TaskResponseMetadata,
 		Raw: gethtypes.Log{
@@ -182,10 +178,10 @@ func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomoc
 		avsReader:          mockAvsReader,
 		ethClient:          mockEthClient,
 		avsSubscriber:      mockAvsSubscriber,
-		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
+		tasks:              make(map[uint32]incsqtaskmanager.IIncredibleSquaringTaskManagerTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),
-		taskResponseChan:   make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded),
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		taskResponseChan:   make(chan *incsqtaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded),
+		newTaskCreatedChan: make(chan *incsqtaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 	}
 	return challenger, mockAvsWriter, mockAvsReader, mockAvsSubscriber, mockEthClient, nil
 }
