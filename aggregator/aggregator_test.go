@@ -61,9 +61,9 @@ func TestSendNewTask(t *testing.T) {
 	var NUMBER_TO_SQUARE = uint32(3)
 	var NUMBER_TO_SQUARE_BIG_INT = big.NewInt(int64(NUMBER_TO_SQUARE))
 
-	mockAvsWriterer.EXPECT().SendNewTaskNumberToSquare(
+	mockAvsWriterer.EXPECT().SendNewTaskVerifyProof(
 		context.Background(), NUMBER_TO_SQUARE_BIG_INT, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,
-	).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, NUMBER_TO_SQUARE))
+	).Return(mocks.MockSendNewTaskVerifyProofCall(BLOCK_NUMBER, TASK_INDEX, NUMBER_TO_SQUARE))
 
 	// 100 blocks, each takes 12 seconds. We hardcode for now since aggregator also hardcodes this value
 	taskTimeToExpiry := 100 * 12 * time.Second

@@ -81,13 +81,13 @@ contract IncredibleSquaringTaskManager is
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
     function createNewTask(
-        uint256 numberToBeSquared,
+        bytes calldata proof,
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers
     ) external onlyTaskGenerator {
         // create a new task struct
         Task memory newTask;
-        newTask.numberToBeSquared = numberToBeSquared;
+        newTask.proof = proof;
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
         newTask.quorumNumbers = quorumNumbers;
@@ -173,6 +173,9 @@ contract IncredibleSquaringTaskManager is
     // NOTE: this function enables a challenger to raise and resolve a challenge.
     // TODO: require challenger to pay a bond for raising a challenge
     // TODO(samlaf): should we check that quorumNumbers is same as the one recorded in the task?
+
+    // TODO: FIX THIS, not updated for proofs
+    
     function raiseAndResolveChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
@@ -180,141 +183,10 @@ contract IncredibleSquaringTaskManager is
         BN254.G1Point[] memory pubkeysOfNonSigningOperators
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-        uint256 numberToBeSquared = task.numberToBeSquared;
-        // some logical checks
-        require(
-            allTaskResponses[referenceTaskIndex] != bytes32(0),
-            "Task hasn't been responded to yet"
-        );
-        require(
-            allTaskResponses[referenceTaskIndex] ==
-                keccak256(abi.encode(taskResponse, taskResponseMetadata)),
-            "Task response does not match the one recorded in the contract"
-        );
-        require(
-            taskSuccesfullyChallenged[referenceTaskIndex] == false,
-            "The response to this task has already been challenged successfully."
-        );
-
-        require(
-            uint32(block.number) <=
-                taskResponseMetadata.taskResponsedBlock +
-                    TASK_CHALLENGE_WINDOW_BLOCK,
-            "The challenge period for this task has already expired."
-        );
-
-        // logic for checking whether challenge is valid or not
-        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
-        bool isResponseCorrect = (actualSquaredOutput ==
-            taskResponse.numberSquared);
-
-        // if response was correct, no slashing happens so we return
-        if (isResponseCorrect == true) {
-            emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
-            return;
-        }
-
-        // get the list of all operators who were active when the task was initialized
-        Operator[][] memory allOperatorInfo = getOperatorState(
-            IBLSRegistryCoordinatorWithIndices(address(registryCoordinator)),
-            task.quorumNumbers,
-            task.taskCreatedBlock
-        );
-
-        // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
-        bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](
-            pubkeysOfNonSigningOperators.length
-        );
-        for (uint i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            hashesOfPubkeysOfNonSigningOperators[
-                i
-            ] = pubkeysOfNonSigningOperators[i].hashG1Point();
-        }
-
-        // verify whether the pubkeys of "claimed" non-signers supplied by challenger are actually non-signers as recorded before
-        // when the aggregator responded to the task
-        // currently inlined, as the MiddlewareUtils.computeSignatoryRecordHash function was removed from BLSSignatureChecker
-        // in this PR: https://github.com/Layr-Labs/eigenlayer-contracts/commit/c836178bf57adaedff37262dff1def18310f3dce#diff-8ab29af002b60fc80e3d6564e37419017c804ae4e788f4c5ff468ce2249b4386L155-L158
-        // TODO(samlaf): contracts team will add this function back in the BLSSignatureChecker, which we should use to prevent potential bugs from code duplication
-        bytes32 signatoryRecordHash = keccak256(
-            abi.encodePacked(
-                task.taskCreatedBlock,
-                hashesOfPubkeysOfNonSigningOperators
-            )
-        );
-        require(
-            signatoryRecordHash == taskResponseMetadata.hashOfNonSigners,
-            "The pubkeys of non-signing operators supplied by the challenger are not correct."
-        );
-
-        // get the address of operators who didn't sign
-        address[] memory addresssOfNonSigningOperators = new address[](
-            pubkeysOfNonSigningOperators.length
-        );
-        for (uint i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addresssOfNonSigningOperators[i] = BLSPubkeyRegistry(
-                address(blsPubkeyRegistry)
-            ).pubkeyCompendium().pubkeyHashToOperator(
-                    hashesOfPubkeysOfNonSigningOperators[i]
-                );
-        }
-
-        // @dev the below code is commented out for the upcoming M2 release 
-        //      in which there will be no slashing. The slasher is also being redesigned
-        //      so its interface may very well change.
-        // ==========================================
-        // freeze the operators who signed adversarially
-        // for (uint i = 0; i < allOperatorInfo.length; i++) {
-        //     // first for loop iterate over quorums
-
-        //     for (uint j = 0; j < allOperatorInfo[i].length; j++) {
-        //         // second for loop iterate over operators active in the quorum when the task was initialized
-
-        //         // get the operator address
-        //         bytes32 operatorID = allOperatorInfo[i][j].operatorId;
-        //         address operatorAddress = BLSPubkeyRegistry(
-        //             address(blsPubkeyRegistry)
-        //         ).pubkeyCompendium().pubkeyHashToOperator(operatorID);
-
-        //         // check if the operator has already NOT been frozen
-        //         if (
-        //             IServiceManager(
-        //                 address(
-        //                     BLSRegistryCoordinatorWithIndices(
-        //                         address(registryCoordinator)
-        //                     ).serviceManager()
-        //                 )
-        //             ).slasher().isFrozen(operatorAddress) == false
-        //         ) {
-        //             // check whether the operator was a signer for the task
-        //             bool wasSigningOperator = true;
-        //             for (
-        //                 uint k = 0;
-        //                 k < addresssOfNonSigningOperators.length;
-        //                 k++
-        //             ) {
-        //                 if (
-        //                     operatorAddress == addresssOfNonSigningOperators[k]
-        //                 ) {
-        //                     // if the operator was a non-signer, then we set the flag to false
-        //                     wasSigningOperator == false;
-        //                     break;
-        //                 }
-        //             }
-
-        //             if (wasSigningOperator == true) {
-        //                 BLSRegistryCoordinatorWithIndices(
-        //                     address(registryCoordinator)
-        //                 ).serviceManager().freezeOperator(operatorAddress);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // the task response has been challenged successfully
+        
         taskSuccesfullyChallenged[referenceTaskIndex] = true;
 
-        emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
+        emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
     }
 
     function getTaskResponseWindowBlock() external view returns (uint32) {
