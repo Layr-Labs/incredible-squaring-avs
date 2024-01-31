@@ -7,6 +7,7 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
@@ -16,6 +17,8 @@ import (
 )
 
 type AvsWriterer interface {
+	avsecdsaregistry.AvsEcdsaRegistryWriter
+
 	SendNewTaskNumberToSquare(
 		ctx context.Context,
 		numToSquare *big.Int,
@@ -37,6 +40,7 @@ type AvsWriterer interface {
 }
 
 type AvsWriter struct {
+	avsecdsaregistry.AvsEcdsaRegistryWriter
 	AvsContractBindings *AvsManagersBindings
 	logger              logging.Logger
 	TxMgr               txmgr.TxManager
@@ -55,14 +59,19 @@ func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStat
 		logger.Error("Failed to create contract bindings", "err", err)
 		return nil, err
 	}
-	return NewAvsWriter(avsServiceBindings, ethHttpClient, logger, txMgr), nil
+	avsRegistryWriter, err := avsecdsaregistry.BuildAvsRegistryChainWriter(registryCoordinatorAddr, operatorStateRetrieverAddr, logger, ethHttpClient, txMgr)
+	if err != nil {
+		return nil, err
+	}
+	return NewAvsWriter(avsRegistryWriter, avsServiceBindings, ethHttpClient, logger, txMgr), nil
 }
-func NewAvsWriter(avsServiceBindings *AvsManagersBindings, ethHttpClient eth.EthClient, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
+func NewAvsWriter(avsEcdsaRegistryWriter avsecdsaregistry.AvsEcdsaRegistryWriter, avsServiceBindings *AvsManagersBindings, ethHttpClient eth.EthClient, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
 	return &AvsWriter{
-		AvsContractBindings: avsServiceBindings,
-		logger:              logger,
-		TxMgr:               txMgr,
-		ethHttpClient:       ethHttpClient,
+		AvsEcdsaRegistryWriter: avsEcdsaRegistryWriter,
+		AvsContractBindings:    avsServiceBindings,
+		logger:                 logger,
+		TxMgr:                  txMgr,
+		ethHttpClient:          ethHttpClient,
 	}
 }
 

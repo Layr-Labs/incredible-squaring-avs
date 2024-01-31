@@ -17,16 +17,17 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
-	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/ECDSARegistryCoordinator"
+	stakereg "github.com/Layr-Labs/eigensdk-go/contracts/bindings/ECDSAStakeRegistry"
+	"github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
-	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
 	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
 	"github.com/Layr-Labs/eigensdk-go/nodeapi"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
@@ -45,17 +46,17 @@ type Operator struct {
 	// this way, auditing this operator code makes it obvious that operators don't need to
 	// write to the chain during the course of their normal operations
 	// writing to the chain should be done via the cli only
-	metricsReg       *prometheus.Registry
-	metrics          metrics.Metrics
-	nodeApi          *nodeapi.NodeApi
-	avsWriter        *chainio.AvsWriter
-	avsReader        chainio.AvsReaderer
-	avsSubscriber    chainio.AvsSubscriberer
-	eigenlayerReader sdkelcontracts.ELReader
-	eigenlayerWriter sdkelcontracts.ELWriter
-	blsKeypair       *bls.KeyPair
-	operatorId       bls.OperatorId
-	operatorAddr     common.Address
+	metricsReg         *prometheus.Registry
+	metrics            metrics.Metrics
+	nodeApi            *nodeapi.NodeApi
+	avsWriter          *chainio.AvsWriter
+	avsReader          chainio.AvsReaderer
+	avsSubscriber      chainio.AvsSubscriberer
+	eigenlayerReader   sdkelcontracts.ELReader
+	eigenlayerWriter   sdkelcontracts.ELWriter
+	avsEcdsaPrivateKey *ecdsa.PrivateKey
+	operatorId         sdktypes.EcdsaOperatorId
+	operatorAddr       common.Address
 	// receive new tasks in this chan (typically from listening to onchain event)
 	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 	// ip address of aggregator
@@ -113,13 +114,13 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		}
 	}
 
-	blsKeyPassword, ok := os.LookupEnv("OPERATOR_BLS_KEY_PASSWORD")
+	avsEcdsaKeyPassword, ok := os.LookupEnv("AVS_ECDSA_KEY_PASSWORD")
 	if !ok {
-		logger.Warnf("OPERATOR_BLS_KEY_PASSWORD env var not set. using empty string")
+		logger.Warnf("AVS_ECDSA_KEY_PASSWORD env var not set. using empty string")
 	}
-	blsKeyPair, err := bls.ReadPrivateKeyFromFile(c.BlsPrivateKeyStorePath, blsKeyPassword)
+	avsEcdsaPrivateKey, err := ecdsa.ReadKey(c.AvsEcdsaPrivateKeyStorePath, avsEcdsaKeyPassword)
 	if err != nil {
-		logger.Errorf("Cannot parse bls private key", "err", err)
+		logger.Errorf("Cannot parse avs ecdsa private key", "err", err)
 		return nil, err
 	}
 	// TODO(samlaf): should we add the chainId to the config instead?
@@ -137,25 +138,41 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{
-		KeystorePath: c.EcdsaPrivateKeyStorePath,
+		KeystorePath: c.OperatorEcdsaPrivateKeyStorePath,
 		Password:     ecdsaKeyPassword,
 	}, chainId)
 	if err != nil {
 		panic(err)
 	}
-	chainioConfig := clients.BuildAllConfig{
-		EthHttpUrl:                 c.EthRpcUrl,
-		EthWsUrl:                   c.EthWsUrl,
-		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
-		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
-		AvsName:                    AVS_NAME,
-		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
-	}
-	sdkClients, err := clients.BuildAll(chainioConfig, common.HexToAddress(c.OperatorAddress), signerV2, logger)
+
+	operatorAddress, err := sdkecdsa.GetAddressFromKeyStoreFile(c.OperatorEcdsaPrivateKeyStorePath)
+	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, operatorAddress)
+
+	registryCoordinator, err := regcoord.NewContractECDSARegistryCoordinator(common.HexToAddress(c.AVSRegistryCoordinatorAddress), ethRpcClient)
 	if err != nil {
-		panic(err)
+		logger.Fatal("Failed to create registry coordinator", "err", err)
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, common.HexToAddress(c.OperatorAddress))
+	stakeRegistryAddr, err := registryCoordinator.StakeRegistry(&bind.CallOpts{})
+	if err != nil {
+		logger.Fatal("Failed to fetch stake registry address", "err", err)
+	}
+	stakeRegistry, err := stakereg.NewContractECDSAStakeRegistry(stakeRegistryAddr, ethRpcClient)
+	if err != nil {
+		logger.Fatal("Failed to create stake registry", "err", err)
+	}
+	delegationManagerAddr, err := stakeRegistry.Delegation(&bind.CallOpts{})
+	if err != nil {
+		logger.Fatal("Failed to fetch delegation manager address", "err", err)
+	}
+	elChainReader, err := elcontracts.BuildELChainReader(delegationManagerAddr, ethRpcClient, logger)
+	if err != nil {
+		logger.Fatal("Failed to create ELChainReader", "err", err)
+	}
+	noopMetrics := metrics.NewNoopMetrics()
+	elChainWriter, err := elcontracts.BuildELChainWriter(delegationManagerAddr, ethRpcClient, logger, noopMetrics, txMgr)
+	if err != nil {
+		logger.Fatal("Failed to create ELChainWriter", "err", err)
+	}
 
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
@@ -182,15 +199,16 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 
+	// TODO: economic collector doesn't work with ecdsa registry atm
 	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph calls)
 	// and not instrumented metrics: see https://prometheus.io/docs/instrumenting/writing_clientlibs/#overall-structure
-	quorumNames := map[sdktypes.QuorumNum]string{
-		0: "quorum0",
-	}
-	economicMetricsCollector := economic.NewCollector(
-		sdkClients.ElChainReader, sdkClients.AvsRegistryChainReader,
-		AVS_NAME, logger, common.HexToAddress(c.OperatorAddress), quorumNames)
-	reg.MustRegister(economicMetricsCollector)
+	// quorumNames := map[sdktypes.QuorumNum]string{
+	// 	0: "quorum0",
+	// }
+	// economicMetricsCollector := economic.NewCollector(
+	// 	elChainReader, avsReader.AvsEcdsaRegistryReader,
+	// 	AVS_NAME, logger, operatorAddress, quorumNames)
+	// reg.MustRegister(economicMetricsCollector)
 
 	aggregatorRpcClient, err := NewAggregatorRpcClient(c.AggregatorServerIpPortAddress, logger, avsAndEigenMetrics)
 	if err != nil {
@@ -208,21 +226,19 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		avsWriter:                          avsWriter,
 		avsReader:                          avsReader,
 		avsSubscriber:                      avsSubscriber,
-		eigenlayerReader:                   sdkClients.ElChainReader,
-		eigenlayerWriter:                   sdkClients.ElChainWriter,
-		blsKeypair:                         blsKeyPair,
-		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
+		eigenlayerReader:                   elChainReader,
+		eigenlayerWriter:                   elChainWriter,
+		avsEcdsaPrivateKey:                 avsEcdsaPrivateKey,
+		operatorAddr:                       operatorAddress,
 		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
 		aggregatorRpcClient:                aggregatorRpcClient,
 		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		operatorId:                         [32]byte{0}, // this is set below
-
 	}
 
 	if c.RegisterOperatorOnStartup {
 		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
-			c.EcdsaPrivateKeyStorePath,
+			c.OperatorEcdsaPrivateKeyStorePath,
 			ecdsaKeyPassword,
 		)
 		if err != nil {
@@ -230,20 +246,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		}
 		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
 	}
-
-	// OperatorId is set in contract during registration so we get it after registering operator.
-	operatorId, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.operatorAddr)
-	if err != nil {
-		logger.Error("Cannot get operator id", "err", err)
-		return nil, err
-	}
-	operator.operatorId = operatorId
-	logger.Info("Operator info",
-		"operatorId", operatorId,
-		"operatorAddr", c.OperatorAddress,
-		"operatorG1Pubkey", operator.blsKeypair.GetPubKeyG1(),
-		"operatorG2Pubkey", operator.blsKeypair.GetPubKeyG2(),
-	)
 
 	return operator, nil
 
@@ -258,7 +260,7 @@ func (o *Operator) Start(ctx context.Context) error {
 	if !operatorIsRegistered {
 		// We bubble the error all the way up instead of using logger.Fatal because logger.Fatal prints a huge stack trace
 		// that hides the actual error message. This error msg is more explicit and doesn't require showing a stack trace to the user.
-		return fmt.Errorf("operator is not registered. Registering operator using the operator-cli before starting operator")
+		return fmt.Errorf("operator is not registered. Register operator using the operator-cli before starting operator")
 	}
 
 	o.logger.Infof("Starting operator.")
@@ -326,10 +328,14 @@ func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquar
 		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
 		return nil, err
 	}
-	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
+	ecdsaSignature, err := sdkecdsa.SignMsg(taskResponseHash[:], o.avsEcdsaPrivateKey)
+	if err != nil {
+		o.logger.Error("Error signing task response", "err", err)
+		return nil, err
+	}
 	signedTaskResponse := &aggregator.SignedTaskResponse{
 		TaskResponse:   *taskResponse,
-		EcdsaSignature: *blsSignature,
+		EcdsaSignature: ecdsaSignature,
 		OperatorId:     o.operatorId,
 	}
 	o.logger.Debug("Signed task response", "signedTaskResponse", signedTaskResponse)

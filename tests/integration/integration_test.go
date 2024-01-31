@@ -130,10 +130,10 @@ func TestIntegration(t *testing.T) {
 	/* start operator */
 	// the passwords are set to empty strings
 	log.Println("starting operator for integration tests")
-	os.Setenv("OPERATOR_BLS_KEY_PASSWORD", "")
+	os.Setenv("AVS_ECDSA_KEY_PASSWORD", "")
 	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
-	nodeConfig.BlsPrivateKeyStorePath = "../keys/test.bls.key.json"
-	nodeConfig.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
+	nodeConfig.AvsEcdsaPrivateKeyStorePath = "../keys/test.bls.key.json"
+	nodeConfig.OperatorEcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
 	nodeConfig.RegisterOperatorOnStartup = true
 	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
 	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint

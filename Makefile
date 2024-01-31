@@ -81,7 +81,7 @@ start-challenger: ##
 		2>&1 | zap-pretty
 
 run-plugin: ## 
-	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml
+	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml --operation-type opt-in
 -----------------------------: ## 
 _____HELPER_____: ## 
 mocks: ## generates mocks for tests
