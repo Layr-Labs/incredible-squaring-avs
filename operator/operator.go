@@ -55,8 +55,9 @@ type Operator struct {
 	eigenlayerReader   sdkelcontracts.ELReader
 	eigenlayerWriter   sdkelcontracts.ELWriter
 	avsEcdsaPrivateKey *ecdsa.PrivateKey
-	operatorId         sdktypes.EcdsaOperatorId
-	operatorAddr       common.Address
+	// operatorId is the address of the avsEcdsaPrivateKey
+	operatorId   sdktypes.EcdsaOperatorId
+	operatorAddr common.Address
 	// receive new tasks in this chan (typically from listening to onchain event)
 	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 	// ip address of aggregator
@@ -229,6 +230,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		eigenlayerReader:                   elChainReader,
 		eigenlayerWriter:                   elChainWriter,
 		avsEcdsaPrivateKey:                 avsEcdsaPrivateKey,
+		operatorId:                         ecdsa.PrivateKeyToOperatorId(avsEcdsaPrivateKey),
 		operatorAddr:                       operatorAddress,
 		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
 		aggregatorRpcClient:                aggregatorRpcClient,
