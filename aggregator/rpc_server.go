@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"net/rpc"
 
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	incsqtaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
 
-	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	"github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
@@ -38,9 +38,9 @@ func (agg *Aggregator) startServer(ctx context.Context) error {
 }
 
 type SignedTaskResponse struct {
-	TaskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-	BlsSignature bls.Signature
-	OperatorId   bls.OperatorId
+	TaskResponse   incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+	EcdsaSignature ecdsa.Signature
+	OperatorId     sdktypes.EcdsaOperatorId
 }
 
 // rpc endpoint which is called by operator
@@ -56,16 +56,16 @@ func (agg *Aggregator) ProcessSignedTaskResponse(signedTaskResponse *SignedTaskR
 	}
 	agg.taskResponsesMu.Lock()
 	if _, ok := agg.taskResponses[taskIndex]; !ok {
-		agg.taskResponses[taskIndex] = make(map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
+		agg.taskResponses[taskIndex] = make(map[sdktypes.TaskResponseDigest]incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
 	}
 	if _, ok := agg.taskResponses[taskIndex][taskResponseDigest]; !ok {
 		agg.taskResponses[taskIndex][taskResponseDigest] = signedTaskResponse.TaskResponse
 	}
 	agg.taskResponsesMu.Unlock()
 
-	err = agg.blsAggregationService.ProcessNewSignature(
+	err = agg.ecdsaAggregationService.ProcessNewSignature(
 		context.Background(), taskIndex, taskResponseDigest,
-		&signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId,
+		signedTaskResponse.EcdsaSignature, signedTaskResponse.OperatorId,
 	)
 	return err
 }

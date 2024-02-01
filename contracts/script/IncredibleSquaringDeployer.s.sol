@@ -10,12 +10,10 @@ import {ISlasher} from "@eigenlayer/contracts/interfaces/ISlasher.sol";
 import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBaseTVLLimits.sol";
 import "@eigenlayer/test/mocks/EmptyContract.sol";
 
-import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
-import {IBLSApkRegistry, IIndexRegistry, IStakeRegistry} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
-import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
-import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
-import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
+import "@eigenlayer-middleware/src/experimental/ECDSARegistryCoordinator.sol" as regcoord;
+import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAStakeRegistry.sol";
+import {ECDSAIndexRegistry} from "@eigenlayer-middleware/src/experimental/ECDSAIndexRegistry.sol";
+import {ECDSAOperatorStateRetriever} from "@eigenlayer-middleware/src/experimental/ECDSAOperatorStateRetriever.sol";
 
 import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
@@ -30,7 +28,7 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+// forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract IncredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
@@ -51,19 +49,16 @@ contract IncredibleSquaringDeployer is Script, Utils {
     ProxyAdmin public incredibleSquaringProxyAdmin;
     PauserRegistry public incredibleSquaringPauserReg;
 
-    regcoord.RegistryCoordinator public registryCoordinator;
-    regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
+    regcoord.ECDSARegistryCoordinator public registryCoordinator;
+    regcoord.ECDSARegistryCoordinator public registryCoordinatorImplementation;
 
-    IBLSApkRegistry public blsApkRegistry;
-    IBLSApkRegistry public blsApkRegistryImplementation;
+    ECDSAStakeRegistry public stakeRegistry;
+    ECDSAStakeRegistry public stakeRegistryImplementation;
 
-    IIndexRegistry public indexRegistry;
-    IIndexRegistry public indexRegistryImplementation;
+    ECDSAIndexRegistry public indexRegistry;
+    ECDSAIndexRegistry public indexRegistryImplementation;
 
-    IStakeRegistry public stakeRegistry;
-    IStakeRegistry public stakeRegistryImplementation;
-
-    OperatorStateRetriever public operatorStateRetriever;
+    ECDSAOperatorStateRetriever public operatorStateRetriever;
 
     IncredibleSquaringServiceManager public incredibleSquaringServiceManager;
     IServiceManager public incredibleSquaringServiceManagerImplementation;
@@ -207,7 +202,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        registryCoordinator = regcoord.RegistryCoordinator(
+        registryCoordinator = regcoord.ECDSARegistryCoordinator(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -216,7 +211,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        blsApkRegistry = IBLSApkRegistry(
+        stakeRegistry = ECDSAStakeRegistry(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -225,16 +220,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        indexRegistry = IIndexRegistry(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
-                    ""
-                )
-            )
-        );
-        stakeRegistry = IStakeRegistry(
+        indexRegistry = ECDSAIndexRegistry(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
@@ -244,11 +230,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
             )
         );
 
-        operatorStateRetriever = new OperatorStateRetriever();
+        operatorStateRetriever = new ECDSAOperatorStateRetriever();
 
         // Second, deploy the *implementation* contracts, using the *proxy contracts* as inputs
         {
-            stakeRegistryImplementation = new StakeRegistry(
+            stakeRegistryImplementation = new ECDSAStakeRegistry(
                 registryCoordinator,
                 delegationManager
             );
@@ -258,16 +244,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 address(stakeRegistryImplementation)
             );
 
-            blsApkRegistryImplementation = new BLSApkRegistry(
-                registryCoordinator
-            );
-
-            incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
-                address(blsApkRegistryImplementation)
-            );
-
-            indexRegistryImplementation = new IndexRegistry(
+            indexRegistryImplementation = new ECDSAIndexRegistry(
                 registryCoordinator
             );
 
@@ -277,43 +254,31 @@ contract IncredibleSquaringDeployer is Script, Utils {
             );
         }
 
-        registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
+        registryCoordinatorImplementation = new regcoord.ECDSARegistryCoordinator(
             incredibleSquaringServiceManager,
-            regcoord.IStakeRegistry(address(stakeRegistry)),
-            regcoord.IBLSApkRegistry(address(blsApkRegistry)),
-            regcoord.IIndexRegistry(address(indexRegistry))
+            regcoord.ECDSAStakeRegistry(address(stakeRegistry)),
+            regcoord.ECDSAIndexRegistry(address(indexRegistry))
         );
 
         {
             uint numQuorums = 1;
             // for each quorum to setup, we need to define
-            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
-            regcoord.IRegistryCoordinator.OperatorSetParam[]
-                memory quorumsOperatorSetParams = new regcoord.IRegistryCoordinator.OperatorSetParam[](
-                    numQuorums
-                );
-            for (uint i = 0; i < numQuorums; i++) {
-                // hard code these for now
-                quorumsOperatorSetParams[i] = regcoord
-                    .IRegistryCoordinator
-                    .OperatorSetParam({
-                        maxOperatorCount: 10000,
-                        kickBIPsOfOperatorStake: 15000,
-                        kickBIPsOfTotalStake: 100
-                    });
-            }
+            // minimumStakeForQuorum, and strategyParams
             // set to 0 for every quorum
             uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            IStakeRegistry.StrategyParams[][]
-                memory quorumsStrategyParams = new IStakeRegistry.StrategyParams[][](
+            regcoord.ECDSAStakeRegistry.StrategyParams[][]
+                memory quorumsStrategyParams = new regcoord.ECDSAStakeRegistry.StrategyParams[][](
                     numQuorums
                 );
             for (uint i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new IStakeRegistry.StrategyParams[](
+                quorumsStrategyParams[
+                    i
+                ] = new regcoord.ECDSAStakeRegistry.StrategyParams[](
                     numStrategies
                 );
                 for (uint j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = IStakeRegistry
+                    quorumsStrategyParams[i][j] = regcoord
+                        .ECDSAStakeRegistry
                         .StrategyParams({
                             strategy: deployedStrategyArray[j],
                             // setting this to 1 ether since the divisor is also 1 ether
@@ -330,14 +295,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 ),
                 address(registryCoordinatorImplementation),
                 abi.encodeWithSelector(
-                    regcoord.RegistryCoordinator.initialize.selector,
-                    // we set churnApprover and ejector to communityMultisig because we don't need them
-                    incredibleSquaringCommunityMultisig,
+                    regcoord.ECDSARegistryCoordinator.initialize.selector,
+                    // we set initialOwner and ejector to communityMultisig
                     incredibleSquaringCommunityMultisig,
                     incredibleSquaringCommunityMultisig,
                     incredibleSquaringPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
-                    quorumsOperatorSetParams,
                     quorumsMinimumStake,
                     quorumsStrategyParams
                 )

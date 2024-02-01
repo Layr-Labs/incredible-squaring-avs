@@ -7,7 +7,6 @@ package operator
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -16,10 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	"github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	eigenSdkTypes "github.com/Layr-Labs/eigensdk-go/types"
-
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 )
 
 func (o *Operator) registerOperatorOnStartup(
@@ -99,7 +96,6 @@ func (o *Operator) RegisterOperatorWithAvs(
 ) error {
 	// hardcode these things for now
 	quorumNumbers := []byte{0}
-	socket := "Not Needed"
 	operatorToAvsRegistrationSigSalt := [32]byte{123}
 	curBlockNum, err := o.ethClient.BlockNumber(context.Background())
 	if err != nil {
@@ -113,10 +109,10 @@ func (o *Operator) RegisterOperatorWithAvs(
 	}
 	sigValidForSeconds := int64(1_000_000)
 	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time()) + sigValidForSeconds)
-	_, err = o.avsWriter.RegisterOperatorWithAVSRegistryCoordinator(
+	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 		context.Background(),
 		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-		o.blsKeypair, quorumNumbers, socket,
+		o.avsEcdsaPrivateKey, quorumNumbers,
 	)
 	if err != nil {
 		o.logger.Errorf("Unable to register operator with avs registry coordinator")
@@ -142,10 +138,6 @@ func (o *Operator) RegisterOperatorWithAvs(
 // operator is frozen: false
 type OperatorStatus struct {
 	EcdsaAddress string
-	// pubkey compendium related
-	PubkeysRegistered bool
-	G1Pubkey          string
-	G2Pubkey          string
 	// avs related
 	RegisteredWithAvs bool
 	OperatorId        string
@@ -153,17 +145,12 @@ type OperatorStatus struct {
 
 func (o *Operator) PrintOperatorStatus() error {
 	fmt.Println("Printing operator status")
-	operatorId, err := o.avsReader.GetOperatorId(&bind.CallOpts{}, o.operatorAddr)
+	registeredWithAvs, err := o.avsReader.IsOperatorRegistered(&bind.CallOpts{}, o.operatorAddr)
 	if err != nil {
 		return err
 	}
-	pubkeysRegistered := operatorId != [32]byte{}
-	registeredWithAvs := o.operatorId != [32]byte{}
 	operatorStatus := OperatorStatus{
 		EcdsaAddress:      o.operatorAddr.String(),
-		PubkeysRegistered: pubkeysRegistered,
-		G1Pubkey:          o.blsKeypair.GetPubKeyG1().String(),
-		G2Pubkey:          o.blsKeypair.GetPubKeyG2().String(),
 		RegisteredWithAvs: registeredWithAvs,
 		OperatorId:        hex.EncodeToString(o.operatorId[:]),
 	}
@@ -173,11 +160,4 @@ func (o *Operator) PrintOperatorStatus() error {
 	}
 	fmt.Println(string(operatorStatusJson))
 	return nil
-}
-
-func pubKeyG1ToBN254G1Point(p *bls.G1Point) regcoord.BN254G1Point {
-	return regcoord.BN254G1Point{
-		X: p.X.BigInt(new(big.Int)),
-		Y: p.Y.BigInt(new(big.Int)),
-	}
 }

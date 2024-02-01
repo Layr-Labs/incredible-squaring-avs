@@ -3,13 +3,14 @@ package types
 import (
 	"errors"
 
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	incsqtaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type TaskResponseData struct {
-	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-	TaskResponseMetadata      cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata
-	NonSigningOperatorPubKeys []cstaskmanager.BN254G1Point
+	TaskResponse         incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+	TaskResponseMetadata incsqtaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata
+	SignersIds           []common.Address
 }
 
 var (

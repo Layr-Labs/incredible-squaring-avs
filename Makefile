@@ -23,7 +23,7 @@ deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
 deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
 	./tests/anvil/deploy-avs-save-anvil-state.sh
 
-deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
+deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer and inc-sq contracts 
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
@@ -81,7 +81,7 @@ start-challenger: ##
 		2>&1 | zap-pretty
 
 run-plugin: ## 
-	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml
+	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml --operation-type opt-in
 -----------------------------: ## 
 _____HELPER_____: ## 
 mocks: ## generates mocks for tests

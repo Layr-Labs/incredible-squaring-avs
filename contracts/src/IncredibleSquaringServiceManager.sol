@@ -3,13 +3,15 @@ pragma solidity ^0.8.9;
 
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
 import "./IIncredibleSquaringTaskManager.sol";
-import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
+import "@eigenlayer-middleware/src/experimental/ECDSAServiceManagerBase.sol";
+import "@eigenlayer-middleware/src/experimental/ECDSARegistryCoordinator.sol";
+import "@eigenlayer-middleware/src/experimental/ECDSAStakeRegistry.sol";
 
 /**
  * @title Primary entrypoint for procuring services from IncredibleSquaring.
  * @author Layr Labs, Inc.
  */
-contract IncredibleSquaringServiceManager is ServiceManagerBase {
+contract IncredibleSquaringServiceManager is ECDSAServiceManagerBase {
     using BytesLib for bytes;
 
     IIncredibleSquaringTaskManager
@@ -26,11 +28,11 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
 
     constructor(
         IDelegationManager _delegationManager,
-        IRegistryCoordinator _registryCoordinator,
-        IStakeRegistry _stakeRegistry,
+        ECDSARegistryCoordinator _registryCoordinator,
+        ECDSAStakeRegistry _stakeRegistry,
         IIncredibleSquaringTaskManager _incredibleSquaringTaskManager
     )
-        ServiceManagerBase(
+        ECDSAServiceManagerBase(
             _delegationManager,
             _registryCoordinator,
             _stakeRegistry

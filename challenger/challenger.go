@@ -10,6 +10,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -126,9 +127,9 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 	// get the inputs necessary for raising a challenge
 	nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(taskResponseLog)
 	taskResponseData := types.TaskResponseData{
-		TaskResponse:              taskResponseLog.TaskResponse,
-		TaskResponseMetadata:      taskResponseLog.TaskResponseMetadata,
-		NonSigningOperatorPubKeys: nonSigningOperatorPubKeys,
+		TaskResponse:         taskResponseLog.TaskResponse,
+		TaskResponseMetadata: taskResponseLog.TaskResponseMetadata,
+		SignersIds:           nonSigningOperatorPubKeys,
 	}
 
 	c.taskResponses[taskResponseRawLog.TaskResponse.ReferenceTaskIndex] = taskResponseData
@@ -152,7 +153,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	return types.NoErrorInTaskResponse
 }
 
-func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
+func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) []gethcommon.Address {
 	c.logger.Info("vLog.Raw is", "vLog.Raw", vLog.Raw)
 
 	// get the nonSignerStakesAndSignature
@@ -184,39 +185,15 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIn
 		c.logger.Error("Error unpacking calldata", "err", err)
 	}
 
-	nonSignerStakesAndSignatureInput := inputs[2].(struct {
-		NonSignerQuorumBitmapIndices []uint32 "json:\"nonSignerQuorumBitmapIndices\""
-		NonSignerPubkeys             []struct {
-			X *big.Int "json:\"X\""
-			Y *big.Int "json:\"Y\""
-		} "json:\"nonSignerPubkeys\""
-		QuorumApks []struct {
-			X *big.Int "json:\"X\""
-			Y *big.Int "json:\"Y\""
-		} "json:\"quorumApks\""
-		ApkG2 struct {
-			X [2]*big.Int "json:\"X\""
-			Y [2]*big.Int "json:\"Y\""
-		} "json:\"apkG2\""
-		Sigma struct {
-			X *big.Int "json:\"X\""
-			Y *big.Int "json:\"Y\""
-		} "json:\"sigma\""
-		QuorumApkIndices      []uint32   "json:\"quorumApkIndices\""
-		TotalStakeIndices     []uint32   "json:\"totalStakeIndices\""
-		NonSignerStakeIndices [][]uint32 "json:\"nonSignerStakeIndices\""
+	signerStakeIndicesAndSignaturesInput := inputs[2].(struct {
+		SignerIds                 []gethcommon.Address "json:\"signerIds\""
+		Signatures                [][]byte             "json:\"signatures\""
+		SignerQuorumBitmapIndices []uint32             "json:\"signerQuorumBitmapIndices\""
+		TotalStakeIndices         []uint32             "json:\"totalStakeIndices\""
+		SignerStakeIndices        [][]uint32           "json:\"signerStakeIndices\""
 	})
 
-	// get pubkeys of non-signing operators and submit them to the contract
-	nonSigningOperatorPubKeys := make([]cstaskmanager.BN254G1Point, len(nonSignerStakesAndSignatureInput.NonSignerPubkeys))
-	for i, pubkey := range nonSignerStakesAndSignatureInput.NonSignerPubkeys {
-		nonSigningOperatorPubKeys[i] = cstaskmanager.BN254G1Point{
-			X: pubkey.X,
-			Y: pubkey.Y,
-		}
-	}
-
-	return nonSigningOperatorPubKeys
+	return signerStakeIndicesAndSignaturesInput.SignerIds
 }
 
 func (c *Challenger) raiseChallenge(taskIndex uint32) error {
@@ -224,14 +201,14 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 	c.logger.Info("Task", "Task", c.tasks[taskIndex])
 	c.logger.Info("TaskResponse", "TaskResponse", c.taskResponses[taskIndex].TaskResponse)
 	c.logger.Info("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
-	c.logger.Info("NonSigningOperatorPubKeys", "NonSigningOperatorPubKeys", c.taskResponses[taskIndex].NonSigningOperatorPubKeys)
+	c.logger.Info("NonSigningOperatorPubKeys", "NonSigningOperatorPubKeys", c.taskResponses[taskIndex].SignersIds)
 
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),
 		c.tasks[taskIndex],
 		c.taskResponses[taskIndex].TaskResponse,
 		c.taskResponses[taskIndex].TaskResponseMetadata,
-		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
+		c.taskResponses[taskIndex].SignersIds,
 	)
 	if err != nil {
 		c.logger.Error("Challenger failed to raise challenge:", "err", err)

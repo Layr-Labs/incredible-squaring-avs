@@ -1,6 +1,6 @@
 # Incredible Squaring AVS
 
-<b> Do not use it in Production, testnet only. </b>
+<b> This branch contains an ECDSA version of incredible squaring, which has been coded in roughly a week, with much love, but also most likely many bugs. It's main purpose is to show that eigenlayer AVSs are not in any way constrained to use BLS signature schemes. </b>
 
 Basic repo demoing a simple AVS middleware with full eigenlayer integration. See this [video walkthrough](https://www.loom.com/share/50314b3ec0f34e2ba386d45724602d76?sid=9d68d8cb-d2d5-4123-bd06-776de2076de0).
 
@@ -51,11 +51,11 @@ The architecture of the AVS contains:
   - [ServiceManager](contracts/src/IncredibleSquaringServiceManager.sol) which will eventually contain slashing logic but for M2 is just a placeholder.
   - [TaskManager](contracts/src/IncredibleSquaringTaskManager.sol) which contains [task creation](contracts/src/IncredibleSquaringTaskManager.sol#L75) and [task response](contracts/src/IncredibleSquaringTaskManager.sol#L102) logic.
   - The [challenge](contracts/src/IncredibleSquaringTaskManager.sol#L185) logic could be separated into its own contract, but we have decided to include it in the TaskManager for this simple task.
-  - Set of [registry contracts](https://github.com/Layr-Labs/eigenlayer-middleware) to manage operators opted in to this avs
+  - Set of experimental (not audited, unlike the BLS ones!) [ECDSA registry contracts](https://github.com/Layr-Labs/eigenlayer-middleware/tree/ecdsa-with-history-poc/src/experimental) to manage operators opted in to this avs
 - Task Generator
   - in a real world scenario, this could be a separate entity, but for this simple demo, the aggregator also acts as the task generator
 - Aggregator
-  - aggregates BLS signatures from operators and posts the aggregated response to the task manager
+  - aggregates ECDSA signatures from operators and posts the aggregated response to the task manager
   - For this simple demo, the aggregator is not an operator, and thus does not need to register with eigenlayer or the AVS contract. It's IP address is simply hardcoded into the operators' config.
 - Operators
   - Square the number sent to the task manager by the task generator, sign it, and send it to the aggregator
@@ -64,11 +64,11 @@ The architecture of the AVS contains:
 
 1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the IncredibleSquaringTaskManager contract's [createNewTask](contracts/src/IncredibleSquaringTaskManager.sol#L78) function. Each task specifies an integer `numberToBeSquared` for which it wants the currently opted-in operators to determine its square `numberToBeSquared^2`. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in incredible-squaring) needs to reach at least thresholdPercentage of operator signatures.
 
-2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
+2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/ecdsa-with-history-poc/src/experimental/ECDSARegistryCoordinator.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 
 3. [Operator] The operators who are currently opted-in with the AVS need to read the task number from the Task contract, compute its square, sign on that computed result (over the BN254 curve) and send their taskResponse and signature to the aggregator.
 
-4. [Aggregator] The aggregator collects the signatures from the operators and aggregates them using BLS aggregation. If any response passes the [quorumThresholdPercentage](contracts/src/IIncredibleSquaringTaskManager.sol#L36) set by the task generator when posting the task, the aggregator posts the aggregated response to the Task contract.
+4. [Aggregator] The aggregator collects the ECDSA signatures from the operators. If any response passes the [quorumThresholdPercentage](contracts/src/IIncredibleSquaringTaskManager.sol#L36) set by the task generator when posting the task, the aggregator posts the aggregated response to the Task contract (which works as a multisig and verifies each operator ECDSA signature one by one).
 
 5. If a response was sent within the [response window](contracts/src/IncredibleSquaringTaskManager.sol#L119), we enter the [Dispute resolution] period.
    - [Off-chain] A challenge window is launched during which anyone can [raise a dispute](contracts/src/IncredibleSquaringTaskManager.sol#L171) in a DisputeResolution contract (in our case, this is the same as the TaskManager contract)

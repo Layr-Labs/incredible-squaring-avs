@@ -8,20 +8,23 @@ import (
 	"os"
 	"time"
 
-	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
-	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
-	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
-	"github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/eigensdk-go/signerv2"
-	"github.com/Layr-Labs/eigensdk-go/utils"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
+
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
+	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/ECDSARegistryCoordinator"
+	stakereg "github.com/Layr-Labs/eigensdk-go/contracts/bindings/ECDSAStakeRegistry"
+	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
+	"github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/Layr-Labs/eigensdk-go/metrics"
+	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	"github.com/Layr-Labs/eigensdk-go/utils"
+
+	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
+	"github.com/Layr-Labs/incredible-squaring-avs/types"
 )
 
 var (
@@ -32,17 +35,17 @@ var (
 		Usage:    "Load configuration from `FILE`",
 		EnvVar:   "CONFIG",
 	}
-	EcdsaKeyPasswordFlag = cli.StringFlag{
-		Name:     "ecdsa-key-password",
+	AvsEcdsaKeyPasswordFlag = cli.StringFlag{
+		Name:     "tx-ecdsa-key-password",
 		Required: false,
-		Usage:    "Password to decrypt the ecdsa key",
-		EnvVar:   "ECDSA_KEY_PASSWORD",
+		Usage:    "Password to decrypt the avs ecdsa key (key associated with the incredible-squaring avs)",
+		EnvVar:   "AVS_ECDSA_KEY_PASSWORD",
 	}
-	BlsKeyPasswordFlag = cli.StringFlag{
-		Name:     "bls-key-password",
+	OperatorEcdsaKeyPasswordFlag = cli.StringFlag{
+		Name:     "operator-ecdsa-key-password",
 		Required: false,
-		Usage:    "Password to decrypt the bls key",
-		EnvVar:   "BLS_KEY_PASSWORD",
+		Usage:    "Password to decrypt the operator ecdsa key (key associated with the operator address)",
+		EnvVar:   "OPERATOR_ECDSA_KEY_PASSWORD",
 	}
 	OperationFlag = cli.StringFlag{
 		Name:     "operation-type",
@@ -62,8 +65,8 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{
 		ConfigFileFlag,
-		EcdsaKeyPasswordFlag,
-		BlsKeyPasswordFlag,
+		AvsEcdsaKeyPasswordFlag,
+		OperatorEcdsaKeyPasswordFlag,
 		OperationFlag,
 		StrategyAddrFlag,
 	}
@@ -91,16 +94,6 @@ func plugin(ctx *cli.Context) {
 	}
 	fmt.Println(avsConfig)
 
-	ecdsaKeyPassword := ctx.GlobalString(EcdsaKeyPasswordFlag.Name)
-
-	buildClientConfig := sdkclients.BuildAllConfig{
-		EthHttpUrl:                 avsConfig.EthRpcUrl,
-		EthWsUrl:                   avsConfig.EthWsUrl,
-		RegistryCoordinatorAddr:    avsConfig.AVSRegistryCoordinatorAddress,
-		OperatorStateRetrieverAddr: avsConfig.OperatorStateRetrieverAddress,
-		AvsName:                    "incredible-squaring",
-		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
-	}
 	logger, _ := logging.NewZapLogger(logging.Development)
 	ethHttpClient, err := eth.NewClient(avsConfig.EthRpcUrl)
 	if err != nil {
@@ -114,8 +107,15 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
+	ecdsaKeyPassword := ctx.GlobalString(OperatorEcdsaKeyPasswordFlag.Name)
+	operatorAddress, err := sdkecdsa.GetAddressFromKeyStoreFile(avsConfig.OperatorEcdsaPrivateKeyStorePath)
+	if err != nil {
+		fmt.Println("can't get operator address")
+		fmt.Println(err)
+		return
+	}
 	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{
-		KeystorePath: avsConfig.EcdsaPrivateKeyStorePath,
+		KeystorePath: avsConfig.OperatorEcdsaPrivateKeyStorePath,
 		Password:     ecdsaKeyPassword,
 	}, chainID)
 	if err != nil {
@@ -123,7 +123,6 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	clients, err := sdkclients.BuildAll(buildClientConfig, common.HexToAddress(avsConfig.OperatorAddress), signerV2, logger)
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
@@ -135,7 +134,7 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethHttpClient, logger, signerV2, common.HexToAddress(avsConfig.OperatorAddress))
+	txMgr := txmgr.NewSimpleTxManager(ethHttpClient, logger, signerV2, operatorAddress)
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
@@ -149,18 +148,45 @@ func plugin(ctx *cli.Context) {
 		return
 	}
 
-	if operationType == "opt-in" {
-		blsKeyPassword := ctx.GlobalString(BlsKeyPasswordFlag.Name)
+	registryCoordinator, err := regcoord.NewContractECDSARegistryCoordinator(common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress), ethHttpClient)
+	if err != nil {
+		logger.Fatal("Failed to create registry coordinator", "err", err)
+	}
+	stakeRegistryAddr, err := registryCoordinator.StakeRegistry(&bind.CallOpts{})
+	if err != nil {
+		logger.Fatal("Failed to fetch stake registry address", "err", err)
+	}
+	stakeRegistry, err := stakereg.NewContractECDSAStakeRegistry(stakeRegistryAddr, ethHttpClient)
+	if err != nil {
+		logger.Fatal("Failed to create stake registry", "err", err)
+	}
+	delegationManagerAddr, err := stakeRegistry.Delegation(&bind.CallOpts{})
+	if err != nil {
+		logger.Fatal("Failed to fetch delegation manager address", "err", err)
+	}
+	elChainReader, err := elcontracts.BuildELChainReader(delegationManagerAddr, ethHttpClient, logger)
+	if err != nil {
+		logger.Fatal("Failed to create ELChainReader", "err", err)
+	}
+	noopMetrics := metrics.NewNoopMetrics()
+	elChainWriter, err := elcontracts.BuildELChainWriter(delegationManagerAddr, ethHttpClient, logger, noopMetrics, txMgr)
+	if err != nil {
+		logger.Fatal("Failed to create ELChainWriter", "err", err)
+	}
 
-		blsKeypair, err := bls.ReadPrivateKeyFromFile(avsConfig.BlsPrivateKeyStorePath, blsKeyPassword)
+	if operationType == "opt-in" {
+
+		avsEcdsaKeyPassword := ctx.GlobalString(AvsEcdsaKeyPasswordFlag.Name)
+		avsEcdsaKeypair, err := sdkecdsa.ReadKey(avsConfig.AvsEcdsaPrivateKeyStorePath, avsEcdsaKeyPassword)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
+		operatorEcdsaKeyPassword := ctx.GlobalString(OperatorEcdsaKeyPasswordFlag.Name)
 		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
-			avsConfig.EcdsaPrivateKeyStorePath,
-			ecdsaKeyPassword,
+			avsConfig.OperatorEcdsaPrivateKeyStorePath,
+			operatorEcdsaKeyPassword,
 		)
 		if err != nil {
 			fmt.Println(err)
@@ -174,10 +200,10 @@ func plugin(ctx *cli.Context) {
 		operatorToAvsRegistrationSigSalt := [32]byte{123}
 		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
 		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
-		r, err := clients.AvsRegistryChainWriter.RegisterOperatorWithAVSRegistryCoordinator(
+		r, err := avsWriter.AvsEcdsaRegistryWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 			goCtx,
 			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-			blsKeypair, quorumNumbers, socket,
+			avsEcdsaKeypair, quorumNumbers,
 		)
 		if err != nil {
 			logger.Errorf("Error assembling CreateNewTask tx")
@@ -194,7 +220,7 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 		strategyAddr := common.HexToAddress(ctx.GlobalString(StrategyAddrFlag.Name))
-		_, tokenAddr, err := clients.ElChainReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
+		_, tokenAddr, err := elChainReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
 		if err != nil {
 			logger.Error("Failed to fetch strategy contract", "err", err)
 			return
@@ -210,7 +236,7 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 		amount := big.NewInt(1000)
-		tx, err := contractErc20Mock.Mint(txOpts, common.HexToAddress(avsConfig.OperatorAddress), amount)
+		tx, err := contractErc20Mock.Mint(txOpts, operatorAddress, amount)
 		if err != nil {
 			logger.Errorf("Error assembling Mint tx")
 			return
@@ -221,7 +247,7 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 
-		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+		_, err = elChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
 		if err != nil {
 			logger.Errorf("Error depositing into strategy")
 			return
@@ -229,12 +255,5 @@ func plugin(ctx *cli.Context) {
 		return
 	} else {
 		fmt.Println("Invalid operation type")
-	}
-}
-
-func pubKeyG1ToBN254G1Point(p *bls.G1Point) regcoord.BN254G1Point {
-	return regcoord.BN254G1Point{
-		X: p.X.BigInt(new(big.Int)),
-		Y: p.Y.BigInt(new(big.Int)),
 	}
 }

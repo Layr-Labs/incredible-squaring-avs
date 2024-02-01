@@ -8,14 +8,10 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
 
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/services/avsregistry"
-	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
-	oppubkeysserv "github.com/Layr-Labs/eigensdk-go/services/operatorpubkeys"
+	ecdsaagg "github.com/Layr-Labs/eigensdk-go/services/ecdsa/aggregation"
+	"github.com/Layr-Labs/eigensdk-go/services/ecdsa/avsregistry"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
-	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 
@@ -69,11 +65,11 @@ type Aggregator struct {
 	serverIpPortAddr string
 	avsWriter        chainio.AvsWriterer
 	// aggregation related fields
-	blsAggregationService blsagg.BlsAggregationService
-	tasks                 map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask
-	tasksMu               sync.RWMutex
-	taskResponses         map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-	taskResponsesMu       sync.RWMutex
+	ecdsaAggregationService ecdsaagg.EcdsaAggregationService
+	tasks                   map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask
+	tasksMu                 sync.RWMutex
+	taskResponses           map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+	taskResponsesMu         sync.RWMutex
 }
 
 // NewAggregator creates a new Aggregator with the provided config.
@@ -91,31 +87,30 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		return nil, err
 	}
 
-	chainioConfig := sdkclients.BuildAllConfig{
-		EthHttpUrl:                 c.EthHttpRpcUrl,
-		EthWsUrl:                   c.EthWsRpcUrl,
-		RegistryCoordinatorAddr:    c.IncredibleSquaringRegistryCoordinatorAddr.String(),
-		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
-		AvsName:                    avsName,
-		PromMetricsIpPortAddress:   ":9090",
-	}
-	clients, err := clients.BuildAll(chainioConfig, c.AggregatorAddress, c.SignerFn, c.Logger)
-	if err != nil {
-		c.Logger.Errorf("Cannot create sdk clients", "err", err)
-		return nil, err
-	}
+	// chainioConfig := sdkclients.BuildAllConfig{
+	// 	EthHttpUrl:                 c.EthHttpRpcUrl,
+	// 	EthWsUrl:                   c.EthWsRpcUrl,
+	// 	RegistryCoordinatorAddr:    c.IncredibleSquaringRegistryCoordinatorAddr.String(),
+	// 	OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
+	// 	AvsName:                    avsName,
+	// 	PromMetricsIpPortAddress:   ":9090",
+	// }
+	// clients, err := clients.BuildAll(chainioConfig, c.AggregatorAddress, c.SignerFn, c.Logger)
+	// if err != nil {
+	// 	c.Logger.Errorf("Cannot create sdk clients", "err", err)
+	// 	return nil, err
+	// }
 
-	operatorPubkeysService := oppubkeysserv.NewOperatorPubkeysServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, c.Logger)
-	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, operatorPubkeysService, c.Logger)
-	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, c.Logger)
+	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, c.Logger)
+	ecdsaAggregationService := ecdsaagg.NewEcdsaAggregatorService(avsRegistryService, c.Logger)
 
 	return &Aggregator{
-		logger:                c.Logger,
-		serverIpPortAddr:      c.AggregatorServerIpPortAddr,
-		avsWriter:             avsWriter,
-		blsAggregationService: blsAggregationService,
-		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse),
+		logger:                  c.Logger,
+		serverIpPortAddr:        c.AggregatorServerIpPortAddr,
+		avsWriter:               avsWriter,
+		ecdsaAggregationService: ecdsaAggregationService,
+		tasks:                   make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
+		taskResponses:           make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse),
 	}, nil
 }
 
@@ -138,9 +133,9 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
-			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
-			agg.sendAggregatedResponseToContract(blsAggServiceResp)
+		case ecdsaAggServiceResp := <-agg.ecdsaAggregationService.GetResponseChannel():
+			agg.logger.Info("Received response from ecdsaAggregationService", "ecdsaAggServiceResp", ecdsaAggServiceResp)
+			agg.sendAggregatedResponseToContract(ecdsaAggServiceResp)
 		case <-ticker.C:
 			err := agg.sendNewTask(big.NewInt(taskNum))
 			taskNum++
@@ -152,40 +147,29 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	}
 }
 
-func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
-	// TODO: check if blsAggServiceResp contains an err
-	if blsAggServiceResp.Err != nil {
-		agg.logger.Error("BlsAggregationServiceResponse contains an error", "err", blsAggServiceResp.Err)
+func (agg *Aggregator) sendAggregatedResponseToContract(ecdsaAggServiceResp ecdsaagg.EcdsaAggregationServiceResponse) {
+	// TODO: check if ecdsaAggServiceResp contains an err
+	if ecdsaAggServiceResp.Err != nil {
+		agg.logger.Error("EcdsaAggregationServiceResponse contains an error", "err", ecdsaAggServiceResp.Err)
 		// panicing to help with debugging (fail fast), but we shouldn't panic if we run this in production
-		panic(blsAggServiceResp.Err)
+		panic(ecdsaAggServiceResp.Err)
 	}
-	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
-	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
-		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
-	}
-	quorumApks := []cstaskmanager.BN254G1Point{}
-	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
-		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
-	}
-	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature{
-		NonSignerPubkeys:             nonSignerPubkeys,
-		QuorumApks:                   quorumApks,
-		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),
-		Sigma:                        core.ConvertToBN254G1Point(blsAggServiceResp.SignersAggSigG1.G1Point),
-		NonSignerQuorumBitmapIndices: blsAggServiceResp.NonSignerQuorumBitmapIndices,
-		QuorumApkIndices:             blsAggServiceResp.QuorumApkIndices,
-		TotalStakeIndices:            blsAggServiceResp.TotalStakeIndices,
-		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
+	nonSignerStakesAndSignature := cstaskmanager.ECDSASignatureCheckerSignerStakeIndicesAndSignatures{
+		SignerIds:                 ecdsaAggServiceResp.SignerIds,
+		Signatures:                ecdsaAggServiceResp.Signatures,
+		SignerQuorumBitmapIndices: ecdsaAggServiceResp.SignerQuorumBitmapIndices,
+		TotalStakeIndices:         ecdsaAggServiceResp.TotalStakeIndices,
+		SignerStakeIndices:        ecdsaAggServiceResp.SignerStakeIndices,
 	}
 
 	agg.logger.Info("Threshold reached. Sending aggregated response onchain.",
-		"taskIndex", blsAggServiceResp.TaskIndex,
+		"taskIndex", ecdsaAggServiceResp.TaskIndex,
 	)
 	agg.tasksMu.RLock()
-	task := agg.tasks[blsAggServiceResp.TaskIndex]
+	task := agg.tasks[ecdsaAggServiceResp.TaskIndex]
 	agg.tasksMu.RUnlock()
 	agg.taskResponsesMu.RLock()
-	taskResponse := agg.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
+	taskResponse := agg.taskResponses[ecdsaAggServiceResp.TaskIndex][ecdsaAggServiceResp.TaskResponseDigest]
 	agg.taskResponsesMu.RUnlock()
 	_, err := agg.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
 	if err != nil {
@@ -212,9 +196,9 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 	for i, _ := range newTask.QuorumNumbers {
 		quorumThresholdPercentages[i] = newTask.QuorumThresholdPercentage
 	}
-	// TODO(samlaf): we use seconds for now, but we should ideally pass a blocknumber to the blsAggregationService
+	// TODO(samlaf): we use seconds for now, but we should ideally pass a blocknumber to the ecdsaAggregationService
 	// and it should monitor the chain and only expire the task aggregation once the chain has reached that block number.
 	taskTimeToExpiry := taskChallengeWindowBlock * blockTimeSeconds
-	agg.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, newTask.QuorumNumbers, quorumThresholdPercentages, taskTimeToExpiry)
+	agg.ecdsaAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, newTask.QuorumNumbers, quorumThresholdPercentages, taskTimeToExpiry)
 	return nil
 }

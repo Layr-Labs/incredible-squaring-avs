@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
+import {ECDSASignatureChecker} from "@eigenlayer-middleware/src/experimental/ECDSASignatureChecker.sol";
 
 interface IIncredibleSquaringTaskManager {
     // EVENTS
@@ -63,6 +64,13 @@ interface IIncredibleSquaringTaskManager {
         bytes calldata quorumNumbers
     ) external;
 
+    function respondToTask(
+        Task calldata task,
+        TaskResponse calldata taskResponse,
+        ECDSASignatureChecker.SignerStakeIndicesAndSignatures
+            memory signerStakeIndicesAndSignatures
+    ) external;
+
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
 
@@ -71,7 +79,7 @@ interface IIncredibleSquaringTaskManager {
         Task calldata task,
         TaskResponse calldata taskResponse,
         TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+        address[] memory signerIds
     ) external;
 
     /// @notice Returns the TASK_RESPONSE_WINDOW_BLOCK
