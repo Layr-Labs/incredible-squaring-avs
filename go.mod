@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.0
 
 require (
-	github.com/Layr-Labs/eigensdk-go v0.0.10-0.20240129183318-15cfe6574396
+	github.com/Layr-Labs/eigensdk-go v0.1.1-0.20240201020034-bb1b8c6643a2
 	github.com/ethereum/go-ethereum v1.13.8
 	github.com/prometheus/client_golang v1.18.0
 	github.com/stretchr/testify v1.8.4
@@ -117,4 +117,4 @@ require (
 )
 
 // use this when making changes to eigensdk locally
-replace github.com/Layr-Labs/eigensdk-go => ../eigensdk-go
+// replace github.com/Layr-Labs/eigensdk-go => ../eigensdk-go
