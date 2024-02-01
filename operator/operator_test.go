@@ -2,7 +2,6 @@ package operator
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -11,8 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-
-	"github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
@@ -61,17 +58,15 @@ func TestOperator(t *testing.T) {
 			},
 			Raw: types.Log{},
 		}
-		fmt.Println("newTaskCreatedEvent", newTaskCreatedEvent)
 
-		sig, err := ecdsa.SignMsg([]byte{1}, operator.avsEcdsaPrivateKey)
-		assert.Nil(t, err)
+		sig := []byte{147, 56, 211, 101, 61, 89, 39, 28, 7, 134, 156, 146, 4, 141, 223, 15, 120, 239, 249, 53, 152, 244, 144, 109, 42, 29, 30, 3, 126, 222, 217, 89, 43, 194, 126, 185, 98, 246, 161, 120, 133, 89, 17, 102, 223, 92, 152, 189, 64, 54, 187, 7, 194, 64, 193, 112, 91, 53, 73, 73, 227, 196, 85, 51, 28}
 		signedTaskResponse := &aggregator.SignedTaskResponse{
 			TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 				ReferenceTaskIndex: taskIndex,
 				NumberSquared:      big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared),
 			},
 			EcdsaSignature: sig,
-			OperatorId: operator.operatorId,
+			OperatorId:     operator.operatorId,
 		}
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
