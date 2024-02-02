@@ -9,6 +9,10 @@ cd "$parent_path"
 
 # start an anvil instance in the background that has eigenlayer contracts deployed
 anvil --load-state eigenlayer-and-shared-avs-contracts-deployed-anvil-state.json --dump-state avs-and-eigenlayer-deployed-anvil-state.json &
+
+# Anvil adds a block state, making the code to fail. We don't care about this, just the accounts and the deployed code
+jq 'del(.block)' avs-and-eigenlayer-deployed-anvil-state.json > avs-and-eigenlayer-deployed-anvil-state.json
+
 cd ../../contracts
 forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
  # we also do this here to make sure the operator has funds to register with the eigenlayer contracts

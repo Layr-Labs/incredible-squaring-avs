@@ -8,6 +8,9 @@ cd "$parent_path"
 # start an empty anvil chain in the background and dump its state to a json file upon exit
 anvil --dump-state eigenlayer-deployed-anvil-state.json &
 
+# Anvil adds a block state, making the code to fail. We don't care about this, just the accounts and the deployed code
+jq 'del(.block)' eigenlayer-deployed-anvil-state.json
+
 cd ../../contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts
 # deployment overwrites this file, so we save it as backup, because we want that output in our local files, and not in the eigenlayer-contracts submodule files
 mv script/output/M2_from_scratch_deployment_data.json script/output/M2_from_scratch_deployment_data.json.bak

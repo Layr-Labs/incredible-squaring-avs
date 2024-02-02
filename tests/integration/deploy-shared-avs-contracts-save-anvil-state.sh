@@ -11,6 +11,9 @@ cd "$parent_path"
 # start an empty anvil chain in the background and dump its state to a json file upon exit
 anvil --load-state eigenlayer-deployed-anvil-state.json --dump-state eigenlayer-and-shared-avs-contracts-deployed-anvil-state.json &
 
+# Anvil adds a block state, making the code to fail. We don't care about this, just the accounts and the deployed code
+jq 'del(.block)' eigenlayer-and-shared-avs-contracts-deployed-anvil-state.json
+
 cd ../../contracts/lib/eigenlayer-middleware
 forge script script/DeploySharedContracts.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 mv script/output/31337/shared_contracts_deployment_data.json ../../script/output/31337/shared_avs_contracts_deployment_output.json
