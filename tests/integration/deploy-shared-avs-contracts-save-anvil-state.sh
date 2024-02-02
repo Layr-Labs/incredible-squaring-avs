@@ -20,3 +20,12 @@ mv script/output/31337/shared_contracts_deployment_data.json ../../script/output
 
 # # kill anvil to save its state
 pkill anvil
+
+# Anvil adds a block state, making the code to fail. We don't care about this, just the accounts and the deployed code
+cd "$parent_path"
+
+jq 'del(.block)' eigenlayer-and-shared-avs-contracts-deployed-anvil-state.json > eigenlayer-and-shared-avs-contracts-deployed-anvil-state-tmp.json
+
+cp -f eigenlayer-and-shared-avs-contracts-deployed-anvil-state-tmp.json eigenlayer-and-shared-avs-contracts-deployed-anvil-state.json
+
+rm eigenlayer-and-shared-avs-contracts-deployed-anvil-state-tmp.json 

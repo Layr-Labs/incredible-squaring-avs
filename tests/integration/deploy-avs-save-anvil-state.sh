@@ -10,12 +10,18 @@ cd "$parent_path"
 # start an anvil instance in the background that has eigenlayer contracts deployed
 anvil --load-state eigenlayer-and-shared-avs-contracts-deployed-anvil-state.json --dump-state avs-and-eigenlayer-deployed-anvil-state.json &
 
-# Anvil adds a block state, making the code to fail. We don't care about this, just the accounts and the deployed code
-jq 'del(.block)' avs-and-eigenlayer-deployed-anvil-state.json > avs-and-eigenlayer-deployed-anvil-state.json
-
 cd ../../contracts
 forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
  # we also do this here to make sure the operator has funds to register with the eigenlayer contracts
 cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 # kill anvil to save its state
 pkill anvil
+
+# Anvil adds a block state, making the code to fail. We don't care about this, just the accounts and the deployed code
+cd "$parent_path"
+
+jq 'del(.block)' avs-and-eigenlayer-deployed-anvil-state.json > avs-and-eigenlayer-deployed-anvil-state-tmp.json
+
+cp -f avs-and-eigenlayer-deployed-anvil-state-tmp.json avs-and-eigenlayer-deployed-anvil-state.json 
+
+rm avs-and-eigenlayer-deployed-anvil-state-tmp.json 
