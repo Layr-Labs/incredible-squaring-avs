@@ -13,9 +13,11 @@ import (
 	big "math/big"
 	reflect "reflect"
 
-	contractBLSOperatorStateRetriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/BLSOperatorStateRetriever"
+	contractOperatorStateRetriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
+	types "github.com/Layr-Labs/eigensdk-go/types"
 	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
 	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	bind "github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common "github.com/ethereum/go-ethereum/common"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -59,10 +61,10 @@ func (mr *MockAvsReadererMockRecorder) CheckSignatures(arg0, arg1, arg2, arg3, a
 }
 
 // GetCheckSignaturesIndices mocks base method.
-func (m *MockAvsReaderer) GetCheckSignaturesIndices(arg0 context.Context, arg1 uint32, arg2 []byte, arg3 [][32]byte) (contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverCheckSignaturesIndices, error) {
+func (m *MockAvsReaderer) GetCheckSignaturesIndices(arg0 *bind.CallOpts, arg1 uint32, arg2 []byte, arg3 [][32]byte) (contractOperatorStateRetriever.OperatorStateRetrieverCheckSignaturesIndices, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCheckSignaturesIndices", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverCheckSignaturesIndices)
+	ret0, _ := ret[0].(contractOperatorStateRetriever.OperatorStateRetrieverCheckSignaturesIndices)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -88,8 +90,38 @@ func (mr *MockAvsReadererMockRecorder) GetErc20Mock(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetErc20Mock", reflect.TypeOf((*MockAvsReaderer)(nil).GetErc20Mock), arg0, arg1)
 }
 
+// GetOperatorAddrsInQuorumsAtCurrentBlock mocks base method.
+func (m *MockAvsReaderer) GetOperatorAddrsInQuorumsAtCurrentBlock(arg0 *bind.CallOpts, arg1 []byte) ([][]common.Address, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOperatorAddrsInQuorumsAtCurrentBlock", arg0, arg1)
+	ret0, _ := ret[0].([][]common.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOperatorAddrsInQuorumsAtCurrentBlock indicates an expected call of GetOperatorAddrsInQuorumsAtCurrentBlock.
+func (mr *MockAvsReadererMockRecorder) GetOperatorAddrsInQuorumsAtCurrentBlock(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatorAddrsInQuorumsAtCurrentBlock", reflect.TypeOf((*MockAvsReaderer)(nil).GetOperatorAddrsInQuorumsAtCurrentBlock), arg0, arg1)
+}
+
+// GetOperatorFromId mocks base method.
+func (m *MockAvsReaderer) GetOperatorFromId(arg0 *bind.CallOpts, arg1 [32]byte) (common.Address, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOperatorFromId", arg0, arg1)
+	ret0, _ := ret[0].(common.Address)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOperatorFromId indicates an expected call of GetOperatorFromId.
+func (mr *MockAvsReadererMockRecorder) GetOperatorFromId(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatorFromId", reflect.TypeOf((*MockAvsReaderer)(nil).GetOperatorFromId), arg0, arg1)
+}
+
 // GetOperatorId mocks base method.
-func (m *MockAvsReaderer) GetOperatorId(arg0 context.Context, arg1 common.Address) ([32]byte, error) {
+func (m *MockAvsReaderer) GetOperatorId(arg0 *bind.CallOpts, arg1 common.Address) ([32]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOperatorId", arg0, arg1)
 	ret0, _ := ret[0].([32]byte)
@@ -104,7 +136,7 @@ func (mr *MockAvsReadererMockRecorder) GetOperatorId(arg0, arg1 any) *gomock.Cal
 }
 
 // GetOperatorStakeInQuorumsOfOperatorAtCurrentBlock mocks base method.
-func (m *MockAvsReaderer) GetOperatorStakeInQuorumsOfOperatorAtCurrentBlock(arg0 context.Context, arg1 [32]byte) (map[byte]*big.Int, error) {
+func (m *MockAvsReaderer) GetOperatorStakeInQuorumsOfOperatorAtCurrentBlock(arg0 *bind.CallOpts, arg1 [32]byte) (map[byte]*big.Int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOperatorStakeInQuorumsOfOperatorAtCurrentBlock", arg0, arg1)
 	ret0, _ := ret[0].(map[byte]*big.Int)
@@ -119,10 +151,10 @@ func (mr *MockAvsReadererMockRecorder) GetOperatorStakeInQuorumsOfOperatorAtCurr
 }
 
 // GetOperatorsStakeInQuorumsAtBlock mocks base method.
-func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsAtBlock(arg0 context.Context, arg1 []byte, arg2 uint32) ([][]contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverOperator, error) {
+func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsAtBlock(arg0 *bind.CallOpts, arg1 []byte, arg2 uint32) ([][]contractOperatorStateRetriever.OperatorStateRetrieverOperator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOperatorsStakeInQuorumsAtBlock", arg0, arg1, arg2)
-	ret0, _ := ret[0].([][]contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverOperator)
+	ret0, _ := ret[0].([][]contractOperatorStateRetriever.OperatorStateRetrieverOperator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -133,12 +165,27 @@ func (mr *MockAvsReadererMockRecorder) GetOperatorsStakeInQuorumsAtBlock(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatorsStakeInQuorumsAtBlock", reflect.TypeOf((*MockAvsReaderer)(nil).GetOperatorsStakeInQuorumsAtBlock), arg0, arg1, arg2)
 }
 
+// GetOperatorsStakeInQuorumsAtCurrentBlock mocks base method.
+func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsAtCurrentBlock(arg0 *bind.CallOpts, arg1 []byte) ([][]contractOperatorStateRetriever.OperatorStateRetrieverOperator, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOperatorsStakeInQuorumsAtCurrentBlock", arg0, arg1)
+	ret0, _ := ret[0].([][]contractOperatorStateRetriever.OperatorStateRetrieverOperator)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOperatorsStakeInQuorumsAtCurrentBlock indicates an expected call of GetOperatorsStakeInQuorumsAtCurrentBlock.
+func (mr *MockAvsReadererMockRecorder) GetOperatorsStakeInQuorumsAtCurrentBlock(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatorsStakeInQuorumsAtCurrentBlock", reflect.TypeOf((*MockAvsReaderer)(nil).GetOperatorsStakeInQuorumsAtCurrentBlock), arg0, arg1)
+}
+
 // GetOperatorsStakeInQuorumsOfOperatorAtBlock mocks base method.
-func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsOfOperatorAtBlock(arg0 context.Context, arg1 [32]byte, arg2 uint32) ([]byte, [][]contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverOperator, error) {
+func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsOfOperatorAtBlock(arg0 *bind.CallOpts, arg1 [32]byte, arg2 uint32) ([]byte, [][]contractOperatorStateRetriever.OperatorStateRetrieverOperator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOperatorsStakeInQuorumsOfOperatorAtBlock", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].([][]contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverOperator)
+	ret1, _ := ret[1].([][]contractOperatorStateRetriever.OperatorStateRetrieverOperator)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -150,11 +197,11 @@ func (mr *MockAvsReadererMockRecorder) GetOperatorsStakeInQuorumsOfOperatorAtBlo
 }
 
 // GetOperatorsStakeInQuorumsOfOperatorAtCurrentBlock mocks base method.
-func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsOfOperatorAtCurrentBlock(arg0 context.Context, arg1 [32]byte) ([]byte, [][]contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverOperator, error) {
+func (m *MockAvsReaderer) GetOperatorsStakeInQuorumsOfOperatorAtCurrentBlock(arg0 *bind.CallOpts, arg1 [32]byte) ([]byte, [][]contractOperatorStateRetriever.OperatorStateRetrieverOperator, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOperatorsStakeInQuorumsOfOperatorAtCurrentBlock", arg0, arg1)
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].([][]contractBLSOperatorStateRetriever.BLSOperatorStateRetrieverOperator)
+	ret1, _ := ret[1].([][]contractOperatorStateRetriever.OperatorStateRetrieverOperator)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
@@ -165,8 +212,23 @@ func (mr *MockAvsReadererMockRecorder) GetOperatorsStakeInQuorumsOfOperatorAtCur
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOperatorsStakeInQuorumsOfOperatorAtCurrentBlock", reflect.TypeOf((*MockAvsReaderer)(nil).GetOperatorsStakeInQuorumsOfOperatorAtCurrentBlock), arg0, arg1)
 }
 
+// GetQuorumCount mocks base method.
+func (m *MockAvsReaderer) GetQuorumCount(arg0 *bind.CallOpts) (byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetQuorumCount", arg0)
+	ret0, _ := ret[0].(byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetQuorumCount indicates an expected call of GetQuorumCount.
+func (mr *MockAvsReadererMockRecorder) GetQuorumCount(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetQuorumCount", reflect.TypeOf((*MockAvsReaderer)(nil).GetQuorumCount), arg0)
+}
+
 // IsOperatorRegistered mocks base method.
-func (m *MockAvsReaderer) IsOperatorRegistered(arg0 context.Context, arg1 common.Address) (bool, error) {
+func (m *MockAvsReaderer) IsOperatorRegistered(arg0 *bind.CallOpts, arg1 common.Address) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsOperatorRegistered", arg0, arg1)
 	ret0, _ := ret[0].(bool)
@@ -178,4 +240,20 @@ func (m *MockAvsReaderer) IsOperatorRegistered(arg0 context.Context, arg1 common
 func (mr *MockAvsReadererMockRecorder) IsOperatorRegistered(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsOperatorRegistered", reflect.TypeOf((*MockAvsReaderer)(nil).IsOperatorRegistered), arg0, arg1)
+}
+
+// QueryExistingRegisteredOperatorPubKeys mocks base method.
+func (m *MockAvsReaderer) QueryExistingRegisteredOperatorPubKeys(arg0 context.Context, arg1, arg2 *big.Int) ([]common.Address, []types.OperatorPubkeys, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryExistingRegisteredOperatorPubKeys", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]common.Address)
+	ret1, _ := ret[1].([]types.OperatorPubkeys)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// QueryExistingRegisteredOperatorPubKeys indicates an expected call of QueryExistingRegisteredOperatorPubKeys.
+func (mr *MockAvsReadererMockRecorder) QueryExistingRegisteredOperatorPubKeys(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryExistingRegisteredOperatorPubKeys", reflect.TypeOf((*MockAvsReaderer)(nil).QueryExistingRegisteredOperatorPubKeys), arg0, arg1, arg2)
 }

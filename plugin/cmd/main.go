@@ -6,16 +6,16 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 
-	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/avsregistry"
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
-	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/elcontracts"
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/BLSRegistryCoordinatorWithIndices"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
+	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/eigensdk-go/metrics"
-	"github.com/Layr-Labs/eigensdk-go/signer"
+	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -93,133 +93,58 @@ func plugin(ctx *cli.Context) {
 
 	ecdsaKeyPassword := ctx.GlobalString(EcdsaKeyPasswordFlag.Name)
 
+	buildClientConfig := sdkclients.BuildAllConfig{
+		EthHttpUrl:                 avsConfig.EthRpcUrl,
+		EthWsUrl:                   avsConfig.EthWsUrl,
+		RegistryCoordinatorAddr:    avsConfig.AVSRegistryCoordinatorAddress,
+		OperatorStateRetrieverAddr: avsConfig.OperatorStateRetrieverAddress,
+		AvsName:                    "incredible-squaring",
+		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
+	}
+	logger, _ := logging.NewZapLogger(logging.Development)
 	ethHttpClient, err := eth.NewClient(avsConfig.EthRpcUrl)
 	if err != nil {
 		fmt.Println("can't connect to eth client")
 		fmt.Println(err)
 		return
 	}
-	ethWsClient, err := eth.NewClient(avsConfig.EthWsUrl)
-	if err != nil {
-		fmt.Println("can't connect to eth client")
-		fmt.Println(err)
-		return
-	}
-
 	chainID, err := ethHttpClient.ChainID(goCtx)
 	if err != nil {
 		fmt.Println("can't get chain id")
 		fmt.Println(err)
 		return
 	}
-
-	signer, err := signer.NewPrivateKeyFromKeystoreSigner(avsConfig.EcdsaPrivateKeyStorePath, ecdsaKeyPassword, chainID)
+	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{
+		KeystorePath: avsConfig.EcdsaPrivateKeyStorePath,
+		Password:     ecdsaKeyPassword,
+	}, chainID)
 	if err != nil {
 		fmt.Println("can't create signer")
 		fmt.Println(err)
 		return
 	}
-
-	logger, _ := logging.NewZapLogger(logging.Development)
-	avsWriter, err := chainio.NewAvsWriter(signer,
-		common.HexToAddress(avsConfig.AVSServiceManagerAddress),
-		common.HexToAddress(avsConfig.BLSOperatorStateRetrieverAddress),
-		ethHttpClient,
-		logger,
-	)
-
-	if err != nil {
-		fmt.Println("can't create avs writer")
-		fmt.Println(err)
-		return
-	}
-
-	avsServiceBindings, err := chainio.NewAvsServiceBindings(
-		common.HexToAddress(avsConfig.AVSServiceManagerAddress),
-		common.HexToAddress(avsConfig.BLSOperatorStateRetrieverAddress),
+	clients, err := sdkclients.BuildAll(buildClientConfig, common.HexToAddress(avsConfig.OperatorAddress), signerV2, logger)
+	avsReader, err := chainio.BuildAvsReader(
+		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
 		ethHttpClient,
 		logger,
 	)
 	if err != nil {
-		fmt.Println("can't create avs service bindings")
+		fmt.Println("can't create avs reader")
 		fmt.Println(err)
 		return
 	}
-
-	blsRegistryCoordinatorAddr, err := avsServiceBindings.ServiceManager.RegistryCoordinator(&bind.CallOpts{})
-	if err != nil {
-		fmt.Println("can't get bls registry coordinator address")
-		fmt.Println(err)
-		return
-	}
-
-	stakeRegistryAddr, err := avsServiceBindings.ServiceManager.StakeRegistry(&bind.CallOpts{})
-	if err != nil {
-		fmt.Println("can't get stake registry address")
-		fmt.Println(err)
-		return
-	}
-	blsPubkeyRegistryAddr, err := avsServiceBindings.ServiceManager.BlsPubkeyRegistry(&bind.CallOpts{})
-	if err != nil {
-		fmt.Println("can't get bls pubkey registry address")
-		fmt.Println(err)
-		return
-	}
-
-	avsRegistryContractClient, err := sdkclients.NewAvsRegistryContractsChainClient(
-		blsRegistryCoordinatorAddr, common.HexToAddress(avsConfig.BLSOperatorStateRetrieverAddress), stakeRegistryAddr, blsPubkeyRegistryAddr, ethHttpClient, logger,
-	)
-	if err != nil {
-		fmt.Println("can't create avs registry contract client")
-		fmt.Println(err)
-		return
-	}
-
-	avsRegistryReader, err := sdkavsregistry.NewAvsRegistryReader(avsRegistryContractClient, logger, ethHttpClient)
-	if err != nil {
-		fmt.Println("can't create avs registry reader")
-		fmt.Println(err)
-		return
-	}
-
-	avsReader, err := chainio.NewAvsReader(
-		avsRegistryReader,
-		avsServiceBindings,
-		logger,
-	)
-
-	if err != nil {
-		fmt.Println("can't create avs writer")
-		fmt.Println(err)
-		return
-	}
-
-	elContractsClient, err := sdkclients.NewELContractsChainClient(common.HexToAddress(avsConfig.ELSlasherAddress), common.HexToAddress(avsConfig.BlsPublicKeyCompendiumAddress), ethHttpClient, ethWsClient, logger)
-	if err != nil {
-		logger.Error("Cannot create ELContractsChainClient", "err", err)
-		return
-	}
-	noopMetrics := metrics.NewNoopMetrics()
-	eigenLayerWriter := sdkelcontracts.NewELChainWriter(
-		elContractsClient,
+	txMgr := txmgr.NewSimpleTxManager(ethHttpClient, logger, signerV2, common.HexToAddress(avsConfig.OperatorAddress))
+	avsWriter, err := chainio.BuildAvsWriter(
+		txMgr,
+		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
 		ethHttpClient,
-		signer,
 		logger,
-		noopMetrics,
-	)
-
-	eigenlayerReader, err := sdkelcontracts.NewELChainReader(
-		elContractsClient,
-		logger,
-		ethHttpClient,
 	)
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	if err != nil {
-		fmt.Println("can't create eigenlayer writer")
+		fmt.Println("can't create avs reader")
 		fmt.Println(err)
 		return
 	}
@@ -227,35 +152,36 @@ func plugin(ctx *cli.Context) {
 	if operationType == "opt-in" {
 		blsKeyPassword := ctx.GlobalString(BlsKeyPasswordFlag.Name)
 
-		keypair, err := bls.ReadPrivateKeyFromFile(avsConfig.BlsPrivateKeyStorePath, blsKeyPassword)
+		blsKeypair, err := bls.ReadPrivateKeyFromFile(avsConfig.BlsPrivateKeyStorePath, blsKeyPassword)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		// Opt into slashing
-		logger.Infof("Opting into slashing with AVS Service Manager address %s", avsConfig.AVSServiceManagerAddress)
-		_, err = eigenLayerWriter.OptOperatorIntoSlashing(goCtx, common.HexToAddress(avsConfig.AVSServiceManagerAddress))
+
+		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
+			avsConfig.EcdsaPrivateKeyStorePath,
+			ecdsaKeyPassword,
+		)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		logger.Infof("Opted into slashing successfully")
 
 		// Register with registry coordination
 		quorumNumbers := []byte{0}
 		socket := "Not Needed"
-
-		pubkey := pubKeyG1ToBN254G1Point(keypair.GetPubKeyG1())
-		g1Point := regcoord.BN254G1Point{
-			X: pubkey.X,
-			Y: pubkey.Y,
-		}
-
+		sigValidForSeconds := int64(1_000_000)
+		operatorToAvsRegistrationSigSalt := [32]byte{123}
+		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
 		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
-		r, err := avsWriter.RegisterOperatorWithAVSRegistryCoordinator(goCtx, quorumNumbers, g1Point, socket)
+		r, err := clients.AvsRegistryChainWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
+			goCtx,
+			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
+			blsKeypair, quorumNumbers, socket,
+		)
 		if err != nil {
-			fmt.Println(err)
 			logger.Errorf("Error assembling CreateNewTask tx")
+			fmt.Println(err)
 			return
 		}
 		logger.Infof("Registered with registry coordination successfully with tx hash %s", r.TxHash.Hex())
@@ -268,7 +194,7 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 		strategyAddr := common.HexToAddress(ctx.GlobalString(StrategyAddrFlag.Name))
-		_, tokenAddr, err := eigenlayerReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
+		_, tokenAddr, err := clients.ElChainReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
 		if err != nil {
 			logger.Error("Failed to fetch strategy contract", "err", err)
 			return
@@ -278,16 +204,24 @@ func plugin(ctx *cli.Context) {
 			logger.Error("Failed to fetch ERC20Mock contract", "err", err)
 			return
 		}
-		txOpts := avsWriter.Signer.GetTxOpts()
+		txOpts, err := avsWriter.TxMgr.GetNoSendTxOpts()
+		if err != nil {
+			logger.Errorf("Error getting tx opts")
+			return
+		}
 		amount := big.NewInt(1000)
 		tx, err := contractErc20Mock.Mint(txOpts, common.HexToAddress(avsConfig.OperatorAddress), amount)
 		if err != nil {
 			logger.Errorf("Error assembling Mint tx")
 			return
 		}
-		ethHttpClient.WaitForTransactionReceipt(context.Background(), tx.Hash())
+		_, err = avsWriter.TxMgr.Send(context.Background(), tx)
+		if err != nil {
+			logger.Errorf("Error submitting Mint tx")
+			return
+		}
 
-		_, err = eigenLayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
 		if err != nil {
 			logger.Errorf("Error depositing into strategy")
 			return

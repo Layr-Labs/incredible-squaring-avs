@@ -24,29 +24,33 @@ type AvsSubscriberer interface {
 // it takes a single url, so the bindings, even though they have watcher functions, those can't be used
 // with the http connection... seems very very stupid. Am I missing something?
 type AvsSubscriber struct {
-	AvsContractBindings *AvsServiceBindings
+	AvsContractBindings *AvsManagersBindings
 	logger              sdklogging.Logger
 }
 
-func NewAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error) {
-	return NewAvsSubscriber(
-		config.IncredibleSquaringServiceManagerAddr,
-		config.BlsOperatorStateRetrieverAddr,
+func BuildAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error) {
+	return BuildAvsSubscriber(
+		config.IncredibleSquaringRegistryCoordinatorAddr,
+		config.OperatorStateRetrieverAddr,
 		config.EthWsClient,
 		config.Logger,
 	)
 }
 
-func NewAvsSubscriber(serviceManagerAddr, blsOperatorStateRetrieverAddr gethcommon.Address, ethclient eth.EthClient, logger sdklogging.Logger) (*AvsSubscriber, error) {
-	avsContractBindings, err := NewAvsServiceBindings(serviceManagerAddr, blsOperatorStateRetrieverAddr, ethclient, logger)
+func BuildAvsSubscriber(registryCoordinatorAddr, blsOperatorStateRetrieverAddr gethcommon.Address, ethclient eth.EthClient, logger sdklogging.Logger) (*AvsSubscriber, error) {
+	avsContractBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, blsOperatorStateRetrieverAddr, ethclient, logger)
 	if err != nil {
 		logger.Errorf("Failed to create contract bindings", "err", err)
 		return nil, err
 	}
+	return NewAvsSubscriber(avsContractBindings, logger), nil
+}
+
+func NewAvsSubscriber(avsContractBindings *AvsManagersBindings, logger sdklogging.Logger) *AvsSubscriber {
 	return &AvsSubscriber{
 		AvsContractBindings: avsContractBindings,
 		logger:              logger,
-	}, nil
+	}
 }
 
 func (s *AvsSubscriber) SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) event.Subscription {

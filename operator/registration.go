@@ -7,20 +7,25 @@ package operator
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	eigenSdkTypes "github.com/Layr-Labs/eigensdk-go/types"
 
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/BLSRegistryCoordinatorWithIndices"
+	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 )
 
-func (o *Operator) registerOperatorOnStartup(blsPubkeyCompendiumAddr common.Address) {
+func (o *Operator) registerOperatorOnStartup(
+	operatorEcdsaPrivateKey *ecdsa.PrivateKey,
+	mockTokenStrategyAddr common.Address,
+) {
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
 		// This error might only be that the operator was already registered with eigenlayer, so we don't want to fatal
@@ -29,16 +34,7 @@ func (o *Operator) registerOperatorOnStartup(blsPubkeyCompendiumAddr common.Addr
 		o.logger.Infof("Registered operator with eigenlayer")
 	}
 
-	err = o.RegisterBLSPublicKey()
-	if err != nil {
-		// This error might only be that the operator has already registered its bls pubkeys, so we don't want to fatal
-		o.logger.Error("Error registering BLS public key with eigenlayer", "err", err)
-	} else {
-		o.logger.Infof("Registered BLS public key with eigenlayer")
-	}
-
-	// TODO(samlaf): these shouldn't be hardcoded
-	mockTokenStrategyAddr := common.HexToAddress("0x7a2088a1bFc9d81c55368AE168C2C02570cB814F")
+	// TODO(samlaf): shouldn't hardcode number here
 	amount := big.NewInt(1000)
 	err = o.DepositIntoStrategy(mockTokenStrategyAddr, amount)
 	if err != nil {
@@ -46,20 +42,11 @@ func (o *Operator) registerOperatorOnStartup(blsPubkeyCompendiumAddr common.Addr
 	}
 	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterOperatorWithAvs()
+	err = o.RegisterOperatorWithAvs(operatorEcdsaPrivateKey)
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}
 	o.logger.Infof("Registered operator with avs")
-}
-
-func (o *Operator) optOperatorIntoSlashing() error {
-	_, err := o.eigenlayerWriter.OptOperatorIntoSlashing(context.Background(), o.credibleSquaringServiceManagerAddr)
-	if err != nil {
-		o.logger.Errorf("Error opting operator into slashing")
-		return err
-	}
-	return nil
 }
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
@@ -76,7 +63,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
+	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
@@ -86,58 +73,51 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		o.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
 		return err
 	}
-	txOpts := o.avsWriter.Signer.GetTxOpts()
+	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
 	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
 	if err != nil {
 		o.logger.Errorf("Error assembling Mint tx")
 		return err
 	}
-	o.ethClient.WaitForTransactionReceipt(context.Background(), tx.Hash())
+	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx)
+	if err != nil {
+		o.logger.Errorf("Error submitting Mint tx")
+		return err
+	}
 
 	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
 	if err != nil {
-		o.logger.Errorf("Error depositing into strategy")
+		o.logger.Errorf("Error depositing into strategy", "err", err)
 		return err
 	}
-	return nil
-}
-
-// TODO(samlaf): this should eventually be moved to eigensdk, since pubkey compendium should be a shared contract
-// between all AVS teams. However it currently is not in that state (not included as part of canonical eigenlayer deployment)
-// so for now we just deploy it as part of avs registries and make the call here.
-func (o *Operator) RegisterBLSPublicKey() error {
-	o.logger.Debugf("registering BLS public keys G1(%s) and G2(%s) with EigenLayer", o.blsKeypair.GetPubKeyG1(), o.blsKeypair.GetPubKeyG2())
-
-	_, err := o.eigenlayerWriter.RegisterBLSPublicKey(context.Background(), o.blsKeypair, eigenSdkTypes.Operator{Address: o.operatorAddr.String()})
-	if err != nil {
-		return fmt.Errorf("failed to register bls pubkey with compendium: %v", err)
-	}
-
-	o.logger.Debugf("registered BLS public keys G1(%s) and G2(%s) with EigenLayer", o.blsKeypair.GetPubKeyG1(), o.blsKeypair.GetPubKeyG2())
 	return nil
 }
 
 // Registration specific functions
-func (o *Operator) RegisterOperatorWithAvs() error {
-
-	// 1. opt operator into getting slashed by credible squaring service manager
-	err := o.optOperatorIntoSlashing()
-	if err != nil {
-		return err
-	}
-
-	// 2. register operator with avs coordinator contract
-
+func (o *Operator) RegisterOperatorWithAvs(
+	operatorEcdsaKeyPair *ecdsa.PrivateKey,
+) error {
+	// hardcode these things for now
 	quorumNumbers := []byte{0}
 	socket := "Not Needed"
-
-	pubkey := pubKeyG1ToBN254G1Point(o.blsKeypair.GetPubKeyG1())
-	g1Point := regcoord.BN254G1Point{
-		X: pubkey.X,
-		Y: pubkey.Y,
+	operatorToAvsRegistrationSigSalt := [32]byte{123}
+	curBlockNum, err := o.ethClient.BlockNumber(context.Background())
+	if err != nil {
+		o.logger.Errorf("Unable to get current block number")
+		return err
 	}
-
-	_, err = o.avsWriter.RegisterOperatorWithAVSRegistryCoordinator(context.Background(), quorumNumbers, g1Point, socket)
+	curBlock, err := o.ethClient.BlockByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
+	if err != nil {
+		o.logger.Errorf("Unable to get current block")
+		return err
+	}
+	sigValidForSeconds := int64(1_000_000)
+	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time()) + sigValidForSeconds)
+	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
+		context.Background(),
+		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
+		o.blsKeypair, quorumNumbers, socket,
+	)
 	if err != nil {
 		o.logger.Errorf("Unable to register operator with avs registry coordinator")
 		return err
@@ -167,44 +147,25 @@ type OperatorStatus struct {
 	G1Pubkey          string
 	G2Pubkey          string
 	// avs related
-	OptedIntoSlashingByAvs bool
-	RegisteredWithAvs      bool
-	OperatorId             string
-	Frozen                 bool
+	RegisteredWithAvs bool
+	OperatorId        string
 }
 
 func (o *Operator) PrintOperatorStatus() error {
 	fmt.Println("Printing operator status")
-	pubkeyhash, err := o.eigenlayerReader.GetOperatorPubkeyHash(context.Background(), eigenSdkTypes.Operator{Address: o.operatorAddr.String()})
+	operatorId, err := o.avsReader.GetOperatorId(&bind.CallOpts{}, o.operatorAddr)
 	if err != nil {
 		return err
 	}
-	pubkeysRegistered := pubkeyhash != [32]byte{}
-	serviceManagerCanSlashOperatorUntilBlock, err := o.eigenlayerReader.ServiceManagerCanSlashOperatorUntilBlock(
-		context.Background(), o.operatorAddr, o.credibleSquaringServiceManagerAddr,
-	)
-	if err != nil {
-		return err
-	}
-	curBlockNumber, err := o.ethClient.BlockNumber(context.Background())
-	if err != nil {
-		return err
-	}
-	optedIntoSlashingByAvs := curBlockNumber < uint64(serviceManagerCanSlashOperatorUntilBlock)
+	pubkeysRegistered := operatorId != [32]byte{}
 	registeredWithAvs := o.operatorId != [32]byte{}
-	isFrozen, err := o.eigenlayerReader.OperatorIsFrozen(context.Background(), o.operatorAddr)
-	if err != nil {
-		return err
-	}
 	operatorStatus := OperatorStatus{
-		EcdsaAddress:           o.operatorAddr.String(),
-		PubkeysRegistered:      pubkeysRegistered,
-		G1Pubkey:               o.blsKeypair.GetPubKeyG1().String(),
-		G2Pubkey:               o.blsKeypair.GetPubKeyG2().String(),
-		OptedIntoSlashingByAvs: optedIntoSlashingByAvs,
-		RegisteredWithAvs:      registeredWithAvs,
-		OperatorId:             hex.EncodeToString(o.operatorId[:]),
-		Frozen:                 isFrozen,
+		EcdsaAddress:      o.operatorAddr.String(),
+		PubkeysRegistered: pubkeysRegistered,
+		G1Pubkey:          o.blsKeypair.GetPubKeyG1().String(),
+		G2Pubkey:          o.blsKeypair.GetPubKeyG2().String(),
+		RegisteredWithAvs: registeredWithAvs,
+		OperatorId:        hex.EncodeToString(o.operatorId[:]),
 	}
 	operatorStatusJson, err := json.MarshalIndent(operatorStatus, "", " ")
 	if err != nil {

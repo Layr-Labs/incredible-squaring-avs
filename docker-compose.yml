@@ -15,7 +15,7 @@ services:
     # changed entrypoint because the default 'bash -c' entrypoint wasn't working the intended way...
     entrypoint: anvil
     volumes:
-      - ./tests/integration/avs-and-eigenlayer-deployed-anvil-state.json:/root/.anvil/state.json
+      - ./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json:/root/.anvil/state.json
     command: --host 0.0.0.0 --load-state /root/.anvil/state.json
     networks:
       - incredible-squaring-network
@@ -34,8 +34,6 @@ services:
       - config-files/aggregator-docker-compose.yaml
       - --credible-squaring-deployment 
       - contracts/script/output/31337/credible_squaring_avs_deployment_output.json
-      - --shared-avs-contracts-deployment 
-      - contracts/script/output/31337/shared_avs_contracts_deployment_output.json
       - --ecdsa-private-key 
       - "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
     networks:
