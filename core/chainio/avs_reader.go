@@ -6,8 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
-	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/avsregistry"
-	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 
@@ -27,52 +26,27 @@ type AvsReaderer interface {
 
 type AvsReader struct {
 	sdkavsregistry.AvsRegistryReader
-	AvsServiceBindings *AvsServiceBindings
+	AvsServiceBindings *AvsManagersBindings
 	logger             logging.Logger
 }
 
 var _ AvsReaderer = (*AvsReader)(nil)
 
-func NewAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
-
-	avsContractBindings, err := NewAvsServiceBindings(c.IncredibleSquaringServiceManagerAddr, c.BlsOperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
-	if err != nil {
-		return nil, err
-	}
-	blsRegistryCoordinatorAddr, err := avsContractBindings.ServiceManager.RegistryCoordinator(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
-	stakeRegistryAddr, err := avsContractBindings.ServiceManager.StakeRegistry(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
-	blsPubkeyRegistryAddr, err := avsContractBindings.ServiceManager.BlsPubkeyRegistry(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
-	ethClient, err := eth.NewClient(c.EthRpcUrl)
-	if err != nil {
-		return nil, err
-	}
-	avsRegistryContractClient, err := sdkclients.NewAvsRegistryContractsChainClient(blsRegistryCoordinatorAddr, c.BlsOperatorStateRetrieverAddr, stakeRegistryAddr, blsPubkeyRegistryAddr, ethClient, c.Logger)
-	if err != nil {
-		return nil, err
-	}
-
-	avsRegistryReader, err := sdkavsregistry.NewAvsRegistryReader(avsRegistryContractClient, c.Logger, ethClient)
-	if err != nil {
-		return nil, err
-	}
-	avsServiceBindings, err := NewAvsServiceBindings(c.IncredibleSquaringServiceManagerAddr, c.BlsOperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewAvsReader(avsRegistryReader, avsServiceBindings, c.Logger)
+func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
+	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
 }
-
-func NewAvsReader(avsRegistryReader sdkavsregistry.AvsRegistryReader, avsServiceBindings *AvsServiceBindings, logger logging.Logger) (*AvsReader, error) {
+func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.EthClient, logger logging.Logger) (*AvsReader, error) {
+	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+	if err != nil {
+		return nil, err
+	}
+	avsRegistryReader, err := sdkavsregistry.BuildAvsRegistryChainReader(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+	if err != nil {
+		return nil, err
+	}
+	return NewAvsReader(avsRegistryReader, avsManagersBindings, logger)
+}
+func NewAvsReader(avsRegistryReader sdkavsregistry.AvsRegistryReader, avsServiceBindings *AvsManagersBindings, logger logging.Logger) (*AvsReader, error) {
 	return &AvsReader{
 		AvsRegistryReader:  avsRegistryReader,
 		AvsServiceBindings: avsServiceBindings,

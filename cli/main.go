@@ -21,12 +21,6 @@ func main() {
 			Action:  actions.RegisterOperatorWithEigenlayer,
 		},
 		{
-			Name:    "register-operator-bls-pubkeys",
-			Aliases: []string{"rpk"},
-			Usage:   "registers operator bls pubkeys with eigenlayer pubkey compendium (this should be called via eigenlayer cli, not plugin, but keeping here for convenience for now)",
-			Action:  actions.RegisterOperatorBlsPubkeys,
-		},
-		{
 			Name:    "deposit-into-strategy",
 			Aliases: []string{"d"},
 			Usage:   "deposit tokens into a strategy",

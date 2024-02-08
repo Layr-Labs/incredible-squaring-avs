@@ -5,11 +5,11 @@ import "@openzeppelin-upgrades/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/permissions/Pausable.sol";
 import "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
-import {BLSPubkeyRegistry} from "@eigenlayer-middleware/src/BLSPubkeyRegistry.sol";
-import {BLSRegistryCoordinatorWithIndices} from "@eigenlayer-middleware/src/BLSRegistryCoordinatorWithIndices.sol";
-import {BLSSignatureChecker, IBLSRegistryCoordinatorWithIndices} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
-import {BLSOperatorStateRetriever} from "@eigenlayer-middleware/src/BLSOperatorStateRetriever.sol";
-import "@eigenlayer/contracts/libraries/BN254.sol";
+import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
+import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
+import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
+import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
+import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IIncredibleSquaringTaskManager.sol";
 
 contract IncredibleSquaringTaskManager is
@@ -17,7 +17,7 @@ contract IncredibleSquaringTaskManager is
     OwnableUpgradeable,
     Pausable,
     BLSSignatureChecker,
-    BLSOperatorStateRetriever,
+    OperatorStateRetriever,
     IIncredibleSquaringTaskManager
 {
     using BN254 for BN254.G1Point;
@@ -60,7 +60,7 @@ contract IncredibleSquaringTaskManager is
     }
 
     constructor(
-        IBLSRegistryCoordinatorWithIndices _registryCoordinator,
+        IRegistryCoordinator _registryCoordinator,
         uint32 _taskResponseWindowBlock
     ) BLSSignatureChecker(_registryCoordinator) {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
@@ -214,13 +214,6 @@ contract IncredibleSquaringTaskManager is
             return;
         }
 
-        // get the list of all operators who were active when the task was initialized
-        Operator[][] memory allOperatorInfo = getOperatorState(
-            IBLSRegistryCoordinatorWithIndices(address(registryCoordinator)),
-            task.quorumNumbers,
-            task.taskCreatedBlock
-        );
-
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
         bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](
             pubkeysOfNonSigningOperators.length
@@ -252,18 +245,22 @@ contract IncredibleSquaringTaskManager is
             pubkeysOfNonSigningOperators.length
         );
         for (uint i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addresssOfNonSigningOperators[i] = BLSPubkeyRegistry(
-                address(blsPubkeyRegistry)
-            ).pubkeyCompendium().pubkeyHashToOperator(
-                    hashesOfPubkeysOfNonSigningOperators[i]
-                );
+            addresssOfNonSigningOperators[i] = BLSApkRegistry(
+                address(blsApkRegistry)
+            ).pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
 
-        // @dev the below code is commented out for the upcoming M2 release 
+        // @dev the below code is commented out for the upcoming M2 release
         //      in which there will be no slashing. The slasher is also being redesigned
         //      so its interface may very well change.
         // ==========================================
-        // freeze the operators who signed adversarially
+        // // get the list of all operators who were active when the task was initialized
+        // Operator[][] memory allOperatorInfo = getOperatorState(
+        //     IRegistryCoordinator(address(registryCoordinator)),
+        //     task.quorumNumbers,
+        //     task.taskCreatedBlock
+        // );
+        // // freeze the operators who signed adversarially
         // for (uint i = 0; i < allOperatorInfo.length; i++) {
         //     // first for loop iterate over quorums
 

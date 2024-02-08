@@ -25,10 +25,17 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     }
 
     constructor(
-        IBLSRegistryCoordinatorWithIndices _registryCoordinator,
-        ISlasher _slasher,
+        IDelegationManager _delegationManager,
+        IRegistryCoordinator _registryCoordinator,
+        IStakeRegistry _stakeRegistry,
         IIncredibleSquaringTaskManager _incredibleSquaringTaskManager
-    ) ServiceManagerBase(_registryCoordinator, _slasher) {
+    )
+        ServiceManagerBase(
+            _delegationManager,
+            _registryCoordinator,
+            _stakeRegistry
+        )
+    {
         incredibleSquaringTaskManager = _incredibleSquaringTaskManager;
     }
 
@@ -37,7 +44,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function freezeOperator(
         address operatorAddr
-    ) external override onlyIncredibleSquaringTaskManager {
+    ) external onlyIncredibleSquaringTaskManager {
         // slasher.freezeOperator(operatorAddr);
     }
 }
