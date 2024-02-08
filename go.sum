@@ -13,8 +13,6 @@ github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMd
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
-github.com/Layr-Labs/eigensdk-go v0.0.10-0.20240103015405-ee57bde1b095 h1:bxZh7ykUr365T/VmiMpkeViOp+tcF+mGlls2uo8mbm8=
-github.com/Layr-Labs/eigensdk-go v0.0.10-0.20240103015405-ee57bde1b095/go.mod h1:oVDbRfA2GKFyZLf61zFOA3U2pjazHIFohlW7luDWqUA=
 github.com/Layr-Labs/eigensdk-go v0.0.10-0.20240103024128-1f8562000045 h1:NyPU6EmFwPjjj0a6NwofojKWiZ0GJDEwS6r/w5K+9R0=
 github.com/Layr-Labs/eigensdk-go v0.0.10-0.20240103024128-1f8562000045/go.mod h1:oVDbRfA2GKFyZLf61zFOA3U2pjazHIFohlW7luDWqUA=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=
