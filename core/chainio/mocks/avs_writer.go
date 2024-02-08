@@ -75,19 +75,19 @@ func (mr *MockAvsWritererMockRecorder) RaiseChallenge(arg0, arg1, arg2, arg3, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RaiseChallenge", reflect.TypeOf((*MockAvsWriterer)(nil).RaiseChallenge), arg0, arg1, arg2, arg3, arg4)
 }
 
-// RegisterOperatorWithAVSRegistryCoordinator mocks base method.
-func (m *MockAvsWriterer) RegisterOperatorWithAVSRegistryCoordinator(arg0 context.Context, arg1 *ecdsa.PrivateKey, arg2 [32]byte, arg3 *big.Int, arg4 *bls.KeyPair, arg5 []byte, arg6 string) (*types.Receipt, error) {
+// RegisterOperatorInQuorumWithAVSRegistryCoordinator mocks base method.
+func (m *MockAvsWriterer) RegisterOperatorInQuorumWithAVSRegistryCoordinator(arg0 context.Context, arg1 *ecdsa.PrivateKey, arg2 [32]byte, arg3 *big.Int, arg4 *bls.KeyPair, arg5 []byte, arg6 string) (*types.Receipt, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterOperatorWithAVSRegistryCoordinator", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "RegisterOperatorInQuorumWithAVSRegistryCoordinator", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(*types.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RegisterOperatorWithAVSRegistryCoordinator indicates an expected call of RegisterOperatorWithAVSRegistryCoordinator.
-func (mr *MockAvsWritererMockRecorder) RegisterOperatorWithAVSRegistryCoordinator(arg0, arg1, arg2, arg3, arg4, arg5, arg6 any) *gomock.Call {
+// RegisterOperatorInQuorumWithAVSRegistryCoordinator indicates an expected call of RegisterOperatorInQuorumWithAVSRegistryCoordinator.
+func (mr *MockAvsWritererMockRecorder) RegisterOperatorInQuorumWithAVSRegistryCoordinator(arg0, arg1, arg2, arg3, arg4, arg5, arg6 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterOperatorWithAVSRegistryCoordinator", reflect.TypeOf((*MockAvsWriterer)(nil).RegisterOperatorWithAVSRegistryCoordinator), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterOperatorInQuorumWithAVSRegistryCoordinator", reflect.TypeOf((*MockAvsWriterer)(nil).RegisterOperatorInQuorumWithAVSRegistryCoordinator), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // SendAggregatedResponse mocks base method.
@@ -121,17 +121,32 @@ func (mr *MockAvsWritererMockRecorder) SendNewTaskNumberToSquare(arg0, arg1, arg
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendNewTaskNumberToSquare", reflect.TypeOf((*MockAvsWriterer)(nil).SendNewTaskNumberToSquare), arg0, arg1, arg2, arg3)
 }
 
-// UpdateOperatorStakes mocks base method.
-func (m *MockAvsWriterer) UpdateOperatorStakes(arg0 context.Context, arg1 []common.Address) (*types.Receipt, error) {
+// UpdateStakesOfEntireOperatorSetForQuorums mocks base method.
+func (m *MockAvsWriterer) UpdateStakesOfEntireOperatorSetForQuorums(arg0 context.Context, arg1 [][]common.Address, arg2 []byte) (*types.Receipt, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateOperatorStakes", arg0, arg1)
+	ret := m.ctrl.Call(m, "UpdateStakesOfEntireOperatorSetForQuorums", arg0, arg1, arg2)
 	ret0, _ := ret[0].(*types.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// UpdateOperatorStakes indicates an expected call of UpdateOperatorStakes.
-func (mr *MockAvsWritererMockRecorder) UpdateOperatorStakes(arg0, arg1 any) *gomock.Call {
+// UpdateStakesOfEntireOperatorSetForQuorums indicates an expected call of UpdateStakesOfEntireOperatorSetForQuorums.
+func (mr *MockAvsWritererMockRecorder) UpdateStakesOfEntireOperatorSetForQuorums(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOperatorStakes", reflect.TypeOf((*MockAvsWriterer)(nil).UpdateOperatorStakes), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStakesOfEntireOperatorSetForQuorums", reflect.TypeOf((*MockAvsWriterer)(nil).UpdateStakesOfEntireOperatorSetForQuorums), arg0, arg1, arg2)
+}
+
+// UpdateStakesOfOperatorSubsetForAllQuorums mocks base method.
+func (m *MockAvsWriterer) UpdateStakesOfOperatorSubsetForAllQuorums(arg0 context.Context, arg1 []common.Address) (*types.Receipt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStakesOfOperatorSubsetForAllQuorums", arg0, arg1)
+	ret0, _ := ret[0].(*types.Receipt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateStakesOfOperatorSubsetForAllQuorums indicates an expected call of UpdateStakesOfOperatorSubsetForAllQuorums.
+func (mr *MockAvsWritererMockRecorder) UpdateStakesOfOperatorSubsetForAllQuorums(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStakesOfOperatorSubsetForAllQuorums", reflect.TypeOf((*MockAvsWriterer)(nil).UpdateStakesOfOperatorSubsetForAllQuorums), arg0, arg1)
 }

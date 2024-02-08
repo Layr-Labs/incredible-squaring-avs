@@ -174,7 +174,7 @@ func plugin(ctx *cli.Context) {
 		operatorToAvsRegistrationSigSalt := [32]byte{123}
 		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
 		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
-		r, err := clients.AvsRegistryChainWriter.RegisterOperatorWithAVSRegistryCoordinator(
+		r, err := clients.AvsRegistryChainWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 			goCtx,
 			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
 			blsKeypair, quorumNumbers, socket,

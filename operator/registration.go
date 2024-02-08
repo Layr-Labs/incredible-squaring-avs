@@ -113,7 +113,7 @@ func (o *Operator) RegisterOperatorWithAvs(
 	}
 	sigValidForSeconds := int64(1_000_000)
 	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time()) + sigValidForSeconds)
-	_, err = o.avsWriter.RegisterOperatorWithAVSRegistryCoordinator(
+	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 		context.Background(),
 		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
 		o.blsKeypair, quorumNumbers, socket,
