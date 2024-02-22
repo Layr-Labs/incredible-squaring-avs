@@ -18,6 +18,9 @@ cd ../../contracts
 # so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0
 # advancing chain manually like this is a current hack until https://github.com/foundry-rs/foundry/issues/6679 is merged
 # also not that it doesn't really advance by the correct number of blocks.. not sure why, so we just forward by a bunch of blocks that should be enough
+# install foundry dependencies
+forge install
+
 forge script script/utils/Utils.sol --sig "advanceChainByNBlocks(uint256)" 100 --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast
 echo "current block-number:" $(cast block-number)
 
