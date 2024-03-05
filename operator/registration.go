@@ -56,7 +56,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 	}
 	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op)
 	if err != nil {
-		o.logger.Errorf("Error registering operator with eigenlayer")
+		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
 	}
 	return nil
