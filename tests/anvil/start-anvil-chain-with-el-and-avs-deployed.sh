@@ -12,6 +12,7 @@ cd "$parent_path"
 anvil --load-state avs-and-eigenlayer-deployed-anvil-state.json &
 ANVIL_PID=$!
 
+sleep 5 
 cd ../../contracts
 # we need to restart the anvil chain at the correct block, otherwise the indexRegistry has a quorumUpdate at the block number
 # at which it was deployed (aka quorum was created/updated), but when we start anvil by loading state file it starts at block number 0
