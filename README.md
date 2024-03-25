@@ -6,14 +6,13 @@ Basic repo demoing a simple AVS middleware with full eigenlayer integration. See
 
 ## Dependencies
 
-You will need [foundry](https://book.getfoundry.sh/getting-started/installation) and [zap-pretty](https://github.com/maoueh/zap-pretty) to run the examples below.
+You will need [foundry](https://book.getfoundry.sh/getting-started/installation) and [zap-pretty](https://github.com/maoueh/zap-pretty) and docker to run the examples below.
 ```
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 go install github.com/maoueh/zap-pretty@latest
 ```
-
-Also make sure to build the contracts:
+You will also need to [install docker](https://docs.docker.com/get-docker/), and build the contracts:
 ```
 make build-contracts
 ```
