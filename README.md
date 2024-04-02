@@ -85,9 +85,9 @@ Below is a more detailed uml diagram of the aggregator and operator processes:
 
 ## Avs node spec compliance
 
-Every AVS node implementation is required to abide by the [Eigenlayer AVS Node Specification](https://eigen.nethermind.io/). We suggest reading through the whole spec, including the keys management section, but the hard requirements are currently only to:
-- implement the [AVS Node API](https://eigen.nethermind.io/docs/category/avs-node-api)
-- implement the [eigen prometheus metrics](https://eigen.nethermind.io/docs/category/metrics)
+Every AVS node implementation is required to abide by the [Eigenlayer AVS Node Specification](https://docs.eigenlayer.xyz/category/node-specification). We suggest reading through the whole spec, including the keys management section, but the hard requirements are currently only to:
+- implement the [AVS Node API](https://docs.eigenlayer.xyz/category/avs-node-api)
+- implement the [eigen prometheus metrics](https://docs.eigenlayer.xyz/category/metrics)
 
 If you are using golang, you can use our [metrics](https://github.com/Layr-Labs/eigensdk-go/tree/master/metrics) and [nodeapi](https://github.com/Layr-Labs/eigensdk-go/tree/master/nodeapi) implementation in the [eigensdk](https://github.com/Layr-Labs/eigensdk-go), just like this repo does. Otherwise, you will have to implement it on your own.
 
