@@ -5,7 +5,7 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 
 # EigenLayer Slasher contract address
 
-# This is the address of the slasher which is deployed in the anvil saved state
+# This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
 avs_registry_coordinator_address: 0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690
@@ -29,6 +29,7 @@ ecdsa_private_key_store_path: tests/keys/test.ecdsa.key.json
 # If you are running locally using go run main.go, this should be full path to your local bls key file
 bls_private_key_store_path: tests/keys/test.bls.key.json
 
+# address which the aggregator listens on for operator signed messages
 aggregator_server_ip_port_address: localhost:8090
 
 # avs node spec compliance https://eigen.nethermind.io/docs/spec/intro
