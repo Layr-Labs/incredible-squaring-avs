@@ -141,7 +141,7 @@ func (w *AvsWriter) RaiseChallenge(
 	}
 	receipt, err := w.TxMgr.Send(ctx, tx)
 	if err != nil {
-		w.logger.Errorf("Error submitting CreateNewTask tx")
+		w.logger.Errorf("Error submitting RaiseChallenge tx")
 		return nil, err
 	}
 	return receipt, nil
