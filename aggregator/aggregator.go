@@ -209,7 +209,7 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 	agg.tasksMu.Unlock()
 
 	quorumThresholdPercentages := make([]uint32, len(newTask.QuorumNumbers))
-	for i, _ := range newTask.QuorumNumbers {
+	for i := range newTask.QuorumNumbers {
 		quorumThresholdPercentages[i] = newTask.QuorumThresholdPercentage
 	}
 	// TODO(samlaf): we use seconds for now, but we should ideally pass a blocknumber to the blsAggregationService
