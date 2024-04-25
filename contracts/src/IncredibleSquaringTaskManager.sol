@@ -30,7 +30,7 @@ contract IncredibleSquaringTaskManager is
 
     /* STORAGE */
     // The latest task index
-    uint32 public latestTaskNum;
+    uint32 public latestTaskNum = 500;
 
     // mapping of task indices to all tasks hashes
     // when a task is created, task hash is stored here,

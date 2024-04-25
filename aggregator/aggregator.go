@@ -80,6 +80,8 @@ type Aggregator struct {
 func NewAggregator(c *config.Config) (*Aggregator, error) {
 
 	avsReader, err := chainio.BuildAvsReaderFromConfig(c)
+	c.Logger.Info("Operator address", "info", c.OperatorStateRetrieverAddr.String())
+	c.Logger.Info("Registry Address", "info", c.IncredibleSquaringRegistryCoordinatorAddr.String())
 	if err != nil {
 		c.Logger.Error("Cannot create avsReader", "err", err)
 		return nil, err
@@ -128,7 +130,10 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	ticker := time.NewTicker(10 * time.Second)
 	agg.logger.Infof("Aggregator set to send new task every 10 seconds...")
 	defer ticker.Stop()
-	taskNum := int64(0)
+
+	// Matt - confusing variable
+	// Don't think this is actually taskNum, pretty sure this is the number to be squared
+	taskNum := int64(777)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
 	_ = agg.sendNewTask(big.NewInt(taskNum))

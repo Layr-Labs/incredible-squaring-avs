@@ -13,6 +13,7 @@ require (
 	github.com/urfave/cli v1.22.14
 	go.uber.org/mock v0.3.0
 	golang.org/x/crypto v0.17.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
