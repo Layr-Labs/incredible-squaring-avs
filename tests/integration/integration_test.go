@@ -12,6 +12,7 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
@@ -90,7 +91,11 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Cannot create signer: %s", err.Error())
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, privateKeySigner, aggregatorAddr)
+	skWallet, err := wallet.NewPrivateKeyWallet(ethRpcClient, privateKeySigner, aggregatorAddr, logger)
+	if err != nil {
+		panic(err)
+	}
+	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &config.Config{
 		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,

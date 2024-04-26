@@ -10,12 +10,14 @@ import (
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -123,7 +125,15 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	clients, err := sdkclients.BuildAll(buildClientConfig, common.HexToAddress(avsConfig.OperatorAddress), signerV2, logger)
+	operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
+		avsConfig.EcdsaPrivateKeyStorePath,
+		ecdsaKeyPassword,
+	)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	clients, err := sdkclients.BuildAll(buildClientConfig, operatorEcdsaPrivateKey, logger)
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
@@ -135,7 +145,13 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethHttpClient, logger, signerV2, common.HexToAddress(avsConfig.OperatorAddress))
+	skWallet, err := wallet.NewPrivateKeyWallet(ethHttpClient, signerV2, common.HexToAddress(avsConfig.OperatorAddress), logger)
+	if err != nil {
+		fmt.Println("can't create wallet")
+		fmt.Println(err)
+		return
+	}
+	txMgr := txmgr.NewSimpleTxManager(skWallet, ethHttpClient, logger, common.HexToAddress(avsConfig.OperatorAddress))
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
@@ -158,17 +174,8 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 
-		operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
-			avsConfig.EcdsaPrivateKeyStorePath,
-			ecdsaKeyPassword,
-		)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
 		// Register with registry coordination
-		quorumNumbers := []byte{0}
+		quorumNumbers := sdktypes.QuorumNums{0}
 		socket := "Not Needed"
 		sigValidForSeconds := int64(1_000_000)
 		operatorToAvsRegistrationSigSalt := [32]byte{123}

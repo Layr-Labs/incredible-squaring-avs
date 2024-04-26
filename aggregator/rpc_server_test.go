@@ -30,7 +30,7 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 	MOCK_OPERATOR_G1PUBKEY := MOCK_OPERATOR_KEYPAIR.GetPubKeyG1()
 	MOCK_OPERATOR_G2PUBKEY := MOCK_OPERATOR_KEYPAIR.GetPubKeyG2()
 
-	operatorPubkeyDict := map[bls.OperatorId]types.OperatorInfo{
+	operatorPubkeyDict := map[sdktypes.OperatorId]types.OperatorInfo{
 		MOCK_OPERATOR_ID: {
 			OperatorPubkeys: sdktypes.OperatorPubkeys{
 				G1Pubkey: MOCK_OPERATOR_G1PUBKEY,

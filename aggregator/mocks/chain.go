@@ -15,8 +15,8 @@ func MockSendNewTaskNumberToSquareCall(blockNum, taskNum, numberToSquare uint32)
 	task := cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(int64(numberToSquare)),
 		TaskCreatedBlock:          blockNum,
-		QuorumNumbers:             types.QUORUM_NUMBERS,
-		QuorumThresholdPercentage: types.QUORUM_THRESHOLD_NUMERATOR,
+		QuorumNumbers:             types.QUORUM_NUMBERS.UnderlyingType(),
+		QuorumThresholdPercentage: uint32(types.QUORUM_THRESHOLD_NUMERATOR),
 	}
 
 	return task, taskNum, nil

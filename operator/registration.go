@@ -98,7 +98,7 @@ func (o *Operator) RegisterOperatorWithAvs(
 	operatorEcdsaKeyPair *ecdsa.PrivateKey,
 ) error {
 	// hardcode these things for now
-	quorumNumbers := []byte{0}
+	quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}
 	socket := "Not Needed"
 	operatorToAvsRegistrationSigSalt := [32]byte{123}
 	curBlockNum, err := o.ethClient.BlockNumber(context.Background())
