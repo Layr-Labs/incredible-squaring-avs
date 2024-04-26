@@ -25,18 +25,24 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     }
 
     constructor(
-        IDelegationManager _delegationManager,
+        IAVSDirectory _avsDirectory,
+        IPaymentCoordinator _paymentCoordinator,
         IRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
         IIncredibleSquaringTaskManager _incredibleSquaringTaskManager
     )
         ServiceManagerBase(
-            _delegationManager,
+            _avsDirectory,
+            _paymentCoordinator,
             _registryCoordinator,
             _stakeRegistry
         )
     {
         incredibleSquaringTaskManager = _incredibleSquaringTaskManager;
+    }
+
+    function initialize(address initialOwner) public virtual initializer {
+        _transferOwnership(initialOwner);
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.

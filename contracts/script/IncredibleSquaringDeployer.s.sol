@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 import "@eigenlayer/contracts/permissions/PauserRegistry.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
+import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
+import {IPaymentCoordinator} from "@eigenlayer/contracts/interfaces/IPaymentCoordinator.sol";
 import {IStrategyManager, IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {ISlasher} from "@eigenlayer/contracts/interfaces/ISlasher.sol";
 import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBaseTVLLimits.sol";
@@ -89,6 +91,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 ".addresses.delegation"
             )
         );
+        IAVSDirectory avsDirectory = IAVSDirectory(
+            stdJson.readAddress(
+                eigenlayerDeployedContracts,
+                ".addresses.avsDirectory"
+            )
+        );
         ProxyAdmin eigenLayerProxyAdmin = ProxyAdmin(
             stdJson.readAddress(
                 eigenlayerDeployedContracts,
@@ -120,6 +128,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
         _deployCredibleSquaringContracts(
             delegationManager,
+            avsDirectory,
             erc20MockStrategy,
             credibleSquaringCommunityMultisig,
             credibleSquaringPauser
@@ -153,11 +162,17 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
         IStrategy[] memory strats = new IStrategy[](1);
         strats[0] = erc20MockStrategy;
-        strategyManager.addStrategiesToDepositWhitelist(strats);
+        bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
+        thirdPartyTransfersForbiddenValues[0] = false;
+        strategyManager.addStrategiesToDepositWhitelist(
+            strats,
+            thirdPartyTransfersForbiddenValues
+        );
     }
 
     function _deployCredibleSquaringContracts(
         IDelegationManager delegationManager,
+        IAVSDirectory avsDirectory,
         IStrategy strat,
         address incredibleSquaringCommunityMultisig,
         address credibleSquaringPauser
@@ -345,7 +360,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
         }
 
         incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
-            delegationManager,
+            avsDirectory,
+            IPaymentCoordinator(address(0)),
             registryCoordinator,
             stakeRegistry,
             incredibleSquaringTaskManager
