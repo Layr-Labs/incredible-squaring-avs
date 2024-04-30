@@ -25,3 +25,7 @@ jobs:
       - name: Run tests
         run: forge test -vvv
         working-directory: ./contracts
+
+      - name: Enforce Formatting
+        run: forge fmt --check
+        working-directory: ./contracts
