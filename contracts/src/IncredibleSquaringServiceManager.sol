@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "@eigenlayer/contracts/libraries/BytesLib.sol";
-import "./IIncredibleSquaringTaskManager.sol";
-import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
+import {BytesLib} from "@eigenlayer/contracts/libraries/BytesLib.sol";
+import {IIncredibleSquaringTaskManager} from "./IIncredibleSquaringTaskManager.sol";
+import {
+    ServiceManagerBase,
+    IDelegationManager,
+    IRegistryCoordinator,
+    IStakeRegistry
+} from "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 
 /**
  * @title Primary entrypoint for procuring services from IncredibleSquaring.

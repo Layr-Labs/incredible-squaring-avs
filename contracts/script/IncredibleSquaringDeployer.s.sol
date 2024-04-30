@@ -11,16 +11,21 @@ import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBa
 import "@eigenlayer/test/mocks/EmptyContract.sol";
 
 import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
-import {IBLSApkRegistry, IIndexRegistry, IStakeRegistry} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
+import {
+    IBLSApkRegistry,
+    IIndexRegistry,
+    IStakeRegistry,
+    IServiceManager
+} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
-import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
+import {IncredibleSquaringServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
-import "../src/ERC20Mock.sol";
+import {ERC20Mock} from "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
 
@@ -115,7 +120,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                         StrategyBaseTVLLimits.initialize.selector,
                         1 ether, // maxPerDeposit
                         100 ether, // maxDeposits
-                        IERC20(erc20Mock),
+                        erc20Mock,
                         eigenLayerPauserReg
                     )
                 )
