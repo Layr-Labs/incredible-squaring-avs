@@ -42,8 +42,8 @@ func TestCallChallengeModule(t *testing.T) {
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
-		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
-		QuorumThresholdPercentage: aggtypes.QUORUM_THRESHOLD_NUMERATOR,
+		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
+		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
@@ -84,8 +84,8 @@ func TestRaiseChallenge(t *testing.T) {
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
-		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
-		QuorumThresholdPercentage: aggtypes.QUORUM_THRESHOLD_NUMERATOR,
+		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
+		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{
@@ -124,8 +124,8 @@ func TestProcessTaskResponseLog(t *testing.T) {
 	challenger.tasks[TASK_INDEX] = cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(3),
 		TaskCreatedBlock:          1000,
-		QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
-		QuorumThresholdPercentage: aggtypes.QUORUM_THRESHOLD_NUMERATOR,
+		QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
+		QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
 	}
 
 	challenger.taskResponses[TASK_INDEX] = chtypes.TaskResponseData{

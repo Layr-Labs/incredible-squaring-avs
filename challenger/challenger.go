@@ -18,7 +18,7 @@ import (
 
 type Challenger struct {
 	logger             logging.Logger
-	ethClient          ethclient.EthClient
+	ethClient          ethclient.Client
 	avsReader          chainio.AvsReaderer
 	avsWriter          chainio.AvsWriterer
 	avsSubscriber      chainio.AvsSubscriberer

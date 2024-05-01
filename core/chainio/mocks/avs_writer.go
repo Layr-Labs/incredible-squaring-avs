@@ -16,9 +16,10 @@ import (
 
 	contractRegistryCoordinator "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	bls "github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	types "github.com/Layr-Labs/eigensdk-go/types"
 	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	common "github.com/ethereum/go-ethereum/common"
-	types "github.com/ethereum/go-ethereum/core/types"
+	types0 "github.com/ethereum/go-ethereum/core/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -46,10 +47,10 @@ func (m *MockAvsWriterer) EXPECT() *MockAvsWritererMockRecorder {
 }
 
 // DeregisterOperator mocks base method.
-func (m *MockAvsWriterer) DeregisterOperator(arg0 context.Context, arg1 []byte, arg2 contractRegistryCoordinator.BN254G1Point) (*types.Receipt, error) {
+func (m *MockAvsWriterer) DeregisterOperator(arg0 context.Context, arg1 types.QuorumNums, arg2 contractRegistryCoordinator.BN254G1Point) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeregisterOperator", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*types.Receipt)
+	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -61,10 +62,10 @@ func (mr *MockAvsWritererMockRecorder) DeregisterOperator(arg0, arg1, arg2 any) 
 }
 
 // RaiseChallenge mocks base method.
-func (m *MockAvsWriterer) RaiseChallenge(arg0 context.Context, arg1 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask, arg2 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTaskResponse, arg3 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTaskResponseMetadata, arg4 []contractIncredibleSquaringTaskManager.BN254G1Point) (*types.Receipt, error) {
+func (m *MockAvsWriterer) RaiseChallenge(arg0 context.Context, arg1 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask, arg2 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTaskResponse, arg3 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTaskResponseMetadata, arg4 []contractIncredibleSquaringTaskManager.BN254G1Point) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RaiseChallenge", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].(*types.Receipt)
+	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -76,10 +77,10 @@ func (mr *MockAvsWritererMockRecorder) RaiseChallenge(arg0, arg1, arg2, arg3, ar
 }
 
 // RegisterOperatorInQuorumWithAVSRegistryCoordinator mocks base method.
-func (m *MockAvsWriterer) RegisterOperatorInQuorumWithAVSRegistryCoordinator(arg0 context.Context, arg1 *ecdsa.PrivateKey, arg2 [32]byte, arg3 *big.Int, arg4 *bls.KeyPair, arg5 []byte, arg6 string) (*types.Receipt, error) {
+func (m *MockAvsWriterer) RegisterOperatorInQuorumWithAVSRegistryCoordinator(arg0 context.Context, arg1 *ecdsa.PrivateKey, arg2 [32]byte, arg3 *big.Int, arg4 *bls.KeyPair, arg5 types.QuorumNums, arg6 string) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterOperatorInQuorumWithAVSRegistryCoordinator", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
-	ret0, _ := ret[0].(*types.Receipt)
+	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -91,10 +92,10 @@ func (mr *MockAvsWritererMockRecorder) RegisterOperatorInQuorumWithAVSRegistryCo
 }
 
 // SendAggregatedResponse mocks base method.
-func (m *MockAvsWriterer) SendAggregatedResponse(arg0 context.Context, arg1 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask, arg2 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTaskResponse, arg3 contractIncredibleSquaringTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (*types.Receipt, error) {
+func (m *MockAvsWriterer) SendAggregatedResponse(arg0 context.Context, arg1 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask, arg2 contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTaskResponse, arg3 contractIncredibleSquaringTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendAggregatedResponse", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.Receipt)
+	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -106,7 +107,7 @@ func (mr *MockAvsWritererMockRecorder) SendAggregatedResponse(arg0, arg1, arg2, 
 }
 
 // SendNewTaskNumberToSquare mocks base method.
-func (m *MockAvsWriterer) SendNewTaskNumberToSquare(arg0 context.Context, arg1 *big.Int, arg2 uint32, arg3 []byte) (contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask, uint32, error) {
+func (m *MockAvsWriterer) SendNewTaskNumberToSquare(arg0 context.Context, arg1 *big.Int, arg2 types.QuorumThresholdPercentage, arg3 types.QuorumNums) (contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask, uint32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendNewTaskNumberToSquare", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(contractIncredibleSquaringTaskManager.IIncredibleSquaringTaskManagerTask)
@@ -122,10 +123,10 @@ func (mr *MockAvsWritererMockRecorder) SendNewTaskNumberToSquare(arg0, arg1, arg
 }
 
 // UpdateStakesOfEntireOperatorSetForQuorums mocks base method.
-func (m *MockAvsWriterer) UpdateStakesOfEntireOperatorSetForQuorums(arg0 context.Context, arg1 [][]common.Address, arg2 []byte) (*types.Receipt, error) {
+func (m *MockAvsWriterer) UpdateStakesOfEntireOperatorSetForQuorums(arg0 context.Context, arg1 [][]common.Address, arg2 types.QuorumNums) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateStakesOfEntireOperatorSetForQuorums", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*types.Receipt)
+	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -137,10 +138,10 @@ func (mr *MockAvsWritererMockRecorder) UpdateStakesOfEntireOperatorSetForQuorums
 }
 
 // UpdateStakesOfOperatorSubsetForAllQuorums mocks base method.
-func (m *MockAvsWriterer) UpdateStakesOfOperatorSubsetForAllQuorums(arg0 context.Context, arg1 []common.Address) (*types.Receipt, error) {
+func (m *MockAvsWriterer) UpdateStakesOfOperatorSubsetForAllQuorums(arg0 context.Context, arg1 []common.Address) (*types0.Receipt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateStakesOfOperatorSubsetForAllQuorums", arg0, arg1)
-	ret0, _ := ret[0].(*types.Receipt)
+	ret0, _ := ret[0].(*types0.Receipt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

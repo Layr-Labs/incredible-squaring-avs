@@ -33,8 +33,8 @@ func TestOperator(t *testing.T) {
 			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
 				NumberToBeSquared:         numberToBeSquared,
 				TaskCreatedBlock:          1000,
-				QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
-				QuorumThresholdPercentage: aggtypes.QUORUM_THRESHOLD_NUMERATOR,
+				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
+				QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
 			},
 			Raw: types.Log{},
 		}
@@ -56,8 +56,8 @@ func TestOperator(t *testing.T) {
 			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
 				NumberToBeSquared:         numberToBeSquared,
 				TaskCreatedBlock:          1000,
-				QuorumNumbers:             aggtypes.QUORUM_NUMBERS,
-				QuorumThresholdPercentage: aggtypes.QUORUM_THRESHOLD_NUMERATOR,
+				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
+				QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
 			},
 			Raw: types.Log{},
 		}
