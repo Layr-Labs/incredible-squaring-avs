@@ -7,6 +7,7 @@ networks:
 
 services:
   anvil:
+    platform: linux/amd64
     image: ghcr.io/foundry-rs/foundry
     container_name: anvil
     ports:
@@ -21,6 +22,7 @@ services:
       - incredible-squaring-network
 
   aggregator:
+    platform: linux/amd64
     image: ghcr.io/layr-labs/incredible-squaring/aggregator/cmd/main.go:latest
     container_name: incredible-squaring-aggregator
     depends_on:
@@ -40,6 +42,7 @@ services:
       - incredible-squaring-network
 
   operator1:
+    platform: linux/amd64
     image: ghcr.io/layr-labs/incredible-squaring/operator/cmd/main.go:latest
     container_name: incredible-squaring-operator1
     depends_on:
@@ -73,6 +76,7 @@ services:
   grafana:
     image: grafana/grafana:9.4.1
     container_name: grafana
+    platform: linux/amd64
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -92,6 +96,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.42.0
     container_name: prometheus
+    platform: linux/amd64
     volumes:
       - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
