@@ -7,6 +7,8 @@ interface IIncredibleSquaringTaskManager {
     // EVENTS
     event NewTaskCreated(uint32 indexed taskIndex, Task task);
 
+    event PriceUpdateRequested(uint32 indexed taskIndex, PriceUpdateTask task);
+
     event TaskResponded(
         TaskResponse taskResponse,
         TaskResponseMetadata taskResponseMetadata
@@ -38,6 +40,16 @@ interface IIncredibleSquaringTaskManager {
         uint32 quorumThresholdPercentage;
     }
 
+    struct PriceUpdateTask {
+        uint32 taskCreatedBlock;
+        bytes32 feedName;
+    }
+
+    struct PriceUpdateTaskResponse {
+        uint32 price;
+        uint32 decimals;
+    }
+
     // Task response is hashed and signed by operators.
     // these signatures are aggregated and sent to the contract as response.
     struct TaskResponse {
@@ -55,6 +67,7 @@ interface IIncredibleSquaringTaskManager {
         bytes32 hashOfNonSigners;
     }
 
+
     // FUNCTIONS
     // NOTE: this function creates new task.
     function createNewTask(
@@ -62,6 +75,8 @@ interface IIncredibleSquaringTaskManager {
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers
     ) external;
+
+    function requestPriceFeed(bytes32 feedName) external;
 
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);

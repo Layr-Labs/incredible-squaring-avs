@@ -28,6 +28,9 @@ contract IncredibleSquaringTaskManager is
     uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
     uint256 internal constant _THRESHOLD_DENOMINATOR = 100;
 
+    bytes32 public immutable ETH_USDC_FEED_NAME = "eth/usdc";
+    bytes32 public immutable BTC_USDC_FEED_NAME = "btc/usdc";
+
     /* STORAGE */
     // The latest task index
     uint32 public latestTaskNum;
@@ -95,6 +98,17 @@ contract IncredibleSquaringTaskManager is
         // store hash of task onchain, emit event, and increase taskNum
         allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
         emit NewTaskCreated(latestTaskNum, newTask);
+        latestTaskNum = latestTaskNum + 1;
+    }
+
+    function requestPriceFeed(bytes32 feedName) external {
+        PriceUpdateTask memory task;
+        task.taskCreatedBlock = uint32(block.number);
+        task.feedName = feedName;
+
+        // store hash of task onchain, emit event, and increase taskNum
+        allTaskHashes[latestTaskNum] = keccak256(abi.encode(task));
+        emit PriceUpdateRequested(latestTaskNum, task);
         latestTaskNum = latestTaskNum + 1;
     }
 
