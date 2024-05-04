@@ -131,7 +131,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
-	_ = agg.sendNewTask(big.NewInt(taskNum))
+	_ = agg.sendPriceUpdateTask()
 	taskNum++
 
 	for {
@@ -142,7 +142,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			err := agg.sendNewTask(big.NewInt(taskNum))
+			err := agg.sendPriceUpdateTask()
 			taskNum++
 			if err != nil {
 				// we log the errors inside sendNewTask() so here we just continue to the next task
@@ -220,5 +220,19 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
 	}
 	agg.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
+	return nil
+}
+
+// sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
+// with the information of operators opted into quorum 0 at the block of task creation.
+func (agg *Aggregator) sendPriceUpdateTask() error {
+	agg.logger.Info("Aggregator sending new price update task")
+	// Send request for a  price feed updated
+	_, err := agg.avsWriter.SendNewPriceUpdate(context.Background())
+	if err != nil {
+		agg.logger.Error("Aggregator failed to send number to square", "err", err)
+		return err
+	}
+
 	return nil
 }
