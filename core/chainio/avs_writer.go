@@ -26,6 +26,7 @@ type AvsWriterer interface {
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
+	SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, error)
 	RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
@@ -98,6 +99,32 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
 	return newTaskCreatedEvent.Task, newTaskCreatedEvent.TaskIndex, nil
+}
+
+// returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
+func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, error) {
+	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		w.logger.Errorf("Error getting tx opts")
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+	}
+	feedName, err := w.AvsContractBindings.TaskManager.BTCUSDCFEEDNAME(nil)
+	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeed(txOpts, feedName)
+	if err != nil {
+		w.logger.Errorf("Error assembling CreateNewTask tx")
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+	}
+	receipt, err := w.TxMgr.Send(ctx, tx)
+	if err != nil {
+		w.logger.Errorf("Error submitting CreateNewTask tx")
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+	}
+	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractIncredibleSquaringTaskManagerFilterer.ParsePriceUpdateRequested(*receipt.Logs[0])
+	if err != nil {
+		w.logger.Error("Aggregator failed to parse new task created event", "err", err)
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+	}
+	return newTaskCreatedEvent.Task, nil
 }
 
 func (w *AvsWriter) SendAggregatedResponse(

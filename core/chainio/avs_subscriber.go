@@ -15,6 +15,7 @@ import (
 
 type AvsSubscriberer interface {
 	SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) event.Subscription
+	SubscribeToNewPriceUpdateTask(newPriceUpdateTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested) event.Subscription
 	SubscribeToTaskResponses(taskResponseLogs chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) event.Subscription
 	ParseTaskResponded(rawLog types.Log) (*cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded, error)
 }
@@ -61,6 +62,17 @@ func (s *AvsSubscriber) SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanag
 		s.logger.Error("Failed to subscribe to new TaskManager tasks", "err", err)
 	}
 	s.logger.Infof("Subscribed to new TaskManager tasks")
+	return sub
+}
+
+func (s *AvsSubscriber) SubscribeToNewPriceUpdateTask(newPriceUpdateTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested) event.Subscription {
+	sub, err := s.AvsContractBindings.TaskManager.WatchPriceUpdateRequested(
+		&bind.WatchOpts{}, newPriceUpdateTaskCreatedChan, nil,
+	)
+	if err != nil {
+		s.logger.Error("Failed to subscribe to new price update tasks", "err", err)
+	}
+	s.logger.Infof("Subscribed to new price update tasks")
 	return sub
 }
 
