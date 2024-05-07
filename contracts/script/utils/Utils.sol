@@ -23,15 +23,6 @@ contract Utils is Script {
         }
     }
 
-    // TODO: this doesn't actually advance by n blocks... maybe because broadcasting batches txs somehow..?
-    function advanceChainByNBlocks(uint256 n) public {
-        for (uint256 i = 0; i < n; i++) {
-            // we transfer eth to ourselves to advance the block
-            vm.broadcast(msg.sender);
-            payable(msg.sender).transfer(1 wei);
-        }
-    }
-
     function convertBoolToString(
         bool input
     ) public pure returns (string memory) {
