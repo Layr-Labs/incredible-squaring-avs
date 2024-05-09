@@ -47,7 +47,7 @@ func TestIntegration(t *testing.T) {
 
 	/* Prepare the config file for aggregator */
 	var aggConfigRaw config.ConfigRaw
-	aggConfigFilePath := "../../config-files/aggregator.yaml"
+	aggConfigFilePath := "../../config-files/31337/aggregator.yaml"
 	sdkutils.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
@@ -114,7 +114,7 @@ func TestIntegration(t *testing.T) {
 
 	/* Prepare the config file for operator */
 	nodeConfig := types.NodeConfig{}
-	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
+	nodeConfigFilePath := "../../config-files/31337/operator.anvil.yaml"
 	err = sdkutils.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
