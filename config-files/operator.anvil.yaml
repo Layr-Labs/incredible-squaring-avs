@@ -8,8 +8,9 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
-operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
+avs_registry_coordinator_address: 0x851356ae760d987E095750cCeb3bC6014560891C
+operator_state_retriever_address: 0x70e0bA845a1A0F2DA3359C97E0285013525FFC49
+price_feed_adapter_address: 0x09635F643e140090A9A8Dcd712eD6285858ceBef
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
@@ -41,4 +42,4 @@ enable_node_api: true
 register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
-token_strategy_addr: 0x09635F643e140090A9A8Dcd712eD6285858ceBef
+token_strategy_addr: 0x67d269191c92Caf3cD7723F116c85e6E9bf55933

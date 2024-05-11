@@ -28,8 +28,8 @@ contract IncredibleSquaringTaskManager is
     uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
     uint256 internal constant _THRESHOLD_DENOMINATOR = 100;
 
-    bytes32 public immutable ETH_USDC_FEED_NAME = "eth/usdc";
-    bytes32 public immutable BTC_USDC_FEED_NAME = "btc/usdc";
+    string public ETH_USDC_FEED_NAME = "eth/usdc";
+    string public BTC_USDC_FEED_NAME = "btc/usdc";
 
     /* STORAGE */
     // The latest task index
@@ -101,7 +101,7 @@ contract IncredibleSquaringTaskManager is
         latestTaskNum = latestTaskNum + 1;
     }
 
-    function requestPriceFeed(bytes32 feedName) external {
+    function requestPriceFeed(string memory feedName) external {
         PriceUpdateTask memory task;
         task.taskCreatedBlock = uint32(block.number);
         task.feedName = feedName;

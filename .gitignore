@@ -7,6 +7,7 @@
 *.dll
 *.so
 *.dylib
+.env
 
 # Test binary, built with `go test -c`
 *.test
@@ -26,3 +27,6 @@ logs.txt
 
 # just for example
 id_rsa
+
+
+node_modules/

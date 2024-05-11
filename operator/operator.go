@@ -12,6 +12,7 @@ import (
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	priceFeedAdapter "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/PriceFeedAdapter"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
@@ -66,6 +67,7 @@ type Operator struct {
 	aggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	credibleSquaringServiceManagerAddr common.Address
+	priceFeedAdapter                   *priceFeedAdapter.ContractPriceFeedAdapter
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -211,6 +213,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 
+	priceFeedClient, err := priceFeedAdapter.NewContractPriceFeedAdapter(common.HexToAddress(c.PriceFeedAdapterAddress), ethRpcClient)
+	if err != nil {
+		logger.Error("Cannot create priceFeedClient. Is aggregator running?", "err", err)
+		return nil, err
+	}
+
 	operator := &Operator{
 		config:                             c,
 		logger:                             logger,
@@ -231,7 +239,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		newPriceUpdateTaskCreatedChan:      make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested),
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
-
+		priceFeedAdapter:                   priceFeedClient,
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -309,13 +317,21 @@ func (o *Operator) Start(ctx context.Context) error {
 func (o *Operator) ProcessNewPriceUpdateCreatedLog(newPriceUpdateTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested) string {
 	o.logger.Debug("Received new price updated", "task", newPriceUpdateTaskCreatedLog)
 	o.logger.Info("Received new price updated task",
-		"feedName", newPriceUpdateTaskCreatedLog.Task.FeedName,
+		"feedName", string(newPriceUpdateTaskCreatedLog.Task.FeedName[:]),
 		"taskCreatedBlock", newPriceUpdateTaskCreatedLog.Task.TaskCreatedBlock,
 	)
 
-	// fetch price from on-chain feed
+	resolvedPrice, err := o.priceFeedAdapter.GetLatestPrice(&bind.CallOpts{}, string(newPriceUpdateTaskCreatedLog.Task.FeedName[:]))
 
-	// Return task response
+	if err != nil {
+		o.logger.Error("Failed to fetch price", "err", err)
+	}
+
+	o.logger.Info("Price fetched is ", "resolvedPrice", resolvedPrice)
+
+	// fetch prices from on-chain feed
+
+	// Return task response to either on-chain or off-chain aggregator
 
 	return ""
 }

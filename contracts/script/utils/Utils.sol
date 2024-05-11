@@ -32,6 +32,11 @@ contract Utils is Script {
         }
     }
 
+    function resetBlockNumber(uint256 n) public {
+        vm.broadcast(msg.sender);
+        vm.roll(n);
+    }
+
     function convertBoolToString(
         bool input
     ) public pure returns (string memory) {
@@ -71,7 +76,7 @@ contract Utils is Script {
             vm.projectRoot(),
             "/script/input/"
         );
-        string memory chainDir = string.concat(vm.toString(block.chainid), "/");
+        string memory chainDir = string.concat("31337", "/");
         string memory file = string.concat(inputFileName, ".json");
         return vm.readFile(string.concat(inputDir, chainDir, file));
     }
@@ -83,7 +88,7 @@ contract Utils is Script {
             vm.projectRoot(),
             "/script/output/"
         );
-        string memory chainDir = string.concat(vm.toString(block.chainid), "/");
+        string memory chainDir = string.concat("31337", "/");
         string memory file = string.concat(outputFileName, ".json");
         return vm.readFile(string.concat(inputDir, chainDir, file));
     }
@@ -96,7 +101,7 @@ contract Utils is Script {
             vm.projectRoot(),
             "/script/output/"
         );
-        string memory chainDir = string.concat(vm.toString(block.chainid), "/");
+        string memory chainDir = string.concat("31337", "/");
         string memory outputFilePath = string.concat(
             outputDir,
             chainDir,

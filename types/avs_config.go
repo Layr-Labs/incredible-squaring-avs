@@ -17,4 +17,5 @@ type NodeConfig struct {
 	EnableMetrics                 bool   `yaml:"enable_metrics"`
 	NodeApiIpPortAddress          string `yaml:"node_api_ip_port_address"`
 	EnableNodeApi                 bool   `yaml:"enable_node_api"`
+	PriceFeedAdapterAddress       string `yaml:"price_feed_adapter_address"`
 }

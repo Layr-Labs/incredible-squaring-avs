@@ -108,7 +108,7 @@ func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncr
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
 	}
-	feedName, err := w.AvsContractBindings.TaskManager.BTCUSDCFEEDNAME(nil)
+	feedName := "btc/usdc"
 	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeed(txOpts, feedName)
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")

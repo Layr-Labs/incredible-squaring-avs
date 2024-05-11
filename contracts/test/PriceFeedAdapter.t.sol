@@ -18,6 +18,6 @@ contract PriceAdapterTest {
     }
 
     function test_fetch_btc_usd_price() public {
-        emit TestValue(priceFeedAdapter.getLatestPrice("btc/usd", true));
+        emit TestValue(priceFeedAdapter.getLatestPrice("btc/usd"));
     }
 }

@@ -21,6 +21,7 @@ import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
+import {PriceFeedAdapter} from "../src/PriceFeedAdapter.sol";
 import "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
@@ -72,6 +73,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
     IncredibleSquaringTaskManager public incredibleSquaringTaskManager;
     IIncredibleSquaringTaskManager
         public incredibleSquaringTaskManagerImplementation;
+
+    PriceFeedAdapter public priceAdapter;
 
     function run() external {
         // Eigenlayer contracts
@@ -142,6 +145,10 @@ contract IncredibleSquaringDeployer is Script, Utils {
         IStrategyManager strategyManager
     ) internal {
         erc20Mock = new ERC20Mock();
+        priceAdapter = new PriceFeedAdapter();
+        priceAdapter.addFeed("btc/usdc", address(0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43));
+        // Add price feeds on sepholia
+
         // TODO(samlaf): any reason why we are using the strategybase with tvl limits instead of just using strategybase?
         // the maxPerDeposit and maxDeposits below are just arbitrary values.
         erc20MockStrategy = StrategyBaseTVLLimits(
@@ -435,6 +442,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
             deployed_addresses,
             "registryCoordinatorImplementation",
             address(registryCoordinatorImplementation)
+        );
+        vm.serializeAddress(
+            deployed_addresses,
+            "priceFeedAdapter",
+            address(priceAdapter)
         );
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses,

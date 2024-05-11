@@ -29,7 +29,7 @@ func (o *Operator) registerOperatorOnStartup(
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
 		// This error might only be that the operator was already registered with eigenlayer, so we don't want to fatal
-		o.logger.Error("Error registering operator with eigenlayer", "err", err)
+		o.logger.Warn("Error registering operator with eigenlayer", "err", err)
 	} else {
 		o.logger.Infof("Registered operator with eigenlayer")
 	}
@@ -56,8 +56,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 	}
 	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op)
 	if err != nil {
-		o.logger.Error("Error registering operator with eigenlayer", "err", err)
-		return err
+		o.logger.Warn("Error registering operator with eigenlayer", "err", err)
 	}
 	return nil
 }
@@ -119,8 +118,7 @@ func (o *Operator) RegisterOperatorWithAvs(
 		o.blsKeypair, quorumNumbers, socket,
 	)
 	if err != nil {
-		o.logger.Errorf("Unable to register operator with avs registry coordinator")
-		return err
+		o.logger.Warn("Unable to register operator with avs registry coordinator")
 	}
 	o.logger.Infof("Registered operator with avs registry coordinator.")
 

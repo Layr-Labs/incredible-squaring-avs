@@ -38,3 +38,23 @@ start_anvil_docker() {
         $LOAD_STATE_ANVIL_ARG $DUMP_STATE_ANVIL_ARG --host 0.0.0.0
     sleep 2
 }
+
+start_anvil_docker_with_fork() {
+    LOAD_STATE_FILE=$1
+    DUMP_STATE_FILE=$2
+    LOAD_STATE_VOLUME_DOCKER_ARG=$([[ -z $LOAD_STATE_FILE ]] && echo "" || echo "-v $LOAD_STATE_FILE:/load-state.json")
+    DUMP_STATE_VOLUME_DOCKER_ARG=$([[ -z $DUMP_STATE_FILE ]] && echo "" || echo "-v $DUMP_STATE_FILE:/dump-state.json")
+    LOAD_STATE_ANVIL_ARG=$([[ -z $LOAD_STATE_FILE ]] && echo "" || echo "--load-state /load-state.json")
+    DUMP_STATE_ANVIL_ARG=$([[ -z $DUMP_STATE_FILE ]] && echo "" || echo "--dump-state /dump-state.json")
+
+    echo $LOAD_STATE_VOLUME_DOCKER_ARG $DUMP_STATE_VOLUME_DOCKER_ARG
+    echo $LOAD_STATE_ANVIL_ARG $DUMP_STATE_ANVIL_ARG
+    trap 'docker stop anvil' EXIT
+    docker run --rm -d --name anvil -p 8545:8545 $LOAD_STATE_VOLUME_DOCKER_ARG $DUMP_STATE_VOLUME_DOCKER_ARG \
+        --entrypoint anvil \
+        $FOUNDRY_IMAGE \
+        $LOAD_STATE_ANVIL_ARG $DUMP_STATE_ANVIL_ARG --host 0.0.0.0 \
+        --fork-url $SEPOLIA_RPC \
+        --fork-block-number 2681910
+    sleep 2
+}

@@ -42,7 +42,7 @@ interface IIncredibleSquaringTaskManager {
 
     struct PriceUpdateTask {
         uint32 taskCreatedBlock;
-        bytes32 feedName;
+        string feedName;
     }
 
     struct PriceUpdateTaskResponse {
@@ -76,7 +76,7 @@ interface IIncredibleSquaringTaskManager {
         bytes calldata quorumNumbers
     ) external;
 
-    function requestPriceFeed(bytes32 feedName) external;
+    function requestPriceFeed(string memory feedName) external;
 
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
