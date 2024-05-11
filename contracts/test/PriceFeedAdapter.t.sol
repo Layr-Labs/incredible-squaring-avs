@@ -5,7 +5,7 @@
 
  
 
- import { PriceFeedAdapterV1 } from "../src/PriceFeedAdapter2.sol";
+ 
  import {PriceFeedAdapterV2 } from "../src/priceAdapter3.sol";
  //import { diaAdapter } from "../src/diaAdapter.sol";
 
@@ -14,32 +14,30 @@
 }
 
 
- contract PriceAdapterTest is Test{
+ contract PriceAdapterTest is Test {
     PriceFeedAdapterV2 internal priceFeedAdapter;
-   // diaAdapter internal diaFeed;
-    address immutable ORACLE = 0xa93546947f3015c986695750b8bbEa8e26D65856;
 
-     function setUp() public {
-         priceFeedAdapter = new PriceFeedAdapterV2();
-     //    diaFeed = new diaAdapter();
-     }
+    event TestValue(int value);
+    event TestValue2(uint128 value);
 
-     function testPriceInfo() public {
-        
-        priceFeedAdapter.getPriceDia("ETH/USD", 1715446929);
-    
+    // Define a constant address for the Chainlink feed; make sure this is correct and matches the network
+    address internal constant CHAINLINK_FEED_ADDRESS = address(0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43); // Sepolia BTC/USD
 
-        
+    function setUp() public {
+        priceFeedAdapter = new PriceFeedAdapterV2();
+        // Ensure that the symbol used in `addFeed` matches the one used in `getLatestPrice`
+        priceFeedAdapter.addFeed("BTC/USD", CHAINLINK_FEED_ADDRESS);
     }
 
-       /**
-    * @dev Test that the storage varibles in the sample contract are
-    * equal to values returned from DIAOracle 
-    * */
-    
+    function testFetchBtcUsdPrice() public {
+        // Fetch the BTC/USD price using the PriceFeedAdapter
+        int256 price = priceFeedAdapter.getLatestPrice("BTC/USD");
+         emit TestValue(price);
 
-     
+         uint128 diaPrice = priceFeedAdapter.getPriceDia("BTC/USD", 1715446929); // https://www.unixtimestamp.com/
+         emit TestValue2(diaPrice);
+        
 
-    
-  }
+    }
+}
 

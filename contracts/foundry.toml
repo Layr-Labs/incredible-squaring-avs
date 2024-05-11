@@ -11,6 +11,7 @@ remappings = [
     "@credible-squaring/=src/",
     "@openzeppelin/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts/",
     "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-upgradeable/",
+    "@chainlink/contracts/=lib/chainlink-brownie-contracts/contracts/",
     "forge-std/=lib/forge-std/src/"
 ]
 
