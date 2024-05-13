@@ -7,7 +7,7 @@ networks:
 
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry
+    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
     container_name: anvil
     ports:
       # opening the port so we can easily cast to anvil from localhost
@@ -19,6 +19,15 @@ services:
     command: --host 0.0.0.0 --load-state /root/.anvil/state.json
     networks:
       - incredible-squaring-network
+  
+  anvil-advance-chain-script:
+    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+    depends_on:
+      - anvil
+    entrypoint: cast
+    command: rpc anvil_mine 100 --rpc-url http://anvil:8545
+    networks:
+      - incredible-squaring-network
 
   aggregator:
     image: ghcr.io/layr-labs/incredible-squaring/aggregator/cmd/main.go:latest
@@ -26,6 +35,8 @@ services:
     depends_on:
       anvil:
         condition: service_started
+      anvil-advance-chain-script:
+        condition: service_completed_successfully
     volumes:
       - ./:/incredible-squaring/
     working_dir: /incredible-squaring
@@ -47,6 +58,8 @@ services:
         condition: service_started
       aggregator:
         condition: service_started
+      anvil-advance-chain-script:
+        condition: service_completed_successfully
     ports:
       - "9090:9090" # prometheus metrics port (defined in operator-docker-compose.anvil.yaml file)
     volumes:
@@ -69,50 +82,50 @@ services:
   #   networks:
   #     - incredible-squaring-network
 
-  # METRICS RELATED
-  grafana:
-    image: grafana/grafana:9.4.1
-    container_name: grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    environment:
-      # See https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
-      # and https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/
-      # They recommend using env vars instead of overwriting config.ini
-      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-    restart: unless-stopped
-    ports:
-      - 3000:3000
-    networks:
-      - incredible-squaring-network
+  # # METRICS RELATED
+  # grafana:
+  #   image: grafana/grafana:9.4.1
+  #   container_name: grafana
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./grafana/provisioning:/etc/grafana/provisioning
+  #   environment:
+  #     # See https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#override-configuration-with-environment-variables
+  #     # and https://grafana.com/docs/grafana/latest/setup-grafana/configure-docker/
+  #     # They recommend using env vars instead of overwriting config.ini
+  #     - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #   restart: unless-stopped
+  #   ports:
+  #     - 3000:3000
+  #   networks:
+  #     - incredible-squaring-network
 
-  prometheus:
-    image: prom/prometheus:v2.42.0
-    container_name: prometheus
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/etc/prometheus/console_libraries"
-      - "--web.console.templates=/etc/prometheus/consoles"
-      - "--storage.tsdb.retention.time=200h"
-      - "--web.enable-lifecycle"
-      - --web.enable-remote-write-receiver
-    restart: unless-stopped
-    expose:
-      - 9090
-    networks:
-      - incredible-squaring-network
-    # so that we can access the host from within the container
-    # needed to get the metrics from host.docker.internal:9184/metrics
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+  # prometheus:
+  #   image: prom/prometheus:v2.42.0
+  #   container_name: prometheus
+  #   volumes:
+  #     - ./prometheus:/etc/prometheus
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - "--config.file=/etc/prometheus/prometheus.yml"
+  #     - "--storage.tsdb.path=/prometheus"
+  #     - "--web.console.libraries=/etc/prometheus/console_libraries"
+  #     - "--web.console.templates=/etc/prometheus/consoles"
+  #     - "--storage.tsdb.retention.time=200h"
+  #     - "--web.enable-lifecycle"
+  #     - --web.enable-remote-write-receiver
+  #   restart: unless-stopped
+  #   expose:
+  #     - 9090
+  #   networks:
+  #     - incredible-squaring-network
+  #   # so that we can access the host from within the container
+  #   # needed to get the metrics from host.docker.internal:9184/metrics
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
 
-volumes:
-  prometheus_data: {}
-  grafana_data: {}
+# volumes:
+#   prometheus_data: {}
+#   grafana_data: {}
