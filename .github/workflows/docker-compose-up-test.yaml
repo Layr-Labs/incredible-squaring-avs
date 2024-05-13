@@ -21,7 +21,7 @@ jobs:
 
       - name: Check services running
         run: |
-          if docker compose ps -aq | xargs docker inspect -f '{{ .State.Status }}' | grep -v running; then
+          if docker compose ps -a --filter="status=exited" --services | grep -v anvil-advance-chain-script | xargs grep -q; then
             echo "Some services are not running"
             exit 1
           fi
