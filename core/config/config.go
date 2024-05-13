@@ -61,15 +61,31 @@ type IncredibleSquaringContractsRaw struct {
 	OperatorStateRetrieverAddr string `json:"operatorStateRetriever"`
 }
 
-// NewConfig parses config file to read from from flags or environment variables
+// NewConfig parses config file to read from flags or environment variables
 // Note: This config is shared by challenger and aggregator and so we put in the core.
 // Operator has a different config and is meant to be used by the operator CLI.
 func NewConfig(ctx *cli.Context) (*Config, error) {
 
 	var configRaw ConfigRaw
-	configFilePath := ctx.GlobalString(ConfigFileFlag.Name)
-	if configFilePath != "" {
-		sdkutils.ReadYamlConfig(configFilePath, &configRaw)
+
+	environment := ctx.GlobalString(EnvironmentFlag.Name)
+	if environment != "" {
+		configRaw.Environment = sdklogging.LogLevel(environment)
+	}
+
+	ethRpcUrl := ctx.GlobalString(EthRpcUrlFlag.Name)
+	if ethRpcUrl != "" {
+		configRaw.EthRpcUrl = ethRpcUrl
+	}
+
+	ethWsUrl := ctx.GlobalString(EthWsUrlFlag.Name)
+	if ethWsUrl != "" {
+		configRaw.EthWsUrl = ethWsUrl
+	}
+
+	aggregatorServerIpPortAddr := ctx.GlobalString(AggregatorServerIpPortAddressFlag.Name)
+	if aggregatorServerIpPortAddr != "" {
+		configRaw.AggregatorServerIpPortAddr = aggregatorServerIpPortAddr
 	}
 
 	var credibleSquaringDeploymentRaw IncredibleSquaringDeploymentRaw
@@ -164,6 +180,26 @@ var (
 		Required: true,
 		Usage:    "Load configuration from `FILE`",
 	}
+	EnvironmentFlag = cli.StringFlag{
+		Name:     "environment",
+		Required: true,
+		Usage:    "Set the environment (production or development)",
+	}
+	EthRpcUrlFlag = cli.StringFlag{
+		Name:     "eth-rpc-url",
+		Required: true,
+		Usage:    "Ethereum RPC URL",
+	}
+	EthWsUrlFlag = cli.StringFlag{
+		Name:     "eth-ws-url",
+		Required: true,
+		Usage:    "Ethereum WS URL",
+	}
+	AggregatorServerIpPortAddressFlag = cli.StringFlag{
+		Name:     "aggregator-server-ip-port-address",
+		Required: true,
+		Usage:    "Aggregator server IP PORT address",
+	}
 	CredibleSquaringDeploymentFileFlag = cli.StringFlag{
 		Name:     "credible-squaring-deployment",
 		Required: true,
@@ -179,7 +215,10 @@ var (
 )
 
 var requiredFlags = []cli.Flag{
-	ConfigFileFlag,
+	EnvironmentFlag,
+	EthRpcUrlFlag,
+	EthWsUrlFlag,
+	AggregatorServerIpPortAddressFlag,
 	CredibleSquaringDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
 }
