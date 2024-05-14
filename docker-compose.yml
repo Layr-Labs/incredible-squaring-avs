@@ -7,7 +7,7 @@ networks:
 
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry
+    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
     container_name: anvil
     ports:
       # opening the port so we can easily cast to anvil from localhost
@@ -19,6 +19,15 @@ services:
     command: --host 0.0.0.0 --load-state /root/.anvil/state.json
     networks:
       - incredible-squaring-network
+  
+  anvil-advance-chain-script:
+    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+    depends_on:
+      - anvil
+    entrypoint: cast
+    command: rpc anvil_mine 100 --rpc-url http://anvil:8545
+    networks:
+      - incredible-squaring-network
 
   aggregator:
     image: ghcr.io/layr-labs/incredible-squaring/aggregator/cmd/main.go:latest
@@ -26,6 +35,8 @@ services:
     depends_on:
       anvil:
         condition: service_started
+      anvil-advance-chain-script:
+        condition: service_completed_successfully
     volumes:
       - ./:/incredible-squaring/
     working_dir: /incredible-squaring
@@ -47,6 +58,8 @@ services:
         condition: service_started
       aggregator:
         condition: service_started
+      anvil-advance-chain-script:
+        condition: service_completed_successfully
     ports:
       - "9090:9090" # prometheus metrics port (defined in operator-docker-compose.anvil.yaml file)
     volumes:
