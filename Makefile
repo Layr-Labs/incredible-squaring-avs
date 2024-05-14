@@ -38,8 +38,8 @@ ___DOCKER___: ##
 docker-build-and-publish-images: ## builds and publishes operator and aggregator docker images using Ko
 	KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build aggregator/cmd/main.go --preserve-import-paths
 	KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build operator/cmd/main.go --preserve-import-paths
-docker-start-everything: docker-build-and-publish-images ## starts aggregator and operator docker containers
-	docker compose pull && docker compose up
+docker-compose-up: ## runs docker compose pull first and then up
+	docker compose pull && docker compose up -d
 
 __CLI__: ## 
 
