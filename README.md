@@ -14,6 +14,7 @@ curl -L https://foundry.paradigm.xyz | bash
 foundryup
 brew install ethereum
 brew install maoueh/tap/zap-pretty
+brew install jq
 ```
 You will also need to [install docker](https://docs.docker.com/get-docker/), and build the contracts:
 ```
