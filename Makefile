@@ -73,10 +73,8 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
+	set -a && source .env && set +a && \
 	go run aggregator/cmd/main.go --environment production \
-		--eth-rpc-url ${ETH_RPC_URL} \
-		--eth-ws-url ${ETH_WS_URL} \
-		--aggregator-server-ip-port-address ${AGGREGATOR_SERVER_IP_PORT_ADDRESS} \
 		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty

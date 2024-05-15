@@ -43,15 +43,6 @@ type Config struct {
 	AggregatorAddress common.Address
 }
 
-// These are read from ConfigFileFlag
-type ConfigRaw struct {
-	Environment                sdklogging.LogLevel `yaml:"environment"`
-	EthRpcUrl                  string              `yaml:"eth_rpc_url"`
-	EthWsUrl                   string              `yaml:"eth_ws_url"`
-	AggregatorServerIpPortAddr string              `yaml:"aggregator_server_ip_port_address"`
-	RegisterOperatorOnStartup  bool                `yaml:"register_operator_on_startup"`
-}
-
 // These are read from CredibleSquaringDeploymentFileFlag
 type IncredibleSquaringDeploymentRaw struct {
 	Addresses IncredibleSquaringContractsRaw `json:"addresses"`
@@ -65,28 +56,28 @@ type IncredibleSquaringContractsRaw struct {
 // Note: This config is shared by challenger and aggregator and so we put in the core.
 // Operator has a different config and is meant to be used by the operator CLI.
 func NewConfig(ctx *cli.Context) (*Config, error) {
-
-	var configRaw ConfigRaw
-
-	environment := ctx.GlobalString(EnvironmentFlag.Name)
-	if environment != "" {
-		configRaw.Environment = sdklogging.LogLevel(environment)
+	Environment := sdklogging.LogLevel(ctx.GlobalString(EnvironmentFlag.Name))
+	logger, err := sdklogging.NewZapLogger(Environment)
+	if err != nil {
+		return nil, err
 	}
 
-	ethRpcUrl := ctx.GlobalString(EthRpcUrlFlag.Name)
-	if ethRpcUrl != "" {
-		configRaw.EthRpcUrl = ethRpcUrl
+	EthRpcUrl := ctx.GlobalString(EthRpcUrlFlag.Name)
+	if EthRpcUrl == "" {
+		logger.Errorf("EthRpcUrl is required")
 	}
 
-	ethWsUrl := ctx.GlobalString(EthWsUrlFlag.Name)
-	if ethWsUrl != "" {
-		configRaw.EthWsUrl = ethWsUrl
+	EthWsUrl := ctx.GlobalString(EthWsUrlFlag.Name)
+	if EthWsUrl == "" {
+		logger.Errorf("EthWsUrl is required")
 	}
 
-	aggregatorServerIpPortAddr := ctx.GlobalString(AggregatorServerIpPortAddressFlag.Name)
-	if aggregatorServerIpPortAddr != "" {
-		configRaw.AggregatorServerIpPortAddr = aggregatorServerIpPortAddr
+	AggregatorServerIpPortAddr := ctx.GlobalString(AggregatorServerIpPortAddressFlag.Name)
+	if AggregatorServerIpPortAddr == "" {
+		logger.Errorf("AggregatorServerIpPortAddress is required")
 	}
+
+	RegisterOperatorOnStartup := true // default value
 
 	var credibleSquaringDeploymentRaw IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := ctx.GlobalString(CredibleSquaringDeploymentFileFlag.Name)
@@ -95,18 +86,13 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	}
 	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
-	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
-	if err != nil {
-		return nil, err
-	}
-
-	ethRpcClient, err := eth.NewClient(configRaw.EthRpcUrl)
+	ethRpcClient, err := eth.NewClient(EthRpcUrl)
 	if err != nil {
 		logger.Errorf("Cannot create http ethclient", "err", err)
 		return nil, err
 	}
 
-	ethWsClient, err := eth.NewClient(configRaw.EthWsUrl)
+	ethWsClient, err := eth.NewClient(EthWsUrl)
 	if err != nil {
 		logger.Errorf("Cannot create ws ethclient", "err", err)
 		return nil, err
@@ -147,14 +133,14 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	config := &Config{
 		EcdsaPrivateKey:            ecdsaPrivateKey,
 		Logger:                     logger,
-		EthWsRpcUrl:                configRaw.EthWsUrl,
-		EthHttpRpcUrl:              configRaw.EthRpcUrl,
+		EthWsRpcUrl:                EthWsUrl,
+		EthHttpRpcUrl:              EthRpcUrl,
 		EthHttpClient:              ethRpcClient,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
+		AggregatorServerIpPortAddr:                AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:                 RegisterOperatorOnStartup,
 		SignerFn:                                  signerV2,
 		TxMgr:                                     txMgr,
 		AggregatorAddress:                         aggregatorAddr,
@@ -180,26 +166,6 @@ var (
 		Required: true,
 		Usage:    "Load configuration from `FILE`",
 	}
-	EnvironmentFlag = cli.StringFlag{
-		Name:     "environment",
-		Required: true,
-		Usage:    "Set the environment (production or development)",
-	}
-	EthRpcUrlFlag = cli.StringFlag{
-		Name:     "eth-rpc-url",
-		Required: true,
-		Usage:    "Ethereum RPC URL",
-	}
-	EthWsUrlFlag = cli.StringFlag{
-		Name:     "eth-ws-url",
-		Required: true,
-		Usage:    "Ethereum WS URL",
-	}
-	AggregatorServerIpPortAddressFlag = cli.StringFlag{
-		Name:     "aggregator-server-ip-port-address",
-		Required: true,
-		Usage:    "Aggregator server IP PORT address",
-	}
 	CredibleSquaringDeploymentFileFlag = cli.StringFlag{
 		Name:     "credible-squaring-deployment",
 		Required: true,
@@ -212,18 +178,43 @@ var (
 		EnvVar:   "ECDSA_PRIVATE_KEY",
 	}
 	/* Optional Flags */
+	EnvironmentFlag = cli.StringFlag{
+		Name:     "environment",
+		Required: false,
+		Usage:    "Set the environment (production or development)",
+		Value:    "development", // default value
+	}
+	EthRpcUrlFlag = cli.StringFlag{
+		Name:     "eth-rpc-url",
+		Required: false,
+		Usage:    "Ethereum RPC URL",
+		EnvVar:   "ETH_RPC_URL",
+	}
+	EthWsUrlFlag = cli.StringFlag{
+		Name:     "eth-ws-url",
+		Required: false,
+		Usage:    "Ethereum WS URL",
+		EnvVar:   "ETH_WS_URL",
+	}
+	AggregatorServerIpPortAddressFlag = cli.StringFlag{
+		Name:     "aggregator-server-ip-port-address",
+		Required: false,
+		Usage:    "Aggregator server IP PORT address",
+		EnvVar:   "AGGREGATOR_SERVER_IP_PORT_ADDRESS",
+	}
 )
 
 var requiredFlags = []cli.Flag{
-	EnvironmentFlag,
-	EthRpcUrlFlag,
-	EthWsUrlFlag,
-	AggregatorServerIpPortAddressFlag,
 	CredibleSquaringDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
 }
 
-var optionalFlags = []cli.Flag{}
+var optionalFlags = []cli.Flag{
+	EnvironmentFlag,
+	EthRpcUrlFlag,
+	EthWsUrlFlag,
+	AggregatorServerIpPortAddressFlag,
+}
 
 func init() {
 	Flags = append(requiredFlags, optionalFlags...)
