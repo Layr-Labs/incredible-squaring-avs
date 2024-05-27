@@ -108,7 +108,7 @@ contract IncredibleSquaringTaskManager is
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
 
-        // check that the task is valid, hasn't been responsed yet, and is being responsed in time
+        // check that the task is valid, hasn't been responded yet, and is being responded in time
         require(
             keccak256(abi.encode(task)) ==
                 allTaskHashes[taskResponse.referenceTaskIndex],
@@ -140,7 +140,7 @@ contract IncredibleSquaringTaskManager is
                 nonSignerStakesAndSignature
             );
 
-        // check that signatories own at least a threshold percentage of each quourm
+        // check that signatories own at least a threshold percentage of each quorum
         for (uint i = 0; i < quorumNumbers.length; i++) {
             // we don't check that the quorumThresholdPercentages are not >100 because a greater value would trivially fail the check, implying
             // signed stake > total stake
@@ -157,7 +157,7 @@ contract IncredibleSquaringTaskManager is
             uint32(block.number),
             hashOfNonSigners
         );
-        // updating the storage with task responsea
+        // updating the storage with task responses
         allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(
             abi.encode(taskResponse, taskResponseMetadata)
         );
