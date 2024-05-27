@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -10,10 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	priceFeedAdapter "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/PriceFeedAdapter"
-	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -67,7 +66,20 @@ type Operator struct {
 	aggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	credibleSquaringServiceManagerAddr common.Address
-	priceFeedAdapter                   *priceFeedAdapter.ContractPriceFeedAdapter
+	// needed to fetch the price of assets on different on-chain oracle networks
+	priceFeedAdapter *priceFeedAdapter.ContractPriceFeedAdapter
+
+	priceFSM *PriceFSM
+}
+
+type PriceUpdateRequest struct {
+	FeedName  string
+	TaskId    uint32
+	LeaderUrl string
+}
+
+type PriceUpdateTaskResponse struct {
+	price *big.Int
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -219,6 +231,31 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 
+	// setup raft consensus client
+	consensusFSM := NewConcensusFSM(priceFeedClient, blsKeyPair)
+	consensusFSM.RaftBind = c.RaftBindingURI
+	consensusFSM.RaftDir = c.RaftDirectoryPath
+	consensusFSM.RaftHttpBind = c.HttpBindingURI
+
+	// initialize raft consensus
+	shouldBootstrapRaftNetwork := c.RaftJoinURI == ""
+	nodeId := c.OperatorAddress
+	consensusFSM.Initialize(shouldBootstrapRaftNetwork, nodeId)
+
+	// start http server with additional raft endpoints
+	h := NewService(c.HttpBindingURI, consensusFSM)
+	if err := h.Start(); err != nil {
+		logger.Error("failed to start HTTP service: %s", err.Error())
+	}
+
+	// If operator is joining an existing raft network make request to join
+	if !shouldBootstrapRaftNetwork {
+		logger.Info("Joining existing raft network")
+		if err := JoinExistingNetwork(c.RaftJoinURI, c.RaftBindingURI, nodeId); err != nil {
+			logger.Error("failed to join node at %s: %s", c.RaftJoinURI, err.Error())
+		}
+	}
+
 	operator := &Operator{
 		config:                             c,
 		logger:                             logger,
@@ -240,6 +277,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
 		priceFeedAdapter:                   priceFeedClient,
+		priceFSM:                           consensusFSM,
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -253,6 +291,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 	operator.operatorId = operatorId
+	operator.priceFSM.setOperatorId(operatorId)
 	logger.Info("Operator info",
 		"operatorId", operatorId,
 		"operatorAddr", c.OperatorAddress,
@@ -314,59 +353,39 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 }
 
-func (o *Operator) ProcessNewPriceUpdateCreatedLog(newPriceUpdateTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested) string {
-	o.logger.Debug("Received new price updated", "task", newPriceUpdateTaskCreatedLog)
-	o.logger.Info("Received new price updated task",
+func (o *Operator) ProcessNewPriceUpdateCreatedLog(newPriceUpdateTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested) error {
+	// If not leader ignore request
+	isLeader, _ := o.priceFSM.IsLeader()
+
+	if !isLeader {
+		o.logger.Info("Waiting for leader request for feed",
+			"feedName", string(newPriceUpdateTaskCreatedLog.Task.FeedName[:]),
+			"taskCreatedBlock", newPriceUpdateTaskCreatedLog.Task.TaskCreatedBlock,
+		)
+
+		return nil
+	}
+
+	o.logger.Info("Received new price updated task, sending request to followers",
 		"feedName", string(newPriceUpdateTaskCreatedLog.Task.FeedName[:]),
 		"taskCreatedBlock", newPriceUpdateTaskCreatedLog.Task.TaskCreatedBlock,
 	)
 
-	resolvedPrice, err := o.priceFeedAdapter.GetLatestPrice(&bind.CallOpts{}, string(newPriceUpdateTaskCreatedLog.Task.FeedName[:]))
+	data := &PriceUpdateRequest{
+		FeedName:  string(newPriceUpdateTaskCreatedLog.Task.FeedName[:]),
+		TaskId:    newPriceUpdateTaskCreatedLog.TaskIndex,
+		LeaderUrl: o.priceFSM.RaftHttpBind, // This is the url of the leader making the request
+	}
+
+	dataBytes, err := json.Marshal(data)
 
 	if err != nil {
-		o.logger.Error("Failed to fetch price", "err", err)
+		o.logger.Error("Failed to request task", "err", err)
 	}
 
-	o.logger.Info("Price fetched is ", "resolvedPrice", resolvedPrice)
+	// Leader sends request to follower operators
+	o.priceFSM.raft.Apply(dataBytes, raftTimeout)
 
-	// fetch prices from on-chain feed
-
-	// Return task response to either on-chain or off-chain aggregator
-
-	return ""
-}
-
-// Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
-// The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
-	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
-	o.logger.Info("Received new task",
-		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
-		"taskIndex", newTaskCreatedLog.TaskIndex,
-		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
-		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
-		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
-	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
-	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		NumberSquared:      numberSquared,
-	}
-	return taskResponse
-}
-
-func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
-	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
-	if err != nil {
-		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
-		return nil, err
-	}
-	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
-	signedTaskResponse := &aggregator.SignedTaskResponse{
-		TaskResponse: *taskResponse,
-		BlsSignature: *blsSignature,
-		OperatorId:   o.operatorId,
-	}
-	o.logger.Debug("Signed task response", "signedTaskResponse", signedTaskResponse)
-	return signedTaskResponse, nil
+	o.logger.Info("Task request sent to followers")
+	return err
 }

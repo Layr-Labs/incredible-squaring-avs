@@ -176,6 +176,11 @@ var (
 		EnvVar:   "ECDSA_PRIVATE_KEY",
 	}
 	/* Optional Flags */
+	GeneratedKeyFileName = cli.StringFlag{
+		Name:     "output-key-store-file-name",
+		Usage:    "Name of output keystore files",
+		Required: false,
+	}
 )
 
 var requiredFlags = []cli.Flag{
@@ -184,7 +189,9 @@ var requiredFlags = []cli.Flag{
 	EcdsaPrivateKeyFlag,
 }
 
-var optionalFlags = []cli.Flag{}
+var optionalFlags = []cli.Flag{
+	GeneratedKeyFileName,
+}
 
 func init() {
 	Flags = append(requiredFlags, optionalFlags...)

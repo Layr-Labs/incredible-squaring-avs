@@ -54,7 +54,6 @@ start_anvil_docker_with_fork() {
         --entrypoint anvil \
         $FOUNDRY_IMAGE \
         $LOAD_STATE_ANVIL_ARG $DUMP_STATE_ANVIL_ARG --host 0.0.0.0 \
-        --fork-url $SEPOLIA_RPC \
-        --fork-block-number 2681910
+        --fork-url $SEPOLIA_RPC
     sleep 2
 }

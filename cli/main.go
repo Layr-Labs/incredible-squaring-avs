@@ -57,6 +57,10 @@ func main() {
 			Aliases: []string{"s"},
 			Usage:   "prints operator status as viewed from incredible squaring contracts",
 			Action:  actions.PrintOperatorStatus,
+		}, {
+			Name:    "generate-operator-keys",
+			Aliases: []string{"g"},
+			Action:  actions.GenerateOperatorKeyStores,
 		},
 	}
 

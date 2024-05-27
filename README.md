@@ -40,17 +40,21 @@ make deploy-all-to-anvil-and-save-state && make bindings && make start-anvil-cha
 
 The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and incredible-squaring contracts already deployed (but no operator registered).
 
-Start the aggregator (this will take around a minute as it requires indexing over the entire block history):
+In order to have a consensus the raft protocol requires at least 3 nodes. So to run three operators run each of these commands in a seperate terminal:
 
 ```bash
-make start-aggregator
+make start-operator-1
+make start-operator-2
+make start-operator-3
 ```
 
-Register the operator with eigenlayer and incredible-squaring, and then start the process:
+Start the task generator server to generate a price update task every 10 seconds:
 
 ```bash
-make start-operator
+make start-task-generator
 ```
+
+
 
 > By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`.
 

@@ -18,4 +18,8 @@ type NodeConfig struct {
 	NodeApiIpPortAddress          string `yaml:"node_api_ip_port_address"`
 	EnableNodeApi                 bool   `yaml:"enable_node_api"`
 	PriceFeedAdapterAddress       string `yaml:"price_feed_adapter_address"`
+	RaftDirectoryPath             string `yaml:"raft_log_directory"`
+	RaftBindingURI                string `yaml:"operator_raft_uri"`
+	HttpBindingURI                string `yaml:"operator_http_uri"`
+	RaftJoinURI                   string `yaml:"raft_join_uri"`
 }

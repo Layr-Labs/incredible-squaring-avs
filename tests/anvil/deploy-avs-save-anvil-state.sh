@@ -42,3 +42,5 @@ mv $TMP_GENESIS_FILE $GENESIS_FILE
 
 # we also do this here to make sure the operator has funds to register with the eigenlayer contracts
 cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+cast send 0x21E325c4c1EA1E645716B0F072Aff3Dc8E6F41fB --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+cast send 0x0506F7466394f30074955856D32eA44058a1D908 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
