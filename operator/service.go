@@ -106,13 +106,22 @@ func (s *Service) handleJoin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http.Request) {
 
-	m := map[string]string{}
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+	var signedResponse SignedTaskResponse
+
+	if err := json.NewDecoder(r.Body).Decode(&signedResponse); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("Resolved body is %+v\n", m)
+	log.Printf("Resolved body is %+v\n", signedResponse)
+
+	/*
+		       1. Verify bls signature + ensure resolved address is a valid operator
+			   2. Cache the task submission locally via a map array (task id -> operator submission [])
+			   3. Check if submissions meet task quorom
+			   4. If quorom is meet sendAggregatedResponseTocontract()
+			   5. Elect new leader
+	*/
 
 	// First example just log response
 	// 1 - Verify senders bs signature + ensure operator processing is leader

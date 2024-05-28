@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 	"sync"
 	"time"
@@ -96,7 +95,9 @@ type PriceUpdateRequest struct {
 }
 
 type PriceUpdateTaskResponse struct {
-	price *big.Int
+	Price  uint64
+	Source string
+	TaskId uint32
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -368,6 +369,9 @@ func (o *Operator) Start(ctx context.Context) error {
 			if err != nil {
 				continue
 			}
+		case blsAggServiceResp := <-o.blsAggregationService.GetResponseChannel():
+			o.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
+			o.sendAggregatedTaskResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
 			err := o.sendNewTask()
 			if err != nil {
@@ -447,4 +451,8 @@ func (o *Operator) sendNewTask() error {
 	}
 	o.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
 	return nil
+}
+
+func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
+
 }

@@ -34,8 +34,8 @@ type priceUpdateCommand struct {
 }
 
 type SignedTaskResponse struct {
-	TaskResponse PriceUpdateTaskResponse
-	BlsSignature bls.Signature
+	TaskResponse []PriceUpdateTaskResponse
+	BlsSignature []bls.Signature
 	OperatorId   sdktypes.OperatorId
 }
 
@@ -216,7 +216,12 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 		return nil
 	}
 
-	response := PriceUpdateTaskResponse{price: resolvePrice}
+	response := []PriceUpdateTaskResponse{} // slice will automatically resize if needed
+
+	chainlinkResponse := PriceUpdateTaskResponse{Price: resolvePrice.Uint64(), Source: "chainlink", TaskId: request.TaskId}
+
+	f.logger.Printf("Chainlink response: %v", chainlinkResponse)
+	response = append(response, chainlinkResponse)
 
 	if err := f.SubmitTaskToLeader(request, response, request.LeaderUrl); err != nil {
 		f.logger.Printf("Failed to submit task response", "err", err)
@@ -225,16 +230,34 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 	return nil
 }
 
-func (f *fsm) SubmitTaskToLeader(request PriceUpdateRequest, response PriceUpdateTaskResponse, leaderUrl string) error {
+func (f *fsm) SubmitTaskToLeader(request PriceUpdateRequest, responses []PriceUpdateTaskResponse, leaderUrl string) error {
 
-	taskResponseHash, err := core.GetTaskResponseDigest(response.price)
-	if err != nil {
-		log.Printf("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
-		return err
+	responseSignatures := []bls.Signature{}
+	signedResponses := []PriceUpdateTaskResponse{}
+
+	// Iterate over every response and sign via bls signature
+	for i, response := range responses {
+		if response.Source == "" {
+			continue
+		}
+
+		f.logger.Printf("Submiting response %v for task %v\n", i, response.TaskId)
+		taskResponseHash, err := core.GetTaskResponseDigest(response.Price, response.Source, response.TaskId)
+		if err != nil {
+			log.Printf("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
+			return err
+		}
+		responseSignatures = append(responseSignatures, *f.blsKeypair.SignMessage(taskResponseHash))
+		signedResponses = append(signedResponses, response)
 	}
-	blsSignature := f.blsKeypair.SignMessage(taskResponseHash)
 
-	b, err := json.Marshal(map[string]string{"taskResponse": response.price.String(), "bls-signature": blsSignature.String(), "operatorId": f.operatorId.LogValue().String()})
+	signedTaskResponse := SignedTaskResponse{
+		TaskResponse: signedResponses,
+		BlsSignature: responseSignatures,
+		OperatorId:   f.operatorId,
+	}
+
+	b, err := json.Marshal(signedTaskResponse)
 	if err != nil {
 		return err
 	}
