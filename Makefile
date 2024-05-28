@@ -70,11 +70,6 @@ cli-generate-new-operator-keys:
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
-start-task-generator: ## 
-	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
-		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
-		2>&1 | zap-pretty
 
 start-operator-1: ## 
 	go run operator/cmd/main.go --config config-files/operator-1.anvil.yaml \
