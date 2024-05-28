@@ -501,4 +501,6 @@ func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg
 	if err != nil {
 		o.logger.Error("Aggregator failed to respond to task", "err", err)
 	}
+	// Elect new operator as leader
+	o.priceFSM.TriggerElection()
 }
