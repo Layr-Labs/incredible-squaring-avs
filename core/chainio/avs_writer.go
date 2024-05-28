@@ -109,7 +109,7 @@ func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncr
 		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
 	feedName := "btc/usdc"
-	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeedUpdate(txOpts, feedName, uint32(sdktypes.QuorumThresholdPercentage(67)), sdktypes.QuorumNums{0}.UnderlyingType(), uint8(1))
+	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeedUpdate(txOpts, feedName, uint32(sdktypes.QuorumThresholdPercentage(67)), sdktypes.QuorumNums{0}.UnderlyingType(), uint8(2))
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err

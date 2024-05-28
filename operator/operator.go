@@ -259,8 +259,10 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	nodeId := c.OperatorAddress
 	consensusFSM.Initialize(shouldBootstrapRaftNetwork, nodeId)
 
+	taskResponses := make(map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse)
 	// start http server with additional raft endpoints
-	h := NewService(c.HttpBindingURI, consensusFSM)
+	h := NewService(c.HttpBindingURI, consensusFSM, blsAggregationService, &taskResponses)
+	h.logger = logger
 	if err := h.Start(); err != nil {
 		logger.Error("failed to start HTTP service: %s", err.Error())
 	}
@@ -295,7 +297,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		priceFeedAdapter:                   priceFeedClient,
 		priceFSM:                           consensusFSM,
 		tasks:                              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask),
-		taskResponses:                      make(map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse),
+		taskResponses:                      taskResponses,
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -371,7 +373,7 @@ func (o *Operator) Start(ctx context.Context) error {
 				continue
 			}
 		case blsAggServiceResp := <-o.blsAggregationService.GetResponseChannel():
-			o.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
+			o.logger.Info("Received response from blsAggregationService")
 			o.sendAggregatedTaskResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
 			err := o.sendNewTask()
