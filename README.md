@@ -8,7 +8,7 @@
 
 ## Dependencies
 
-You will need [foundry](https://book.getfoundry.sh/getting-started/installation), [zap-pretty](https://github.com/maoueh/zap-pretty) and docker to run the examples below, and [geth](https://geth.ethereum.org/docs/getting-started/installing-geth)
+You will need [foundry](https://book.getfoundry.sh/getting-started/installation), [zap-pretty](https://github.com/maoueh/zap-pretty), golang, and docker to run the examples below, and [geth](https://geth.ethereum.org/docs/getting-started/installing-geth)
 ```
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
