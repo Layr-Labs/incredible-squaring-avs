@@ -26,7 +26,7 @@ type AvsWriterer interface {
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
-	SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, error)
+	SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error)
 	RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
@@ -34,11 +34,11 @@ type AvsWriterer interface {
 		taskResponseMetadata cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata,
 		pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
 	) (*types.Receipt, error)
-	SendAggregatedResponse(ctx context.Context,
-		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
-		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-	) (*types.Receipt, error)
+	// SendAggregatedResponse(ctx context.Context,
+	// 	task cstaskmanager.IIncredibleSquaringTaskManagerTask,
+	// 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
+	// 	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	// ) (*types.Receipt, error)
 }
 
 type AvsWriter struct {
@@ -102,53 +102,53 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, error) {
+func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
-		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
 	feedName := "btc/usdc"
-	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeed(txOpts, feedName)
+	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeedUpdate(txOpts, feedName, uint32(sdktypes.QuorumThresholdPercentage(67)), sdktypes.QuorumNums{0}.UnderlyingType(), uint8(1))
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
-		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
 	receipt, err := w.TxMgr.Send(ctx, tx)
 	if err != nil {
 		w.logger.Errorf("Error submitting CreateNewTask tx")
-		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
 	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractIncredibleSquaringTaskManagerFilterer.ParsePriceUpdateRequested(*receipt.Logs[0])
 	if err != nil {
 		w.logger.Error("Aggregator failed to parse new task created event", "err", err)
-		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, err
+		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
-	return newTaskCreatedEvent.Task, nil
+	return newTaskCreatedEvent.Task, newTaskCreatedEvent.TaskIndex, nil
 }
 
-func (w *AvsWriter) SendAggregatedResponse(
-	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
-	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-) (*types.Receipt, error) {
-	txOpts, err := w.TxMgr.GetNoSendTxOpts()
-	if err != nil {
-		w.logger.Errorf("Error getting tx opts")
-		return nil, err
-	}
-	tx, err := w.AvsContractBindings.TaskManager.RespondToTask(txOpts, task, taskResponse, nonSignerStakesAndSignature)
-	if err != nil {
-		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
-		return nil, err
-	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
-	if err != nil {
-		w.logger.Errorf("Error submitting respondToTask tx")
-		return nil, err
-	}
-	return receipt, nil
-}
+// func (w *AvsWriter) SendAggregatedResponse(
+// 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
+// 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
+// 	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+// ) (*types.Receipt, error) {
+// 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+// 	if err != nil {
+// 		w.logger.Errorf("Error getting tx opts")
+// 		return nil, err
+// 	}
+// 	tx, err := w.AvsContractBindings.TaskManager.RespondToTask(txOpts, task, taskResponse, nonSignerStakesAndSignature)
+// 	if err != nil {
+// 		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
+// 		return nil, err
+// 	}
+// 	receipt, err := w.TxMgr.Send(ctx, tx)
+// 	if err != nil {
+// 		w.logger.Errorf("Error submitting respondToTask tx")
+// 		return nil, err
+// 	}
+// 	return receipt, nil
+// }
 
 func (w *AvsWriter) RaiseChallenge(
 	ctx context.Context,

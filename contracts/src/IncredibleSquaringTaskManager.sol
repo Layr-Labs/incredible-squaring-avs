@@ -101,10 +101,19 @@ contract IncredibleSquaringTaskManager is
         latestTaskNum = latestTaskNum + 1;
     }
 
-    function requestPriceFeed(string memory feedName) external {
+    // Add onlyOperator modifier
+    function requestPriceFeedUpdate(
+        string memory feedName,
+        uint32 quorumThresholdPercentage,
+        bytes calldata quorumNumbers,
+        uint8 minNumOfOracleNetworks
+    ) external {
         PriceUpdateTask memory task;
         task.taskCreatedBlock = uint32(block.number);
         task.feedName = feedName;
+        task.quorumNumbers = quorumNumbers;
+        task.quorumThresholdPercentage = quorumThresholdPercentage;
+        task.minNumOfOracleNetworks = minNumOfOracleNetworks;
 
         // store hash of task onchain, emit event, and increase taskNum
         allTaskHashes[latestTaskNum] = keccak256(abi.encode(task));
@@ -114,70 +123,70 @@ contract IncredibleSquaringTaskManager is
 
     // NOTE: this function responds to existing tasks.
     function respondToTask(
-        Task calldata task,
-        TaskResponse calldata taskResponse,
+        PriceUpdateTask calldata task,
+        PriceUpdateTaskResponse calldata taskResponse,
         NonSignerStakesAndSignature memory nonSignerStakesAndSignature
     ) external onlyAggregator {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
 
-        // check that the task is valid, hasn't been responsed yet, and is being responsed in time
-        require(
-            keccak256(abi.encode(task)) ==
-                allTaskHashes[taskResponse.referenceTaskIndex],
-            "supplied task does not match the one recorded in the contract"
-        );
-        // some logical checks
-        require(
-            allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0),
-            "Aggregator has already responded to the task"
-        );
-        require(
-            uint32(block.number) <=
-                taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
-            "Aggregator has responded to the task too late"
-        );
+        // // check that the task is valid, hasn't been responsed yet, and is being responsed in time
+        // require(
+        //     keccak256(abi.encode(task)) ==
+        //         allTaskHashes[taskResponse.referenceTaskIndex],
+        //     "supplied task does not match the one recorded in the contract"
+        // );
+        // // some logical checks
+        // require(
+        //     allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0),
+        //     "Aggregator has already responded to the task"
+        // );
+        // require(
+        //     uint32(block.number) <=
+        //         taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
+        //     "Aggregator has responded to the task too late"
+        // );
 
-        /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
-        // calculate message which operators signed
-        bytes32 message = keccak256(abi.encode(taskResponse));
+        // /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
+        // // calculate message which operators signed
+        // bytes32 message = keccak256(abi.encode(taskResponse));
 
-        // check the BLS signature
-        (
-            QuorumStakeTotals memory quorumStakeTotals,
-            bytes32 hashOfNonSigners
-        ) = checkSignatures(
-                message,
-                quorumNumbers,
-                taskCreatedBlock,
-                nonSignerStakesAndSignature
-            );
+        // // check the BLS signature
+        // (
+        //     QuorumStakeTotals memory quorumStakeTotals,
+        //     bytes32 hashOfNonSigners
+        // ) = checkSignatures(
+        //         message,
+        //         quorumNumbers,
+        //         taskCreatedBlock,
+        //         nonSignerStakesAndSignature
+        //     );
 
-        // check that signatories own at least a threshold percentage of each quourm
-        for (uint i = 0; i < quorumNumbers.length; i++) {
-            // we don't check that the quorumThresholdPercentages are not >100 because a greater value would trivially fail the check, implying
-            // signed stake > total stake
-            require(
-                quorumStakeTotals.signedStakeForQuorum[i] *
-                    _THRESHOLD_DENOMINATOR >=
-                    quorumStakeTotals.totalStakeForQuorum[i] *
-                        uint8(quorumThresholdPercentage),
-                "Signatories do not own at least threshold percentage of a quorum"
-            );
-        }
+        // // check that signatories own at least a threshold percentage of each quourm
+        // for (uint i = 0; i < quorumNumbers.length; i++) {
+        //     // we don't check that the quorumThresholdPercentages are not >100 because a greater value would trivially fail the check, implying
+        //     // signed stake > total stake
+        //     require(
+        //         quorumStakeTotals.signedStakeForQuorum[i] *
+        //             _THRESHOLD_DENOMINATOR >=
+        //             quorumStakeTotals.totalStakeForQuorum[i] *
+        //                 uint8(quorumThresholdPercentage),
+        //         "Signatories do not own at least threshold percentage of a quorum"
+        //     );
+        // }
 
-        TaskResponseMetadata memory taskResponseMetadata = TaskResponseMetadata(
-            uint32(block.number),
-            hashOfNonSigners
-        );
-        // updating the storage with task responsea
-        allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(
-            abi.encode(taskResponse, taskResponseMetadata)
-        );
+        // TaskResponseMetadata memory taskResponseMetadata = TaskResponseMetadata(
+        //     uint32(block.number),
+        //     hashOfNonSigners
+        // );
+        // // updating the storage with task responsea
+        // allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(
+        //     abi.encode(taskResponse, taskResponseMetadata)
+        // );
 
-        // emitting event
-        emit TaskResponded(taskResponse, taskResponseMetadata);
+        // // emitting event
+        // emit TaskResponded(taskResponse, taskResponseMetadata);
     }
 
     function taskNumber() external view returns (uint32) {
