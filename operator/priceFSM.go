@@ -203,19 +203,12 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 		return nil // No need to replay previous logs
 	}
 
-	leaderURL, _ := f.raft.LeaderWithID()
-	isLeader := string(leaderURL) == f.RaftBind
-
-	if isLeader {
-		// Leader doesn't submit to themselves
-		return nil
-	}
-
 	var request PriceUpdateRequest
 	if err := json.Unmarshal(l.Data, &request); err != nil {
 		panic(fmt.Sprintf("failed to unmarshal command: %s", err.Error()))
 	}
 
+	// Fetch chainlink price
 	resolvePrice, err := f.priceFeedAdapter.GetLatestPrice(&bind.CallOpts{}, request.FeedName)
 
 	if err != nil {
