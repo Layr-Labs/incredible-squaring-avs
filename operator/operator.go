@@ -14,6 +14,7 @@ import (
 
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	priceFeedAdapter "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/PriceFeedAdapter"
+	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -454,5 +455,48 @@ func (o *Operator) sendNewTask() error {
 }
 
 func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
+	// If not leader ignore request
+	isLeader, _ := o.priceFSM.IsLeader()
 
+	if !isLeader {
+		return // Only leader create task
+	}
+
+	if blsAggServiceResp.Err != nil {
+		o.logger.Error("BlsAggregationServiceResponse contains an error", "err", blsAggServiceResp.Err)
+		// panicing to help with debugging (fail fast), but we shouldn't panic if we run this in production
+		panic(blsAggServiceResp.Err)
+	}
+	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
+	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
+		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
+	}
+	quorumApks := []cstaskmanager.BN254G1Point{}
+	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
+		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
+	}
+	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature{
+		NonSignerPubkeys:             nonSignerPubkeys,
+		QuorumApks:                   quorumApks,
+		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),
+		Sigma:                        core.ConvertToBN254G1Point(blsAggServiceResp.SignersAggSigG1.G1Point),
+		NonSignerQuorumBitmapIndices: blsAggServiceResp.NonSignerQuorumBitmapIndices,
+		QuorumApkIndices:             blsAggServiceResp.QuorumApkIndices,
+		TotalStakeIndices:            blsAggServiceResp.TotalStakeIndices,
+		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
+	}
+
+	o.logger.Info("Threshold reached. Sending aggregated response onchain.",
+		"taskIndex", blsAggServiceResp.TaskIndex,
+	)
+	o.tasksMu.RLock()
+	task := o.tasks[blsAggServiceResp.TaskIndex]
+	o.tasksMu.RUnlock()
+	o.taskResponsesMu.RLock()
+	taskResponse := o.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
+	o.taskResponsesMu.RUnlock()
+	_, err := o.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
+	if err != nil {
+		o.logger.Error("Aggregator failed to respond to task", "err", err)
+	}
 }

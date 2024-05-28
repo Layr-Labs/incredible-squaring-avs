@@ -34,11 +34,11 @@ type AvsWriterer interface {
 		taskResponseMetadata cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata,
 		pubkeysOfNonSigningOperators []cstaskmanager.BN254G1Point,
 	) (*types.Receipt, error)
-	// SendAggregatedResponse(ctx context.Context,
-	// 	task cstaskmanager.IIncredibleSquaringTaskManagerTask,
-	// 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-	// 	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-	// ) (*types.Receipt, error)
+	SendAggregatedResponse(ctx context.Context,
+		task cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask,
+		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse,
+		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	) (*types.Receipt, error)
 }
 
 type AvsWriter struct {
@@ -127,28 +127,28 @@ func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncr
 	return newTaskCreatedEvent.Task, newTaskCreatedEvent.TaskIndex, nil
 }
 
-// func (w *AvsWriter) SendAggregatedResponse(
-// 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
-// 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-// 	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-// ) (*types.Receipt, error) {
-// 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
-// 	if err != nil {
-// 		w.logger.Errorf("Error getting tx opts")
-// 		return nil, err
-// 	}
-// 	tx, err := w.AvsContractBindings.TaskManager.RespondToTask(txOpts, task, taskResponse, nonSignerStakesAndSignature)
-// 	if err != nil {
-// 		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
-// 		return nil, err
-// 	}
-// 	receipt, err := w.TxMgr.Send(ctx, tx)
-// 	if err != nil {
-// 		w.logger.Errorf("Error submitting respondToTask tx")
-// 		return nil, err
-// 	}
-// 	return receipt, nil
-// }
+func (w *AvsWriter) SendAggregatedResponse(
+	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask,
+	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse,
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+) (*types.Receipt, error) {
+	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		w.logger.Errorf("Error getting tx opts")
+		return nil, err
+	}
+	tx, err := w.AvsContractBindings.TaskManager.RespondToTask(txOpts, task, taskResponse, nonSignerStakesAndSignature)
+	if err != nil {
+		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
+		return nil, err
+	}
+	receipt, err := w.TxMgr.Send(ctx, tx)
+	if err != nil {
+		w.logger.Errorf("Error submitting respondToTask tx")
+		return nil, err
+	}
+	return receipt, nil
+}
 
 func (w *AvsWriter) RaiseChallenge(
 	ctx context.Context,
