@@ -124,78 +124,15 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
 	// see https://github.com/golang/go/issues/17601
-	_ = agg.sendPriceUpdateTask()
 	taskNum++
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
+		}
 		// case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
 		// 	agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 		// 	agg.sendAggregatedResponseToContract(blsAggServiceResp)
-		case <-ticker.C:
-			err := agg.sendPriceUpdateTask()
-			taskNum++
-			if err != nil {
-				// we log the errors inside sendNewTask() so here we just continue to the next task
-				continue
-			}
-		}
 	}
-}
-
-// func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
-// 	// TODO: check if blsAggServiceResp contains an err
-// 	if blsAggServiceResp.Err != nil {
-// 		agg.logger.Error("BlsAggregationServiceResponse contains an error", "err", blsAggServiceResp.Err)
-// 		// panicing to help with debugging (fail fast), but we shouldn't panic if we run this in production
-// 		panic(blsAggServiceResp.Err)
-// 	}
-// 	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
-// 	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
-// 		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
-// 	}
-// 	quorumApks := []cstaskmanager.BN254G1Point{}
-// 	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
-// 		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
-// 	}
-// 	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature{
-// 		NonSignerPubkeys:             nonSignerPubkeys,
-// 		QuorumApks:                   quorumApks,
-// 		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),
-// 		Sigma:                        core.ConvertToBN254G1Point(blsAggServiceResp.SignersAggSigG1.G1Point),
-// 		NonSignerQuorumBitmapIndices: blsAggServiceResp.NonSignerQuorumBitmapIndices,
-// 		QuorumApkIndices:             blsAggServiceResp.QuorumApkIndices,
-// 		TotalStakeIndices:            blsAggServiceResp.TotalStakeIndices,
-// 		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
-// 	}
-
-// 	agg.logger.Info("Threshold reached. Sending aggregated response onchain.",
-// 		"taskIndex", blsAggServiceResp.TaskIndex,
-// 	)
-// 	agg.tasksMu.RLock()
-// 	task := agg.tasks[blsAggServiceResp.TaskIndex]
-// 	agg.tasksMu.RUnlock()
-// 	agg.taskResponsesMu.RLock()
-// 	taskResponse := agg.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
-// 	agg.taskResponsesMu.RUnlock()
-// 	_, err := agg.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
-// 	if err != nil {
-// 		agg.logger.Error("Aggregator failed to respond to task", "err", err)
-// 	}
-// }
-
-// sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
-// with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendPriceUpdateTask() error {
-	agg.logger.Info("Aggregator sending new price update task")
-	// Send request for a  price feed updated
-	_, err := agg.avsWriter.SendNewPriceUpdate(context.Background())
-	if err != nil {
-		agg.logger.Error("Aggregator failed to send number to square", "err", err)
-		return err
-	}
-
-	return nil
 }
