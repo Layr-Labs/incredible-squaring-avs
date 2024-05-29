@@ -1,4 +1,4 @@
-package types
+package operator
 
 import (
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
@@ -6,14 +6,12 @@ import (
 )
 
 // all operators in quorum0 must sign the task response in order for it to be accepted
-// TODO: our contracts require uint8 but right now sdktypes.QuorumThresholdPercentage is uint8
-//       prob need to update our inc-sq contracts to use uint8 as well?
 const QUORUM_THRESHOLD_NUMERATOR = sdktypes.QuorumThresholdPercentage(100)
 const QUORUM_THRESHOLD_DENOMINATOR = sdktypes.QuorumThresholdPercentage(100)
 
 const QUERY_FILTER_FROM_BLOCK = uint64(1)
 
-// we only use a single quorum (quorum 0) for incredible squaring
+// we only use a single quorum (quorum 0) for the price oracle AVS
 var QUORUM_NUMBERS = sdktypes.QuorumNums{0}
 
 type BlockNumber = uint32

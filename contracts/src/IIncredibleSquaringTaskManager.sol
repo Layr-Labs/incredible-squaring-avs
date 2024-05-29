@@ -43,11 +43,15 @@ interface IIncredibleSquaringTaskManager {
     struct PriceUpdateTask {
         uint32 taskCreatedBlock;
         string feedName;
+        bytes quorumNumbers;
+        uint32 quorumThresholdPercentage;
+        uint8 minNumOfOracleNetworks;
     }
 
     struct PriceUpdateTaskResponse {
         uint32 price;
         uint32 decimals;
+        string[] sources;
     }
 
     // Task response is hashed and signed by operators.
@@ -76,7 +80,12 @@ interface IIncredibleSquaringTaskManager {
         bytes calldata quorumNumbers
     ) external;
 
-    function requestPriceFeed(string memory feedName) external;
+    function requestPriceFeedUpdate(
+        string memory feedName,
+        uint32 quorumThresholdPercentage,
+        bytes calldata quorumNumbers,
+        uint8 minNumOfOracleNetworks
+    ) external;
 
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);

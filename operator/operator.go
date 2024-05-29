@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +14,7 @@ import (
 
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	priceFeedAdapter "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/PriceFeedAdapter"
+	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -30,12 +32,22 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
 	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
 	"github.com/Layr-Labs/eigensdk-go/nodeapi"
+	"github.com/Layr-Labs/eigensdk-go/services/avsregistry"
+	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
+	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
-const AVS_NAME = "incredible-squaring"
-const SEM_VER = "0.0.1"
+const (
+	// number of blocks after which a task is considered expired
+	// this hardcoded here because it's also hardcoded in the contracts, but should
+	// ideally be fetched from the contracts
+	taskChallengeWindowBlock = 100
+	blockTimeSeconds         = 12 * time.Second
+	AVS_NAME                 = "incredible-squaring"
+	SEM_VER                  = "0.0.1"
+)
 
 type Operator struct {
 	config    types.NodeConfig
@@ -60,12 +72,17 @@ type Operator struct {
 	// receive new tasks in this chan (typically from listening to onchain event)
 	newTaskCreatedChan            chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 	newPriceUpdateTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested
-	// ip address of aggregator
-	aggregatorServerIpPortAddr string
-	// rpc client to send signed task responses to aggregator
-	aggregatorRpcClient AggregatorRpcClienter
+
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	credibleSquaringServiceManagerAddr common.Address
+
+	// aggregation related fields
+	blsAggregationService blsagg.BlsAggregationService
+	tasks                 map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask
+	tasksMu               sync.RWMutex
+	taskResponses         map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse
+	taskResponsesMu       sync.RWMutex
+
 	// needed to fetch the price of assets on different on-chain oracle networks
 	priceFeedAdapter *priceFeedAdapter.ContractPriceFeedAdapter
 
@@ -79,7 +96,9 @@ type PriceUpdateRequest struct {
 }
 
 type PriceUpdateTaskResponse struct {
-	price *big.Int
+	Price  uint64
+	Source string
+	TaskId uint32
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -219,11 +238,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		AVS_NAME, logger, common.HexToAddress(c.OperatorAddress), quorumNames)
 	reg.MustRegister(economicMetricsCollector)
 
-	aggregatorRpcClient, err := NewAggregatorRpcClient(c.AggregatorServerIpPortAddress, logger, avsAndEigenMetrics)
-	if err != nil {
-		logger.Error("Cannot create AggregatorRpcClient. Is aggregator running?", "err", err)
-		return nil, err
-	}
+	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(context.Background(), sdkClients.AvsRegistryChainSubscriber, sdkClients.AvsRegistryChainReader, logger)
+	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, operatorPubkeysService, logger)
+	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, logger)
 
 	priceFeedClient, err := priceFeedAdapter.NewContractPriceFeedAdapter(common.HexToAddress(c.PriceFeedAdapterAddress), ethRpcClient)
 	if err != nil {
@@ -242,8 +259,10 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	nodeId := c.OperatorAddress
 	consensusFSM.Initialize(shouldBootstrapRaftNetwork, nodeId)
 
+	taskResponses := make(map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse)
 	// start http server with additional raft endpoints
-	h := NewService(c.HttpBindingURI, consensusFSM)
+	h := NewService(c.HttpBindingURI, consensusFSM, blsAggregationService, &taskResponses)
+	h.logger = logger
 	if err := h.Start(); err != nil {
 		logger.Error("failed to start HTTP service: %s", err.Error())
 	}
@@ -269,15 +288,16 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		eigenlayerReader:                   sdkClients.ElChainReader,
 		eigenlayerWriter:                   sdkClients.ElChainWriter,
 		blsKeypair:                         blsKeyPair,
+		blsAggregationService:              blsAggregationService,
 		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
-		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
-		aggregatorRpcClient:                aggregatorRpcClient,
 		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 		newPriceUpdateTaskCreatedChan:      make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerPriceUpdateRequested),
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
 		priceFeedAdapter:                   priceFeedClient,
 		priceFSM:                           consensusFSM,
+		tasks:                              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask),
+		taskResponses:                      taskResponses,
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -327,6 +347,9 @@ func (o *Operator) Start(ctx context.Context) error {
 		metricsErrChan = make(chan error, 1)
 	}
 
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
 	// TODO(samlaf): wrap this call with increase in avs-node-spec metric
 	sub := o.avsSubscriber.SubscribeToNewPriceUpdateTask(o.newPriceUpdateTaskCreatedChan)
 	for {
@@ -346,6 +369,14 @@ func (o *Operator) Start(ctx context.Context) error {
 		case newPriceUpdateTaskCreatedLog := <-o.newPriceUpdateTaskCreatedChan:
 			o.metrics.IncNumTasksReceived()
 			o.ProcessNewPriceUpdateCreatedLog(newPriceUpdateTaskCreatedLog)
+			if err != nil {
+				continue
+			}
+		case blsAggServiceResp := <-o.blsAggregationService.GetResponseChannel():
+			o.logger.Info("Received response from blsAggregationService")
+			o.sendAggregatedTaskResponseToContract(blsAggServiceResp)
+		case <-ticker.C:
+			err := o.sendNewTask()
 			if err != nil {
 				continue
 			}
@@ -388,4 +419,88 @@ func (o *Operator) ProcessNewPriceUpdateCreatedLog(newPriceUpdateTaskCreatedLog 
 
 	o.logger.Info("Task request sent to followers")
 	return err
+}
+
+func (o *Operator) sendNewTask() error {
+	// If not leader ignore request
+	isLeader, _ := o.priceFSM.IsLeader()
+
+	if !isLeader {
+		return nil // Only leader create task
+	}
+
+	o.logger.Info("Sending new task")
+	// Send number to square to the task manager contract
+	newTask, taskIndex, err := o.avsWriter.SendNewPriceUpdate(context.Background())
+	if err != nil {
+		o.logger.Error("Aggregator failed to send number to square", "err", err)
+		return err
+	}
+
+	o.tasksMu.Lock()
+	o.tasks[taskIndex] = newTask
+	o.tasksMu.Unlock()
+
+	quorumThresholdPercentages := make(sdktypes.QuorumThresholdPercentages, len(newTask.QuorumNumbers))
+	for i := range newTask.QuorumNumbers {
+		quorumThresholdPercentages[i] = sdktypes.QuorumThresholdPercentage(newTask.QuorumThresholdPercentage)
+	}
+	// TODO(samlaf): we use seconds for now, but we should ideally pass a blocknumber to the blsAggregationService
+	// and it should monitor the chain and only expire the task aggregation once the chain has reached that block number.
+	taskTimeToExpiry := taskChallengeWindowBlock * blockTimeSeconds
+	var quorumNums sdktypes.QuorumNums
+	for _, quorumNum := range newTask.QuorumNumbers {
+		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
+	}
+	o.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
+	return nil
+}
+
+func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
+	// If not leader ignore request
+	isLeader, _ := o.priceFSM.IsLeader()
+
+	if !isLeader {
+		return // Only leader create task
+	}
+
+	if blsAggServiceResp.Err != nil {
+		o.logger.Error("BlsAggregationServiceResponse contains an error", "err", blsAggServiceResp.Err)
+		// panicing to help with debugging (fail fast), but we shouldn't panic if we run this in production
+		panic(blsAggServiceResp.Err)
+	}
+	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
+	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
+		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
+	}
+	quorumApks := []cstaskmanager.BN254G1Point{}
+	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
+		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
+	}
+	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature{
+		NonSignerPubkeys:             nonSignerPubkeys,
+		QuorumApks:                   quorumApks,
+		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),
+		Sigma:                        core.ConvertToBN254G1Point(blsAggServiceResp.SignersAggSigG1.G1Point),
+		NonSignerQuorumBitmapIndices: blsAggServiceResp.NonSignerQuorumBitmapIndices,
+		QuorumApkIndices:             blsAggServiceResp.QuorumApkIndices,
+		TotalStakeIndices:            blsAggServiceResp.TotalStakeIndices,
+		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
+	}
+
+	o.logger.Info("Threshold reached. Sending aggregated response onchain.",
+		"taskIndex", blsAggServiceResp.TaskIndex,
+	)
+	o.tasksMu.RLock()
+	task := o.tasks[blsAggServiceResp.TaskIndex]
+	o.tasksMu.RUnlock()
+	o.taskResponsesMu.RLock()
+	taskResponse := o.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
+	o.taskResponsesMu.RUnlock()
+	_, err := o.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
+	if err != nil {
+		o.logger.Error("Aggregator failed to respond to task", "err", err)
+	}
+	// Elect new operator as leader
+	o.priceFSM.TriggerElection()
 }

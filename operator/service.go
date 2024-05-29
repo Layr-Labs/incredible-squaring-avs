@@ -3,10 +3,18 @@
 package operator
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net"
 	"net/http"
+	"sync"
+
+	"github.com/Layr-Labs/eigensdk-go/logging"
+	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
+	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	"github.com/Layr-Labs/incredible-squaring-avs/core"
 )
 
 type IPriceFSM interface {
@@ -15,18 +23,23 @@ type IPriceFSM interface {
 }
 
 type Service struct {
-	addr            string
-	ln              net.Listener
-	taskSubmissions map[string]int
-
-	priceFSM IPriceFSM
+	addr                  string
+	ln                    net.Listener
+	taskSubmissions       map[string]int
+	logger                logging.Logger
+	priceFSM              IPriceFSM
+	taskResponsesMu       sync.RWMutex
+	taskResponses         *map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse
+	blsAggregationService blsagg.BlsAggregationService
 }
 
 // New returns an uninitialized HTTP service.
-func NewService(addr string, priceFSM IPriceFSM) *Service {
+func NewService(addr string, priceFSM IPriceFSM, blsAggregationService blsagg.BlsAggregationService, taskResponses *map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse) *Service {
 	return &Service{
-		addr:     addr,
-		priceFSM: priceFSM,
+		addr:                  addr,
+		priceFSM:              priceFSM,
+		taskResponses:         taskResponses,
+		blsAggregationService: blsAggregationService,
 	}
 }
 
@@ -106,18 +119,50 @@ func (s *Service) handleJoin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http.Request) {
 
-	m := map[string]string{}
-	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+	var signedResponse SignedTaskResponse
+
+	if err := json.NewDecoder(r.Body).Decode(&signedResponse); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("Resolved body is %+v\n", m)
+	// 1 - Verify price between submitted sources if within threshold
+	// 2 - Verify price between this submission and last submission is within threshold
 
-	// First example just log response
-	// 1 - Verify senders bs signature + ensure operator processing is leader
-	// 2 - Verify price submissions fall within error range
-	// 3 - If this task has reached qurom submit it on-chain and trigger a new leader election
+	// Submit each price feed source seperatly
+	s.logger.Info("Preparing to submit bls signatures")
+	for i, task := range signedResponse.TaskResponse {
+		taskIndex := task.TaskId
+		signature := signedResponse.BlsSignature[i]
+		taskResponseDigest, err := core.GetTaskResponseDigest(task.Price, task.Source, task.TaskId)
+		if err != nil {
+			s.logger.Error("Failed to get task response digest", "err", err)
+			w.WriteHeader(http.StatusBadGateway)
+		}
+		s.taskResponsesMu.Lock()
+
+		if _, ok := (*s.taskResponses)[taskIndex]; !ok {
+			(*s.taskResponses)[taskIndex] = make(map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse)
+		}
+		if _, ok := (*s.taskResponses)[taskIndex][taskResponseDigest]; !ok {
+			(*s.taskResponses)[taskIndex][taskResponseDigest] = cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse{
+				Price:    uint32(task.Price),
+				Decimals: 18,
+				Sources:  []string{task.Source},
+			}
+		}
+		s.taskResponsesMu.Unlock()
+
+		err = s.blsAggregationService.ProcessNewSignature(
+			context.Background(), taskIndex, taskResponseDigest,
+			&signature, signedResponse.OperatorId,
+		)
+
+		s.logger.Info("Submitted bls signature to aggregation service",
+			"taskId", task.TaskId,
+			"operatorId", signedResponse.OperatorId.LogValue().String(),
+		)
+	}
 }
 
 func (s *Service) handleVerify(w http.ResponseWriter, r *http.Request) {

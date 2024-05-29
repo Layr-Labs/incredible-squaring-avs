@@ -10,18 +10,28 @@ import (
 )
 
 type PriceUpdateTaskResponse struct {
-	Price *big.Int
+	Price  uint64
+	Source string
+	TaskId uint32
 }
 
 // this hardcodes abi.encode() for cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
 // unclear why abigen doesn't provide this out of the box...
-func AbiEncodeTaskResponse(price *big.Int) ([]byte, error) {
-	priceUpdate := &PriceUpdateTaskResponse{Price: price}
+func AbiEncodeTaskResponse(price uint64, source string, taskId uint32) ([]byte, error) {
+	priceUpdate := &PriceUpdateTaskResponse{Price: price, Source: source, TaskId: taskId}
 	// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
 	taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
 		{
 			Name: "price",
-			Type: "uint256",
+			Type: "uint64",
+		},
+		{
+			Name: "source",
+			Type: "string",
+		},
+		{
+			Name: "taskId",
+			Type: "uint32",
 		},
 	})
 	if err != nil {
@@ -42,9 +52,9 @@ func AbiEncodeTaskResponse(price *big.Int) ([]byte, error) {
 }
 
 // GetTaskResponseDigest returns the hash of the TaskResponse, which is what operators sign over
-func GetTaskResponseDigest(price *big.Int) ([32]byte, error) {
+func GetTaskResponseDigest(price uint64, source string, taskId uint32) ([32]byte, error) {
 
-	encodeTaskResponseByte, err := AbiEncodeTaskResponse(price)
+	encodeTaskResponseByte, err := AbiEncodeTaskResponse(price, source, taskId)
 	if err != nil {
 		return [32]byte{}, err
 	}
