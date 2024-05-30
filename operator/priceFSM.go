@@ -181,7 +181,6 @@ func (p *PriceFSM) Join(nodeID, addr string) error {
 
 func (p *PriceFSM) IsLeader() (bool, string) {
 	leaderURL, _ := p.raft.LeaderWithID()
-	p.logger.Printf("leader address read is %s and my addr is %s", leaderURL, p.RaftBind)
 	return string(leaderURL) == p.RaftBind, string(leaderURL)
 }
 
@@ -197,6 +196,14 @@ type fsmSnapshot struct {
 
 // Triggers operator to fetch the requested price feed and sumbit to leader
 func (f *fsm) Apply(l *raft.Log) interface{} {
+
+	// Leader does not respond to task request from themselves
+	leaderURL, _ := f.raft.LeaderWithID()
+
+	if string(leaderURL) == f.RaftBind {
+		return nil
+	}
+
 	lastAppliedIndex := f.raft.AppliedIndex()
 
 	if l.Index < lastAppliedIndex {

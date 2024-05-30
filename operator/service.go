@@ -148,7 +148,8 @@ func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http
 			(*s.taskResponses)[taskIndex][taskResponseDigest] = cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse{
 				Price:    uint32(task.Price),
 				Decimals: 18,
-				Sources:  []string{task.Source},
+				Source:   task.Source,
+				TaskId:   task.TaskId,
 			}
 		}
 		s.taskResponsesMu.Unlock()

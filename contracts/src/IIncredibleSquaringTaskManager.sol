@@ -51,7 +51,8 @@ interface IIncredibleSquaringTaskManager {
     struct PriceUpdateTaskResponse {
         uint32 price;
         uint32 decimals;
-        string[] sources;
+        uint32 taskId;
+        string source;
     }
 
     // Task response is hashed and signed by operators.

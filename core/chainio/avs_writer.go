@@ -36,8 +36,8 @@ type AvsWriterer interface {
 	) (*types.Receipt, error)
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask,
-		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse,
-		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+		taskResponses []cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse,
+		nonSignerStakesAndSignatures []cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 	) (*types.Receipt, error)
 }
 
@@ -109,7 +109,7 @@ func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncr
 		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
 	feedName := "btc/usdc"
-	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeedUpdate(txOpts, feedName, uint32(sdktypes.QuorumThresholdPercentage(67)), sdktypes.QuorumNums{0}.UnderlyingType(), uint8(2))
+	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeedUpdate(txOpts, feedName, uint32(sdktypes.QuorumThresholdPercentage(66)), sdktypes.QuorumNums{0}.UnderlyingType(), uint8(1))
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
@@ -129,15 +129,15 @@ func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncr
 
 func (w *AvsWriter) SendAggregatedResponse(
 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask,
-	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse,
-	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	taskResponses []cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse,
+	nonSignerStakesAndSignatures []cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
 		return nil, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.RespondToTask(txOpts, task, taskResponse, nonSignerStakesAndSignature)
+	tx, err := w.AvsContractBindings.TaskManager.RespondToTask(txOpts, task, taskResponses, nonSignerStakesAndSignatures)
 	if err != nil {
 		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
 		return nil, err

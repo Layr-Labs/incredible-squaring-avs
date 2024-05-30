@@ -41,7 +41,7 @@ contract IncredibleSquaringTaskManager is
     // which is hashed onchain and checked against this mapping
     mapping(uint32 => bytes32) public allTaskHashes;
 
-    // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
+    // mapping of task indices to hash of abi.encode([] taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
     mapping(uint32 => bool) public taskSuccesfullyChallenged;
@@ -124,32 +124,42 @@ contract IncredibleSquaringTaskManager is
 
     // NOTE: this function responds to existing tasks.
     // Add onlyOperator modifier
+    /**
+        1. Submit an array of task, responses, stakesAndSignatres for each source
+        2. Verify each aggergated response matches the correct task
+        3. Check quroum on each source
+        4. Encode all task responses together
+        5. Save final price of feed
+     */
     function respondToTask(
         PriceUpdateTask calldata task,
-        PriceUpdateTaskResponse calldata taskResponse,
-        NonSignerStakesAndSignature memory nonSignerStakesAndSignature
+        PriceUpdateTaskResponse[] calldata taskResponses, // Each price feed source has a different response
+        NonSignerStakesAndSignature[] memory nonSignerStakesAndSignatures
     ) external {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
 
-        // // check that the task is valid, hasn't been responsed yet, and is being responsed in time
-        // require(
-        //     keccak256(abi.encode(task)) ==
-        //         allTaskHashes[taskResponse.referenceTaskIndex],
-        //     "supplied task does not match the one recorded in the contract"
-        // );
-        // // some logical checks
-        // require(
-        //     allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0),
-        //     "Aggregator has already responded to the task"
-        // );
-        // require(
-        //     uint32(block.number) <=
-        //         taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
-        //     "Aggregator has responded to the task too late"
-        // );
+        for (uint i = 0; i < taskResponses.length; i++) {
+            // check that the task is valid, hasn't been responsed yet, and is being responsed in time
+            require(
+                keccak256(abi.encode(task)) ==
+                    allTaskHashes[taskResponses[i].taskId],
+                "supplied task does not match the one recorded in the contract"
+            );
+            // some logical checks
+            require(
+                allTaskResponses[taskResponses[i].taskId] == bytes32(0),
+                "Aggregator has already responded to the task"
+            );
 
+            require(
+                uint32(block.number) <=
+                    taskCreatedBlock + TASK_RESPONSE_WINDOW_BLOCK,
+                "Aggregator has responded to the task too late"
+            );
+
+        }
         // /* CHECKING SIGNATURES & WHETHER THRESHOLD IS MET OR NOT */
         // // calculate message which operators signed
         // bytes32 message = keccak256(abi.encode(taskResponse));

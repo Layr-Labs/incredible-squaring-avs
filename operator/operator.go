@@ -81,6 +81,7 @@ type Operator struct {
 	tasks                 map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask
 	tasksMu               sync.RWMutex
 	taskResponses         map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse
+	taskDigestQuorum      map[uint32]TaskDigestQuorum
 	taskResponsesMu       sync.RWMutex
 
 	// needed to fetch the price of assets on different on-chain oracle networks
@@ -99,6 +100,11 @@ type PriceUpdateTaskResponse struct {
 	Price  uint64
 	Source string
 	TaskId uint32
+}
+
+type TaskDigestQuorum struct {
+	finalTaskResponse           cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -298,6 +304,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		priceFSM:                           consensusFSM,
 		tasks:                              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask),
 		taskResponses:                      taskResponses,
+		taskDigestQuorum:                   make(map[uint32]TaskDigestQuorum),
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -456,6 +463,7 @@ func (o *Operator) sendNewTask() error {
 	return nil
 }
 
+// Triggered whenever a taskDigest (ie. hash of {price, taskId, source}) is at quorom
 func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
 	// If not leader ignore request
 	isLeader, _ := o.priceFSM.IsLeader()
@@ -469,6 +477,7 @@ func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg
 		// panicing to help with debugging (fail fast), but we shouldn't panic if we run this in production
 		panic(blsAggServiceResp.Err)
 	}
+
 	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
 	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
 		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
@@ -488,19 +497,71 @@ func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg
 		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
 	}
 
-	o.logger.Info("Threshold reached. Sending aggregated response onchain.",
-		"taskIndex", blsAggServiceResp.TaskIndex,
-	)
 	o.tasksMu.RLock()
 	task := o.tasks[blsAggServiceResp.TaskIndex]
 	o.tasksMu.RUnlock()
 	o.taskResponsesMu.RLock()
 	taskResponse := o.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
 	o.taskResponsesMu.RUnlock()
-	_, err := o.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
-	if err != nil {
-		o.logger.Error("Aggregator failed to respond to task", "err", err)
+
+	o.logger.Info("Quorum reached on source. Checking is quorum achieved over minimum amount of sources",
+		"taskIndex", blsAggServiceResp.TaskIndex,
+		"source", taskResponse.Source,
+	)
+
+	// Cache threshold is achieved for this taskDigest (aka source)
+	o.taskDigestQuorum[blsAggServiceResp.TaskIndex] = TaskDigestQuorum{
+		finalTaskResponse:           taskResponse,
+		nonSignerStakesAndSignature: nonSignerStakesAndSignature,
 	}
-	// Elect new operator as leader
-	o.priceFSM.TriggerElection()
+
+	// Iterate through all task digest quorums on this task and ensure enough price feed sources acheive quorom
+	taskSubmissions := []TaskDigestQuorum{}
+	sourcesAtQuorum := []string{}
+
+	for _, submission := range o.taskDigestQuorum {
+		doesContain := contains(sourcesAtQuorum, submission.finalTaskResponse.Source)
+		// Each source can only have 1 quorum
+		if !doesContain {
+			sourcesAtQuorum = append(sourcesAtQuorum, submission.finalTaskResponse.Source)
+			taskSubmissions = append(taskSubmissions, submission)
+		}
+	}
+
+	// If quorum reached submit on chain
+	if len(taskSubmissions) >= int(task.MinNumOfOracleNetworks) {
+
+		var finalResponses []cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse
+		var finalStakesAndSignatures []cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature
+
+		for _, submission := range taskSubmissions {
+			finalResponses = append(finalResponses, submission.finalTaskResponse)
+			finalStakesAndSignatures = append(finalStakesAndSignatures, submission.nonSignerStakesAndSignature)
+		}
+
+		o.logger.Info("Quorum reached on enough sources. Submitting aggregate responses from each price feed source",
+			"taskIndex", blsAggServiceResp.TaskIndex,
+			"minNumOfOracleNetworks", task.MinNumOfOracleNetworks,
+			"numOfSourcesWithQuorum", len(taskSubmissions),
+		)
+
+		_, err := o.avsWriter.SendAggregatedResponse(context.Background(), task, finalResponses, finalStakesAndSignatures)
+
+		if err != nil {
+			o.logger.Error("Aggregator failed to respond to task", "err", err)
+		}
+
+		// Elect new operator as leader
+		o.priceFSM.TriggerElection()
+	}
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }
