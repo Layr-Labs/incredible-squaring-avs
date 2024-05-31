@@ -126,15 +126,12 @@ func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http
 		return
 	}
 
-	// 1 - Verify price between submitted sources if within threshold
-	// 2 - Verify price between this submission and last submission is within threshold
-
 	// Submit each price feed source seperatly
 	s.logger.Info("Preparing to submit bls signatures")
 	for i, task := range signedResponse.TaskResponse {
 		taskIndex := task.TaskId
 		signature := signedResponse.BlsSignature[i]
-		taskResponseDigest, err := core.GetTaskResponseDigest(task.Price, task.Source, task.TaskId)
+		taskResponseDigest, err := core.GetTaskResponseDigest(task.Price, task.Source, task.TaskId, task.Decimals)
 		if err != nil {
 			s.logger.Error("Failed to get task response digest", "err", err)
 			w.WriteHeader(http.StatusBadGateway)
@@ -148,7 +145,8 @@ func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http
 			(*s.taskResponses)[taskIndex][taskResponseDigest] = cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse{
 				Price:    uint32(task.Price),
 				Decimals: 18,
-				Sources:  []string{task.Source},
+				Source:   task.Source,
+				TaskId:   task.TaskId,
 			}
 		}
 		s.taskResponsesMu.Unlock()

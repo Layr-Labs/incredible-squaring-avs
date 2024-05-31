@@ -78,7 +78,7 @@ func (s *AvsSubscriber) SubscribeToNewPriceUpdateTask(newPriceUpdateTaskCreatedC
 
 func (s *AvsSubscriber) SubscribeToTaskResponses(taskResponseChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) event.Subscription {
 	sub, err := s.AvsContractBindings.TaskManager.WatchTaskResponded(
-		&bind.WatchOpts{}, taskResponseChan,
+		&bind.WatchOpts{}, taskResponseChan, nil,
 	)
 	if err != nil {
 		s.logger.Error("Failed to subscribe to TaskResponded events", "err", err)

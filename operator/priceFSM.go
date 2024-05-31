@@ -181,7 +181,6 @@ func (p *PriceFSM) Join(nodeID, addr string) error {
 
 func (p *PriceFSM) IsLeader() (bool, string) {
 	leaderURL, _ := p.raft.LeaderWithID()
-	p.logger.Printf("leader address read is %s and my addr is %s", leaderURL, p.RaftBind)
 	return string(leaderURL) == p.RaftBind, string(leaderURL)
 }
 
@@ -197,6 +196,14 @@ type fsmSnapshot struct {
 
 // Triggers operator to fetch the requested price feed and sumbit to leader
 func (f *fsm) Apply(l *raft.Log) interface{} {
+
+	// Leader does not respond to task request from themselves
+	leaderURL, _ := f.raft.LeaderWithID()
+
+	if string(leaderURL) == f.RaftBind {
+		return nil
+	}
+
 	lastAppliedIndex := f.raft.AppliedIndex()
 
 	if l.Index < lastAppliedIndex {
@@ -218,7 +225,7 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 
 	response := []PriceUpdateTaskResponse{} // slice will automatically resize if needed
 
-	chainlinkResponse := PriceUpdateTaskResponse{Price: resolvePrice.Uint64(), Source: "chainlink", TaskId: request.TaskId}
+	chainlinkResponse := PriceUpdateTaskResponse{Price: uint32(resolvePrice.Uint64()), Source: "chainlink", TaskId: request.TaskId, Decimals: 18}
 
 	f.logger.Printf("Chainlink response: %v", chainlinkResponse)
 	response = append(response, chainlinkResponse)
@@ -242,7 +249,7 @@ func (f *fsm) SubmitTaskToLeader(request PriceUpdateRequest, responses []PriceUp
 		}
 
 		f.logger.Printf("Submiting response %v for task %v\n", i, response.TaskId)
-		taskResponseHash, err := core.GetTaskResponseDigest(response.Price, response.Source, response.TaskId)
+		taskResponseHash, err := core.GetTaskResponseDigest(response.Price, response.Source, response.TaskId, response.Decimals)
 		if err != nil {
 			log.Printf("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
 			return err
