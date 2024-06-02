@@ -40,7 +40,8 @@ contract PriceFeedAdapter is Ownable {
         return price;
     }
 
-    function getPriceDia(string memory _symbol, uint128 _timestampOflatestPrice) external view {
-        (, _timestampOflatestPrice) = IDIAOracleV2(diaORACLE).getValue(_symbol);
+    function getPriceDia(string memory _symbol) external view returns (uint128 Price){
+        (, Price) = IDIAOracleV2(diaORACLE).getValue(_symbol);
+        return Price;
     }
 }
