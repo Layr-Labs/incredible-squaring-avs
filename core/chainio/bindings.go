@@ -37,6 +37,8 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	}
 
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	// log taskManagerAddr
+	logger.Info("TaskManagerAddr", "addr", taskManagerAddr.Hex())
 	if err != nil {
 		logger.Error("Failed to fetch TaskManager address", "err", err)
 		return nil, err

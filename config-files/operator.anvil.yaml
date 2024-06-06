@@ -8,12 +8,17 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
-operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
+#avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
+# https://github.com/Layr-Labs/eigenlayer-middleware?tab=readme-ov-file
+avs_registry_coordinator_address: 0xce09BFDbA7820329d098282b08ad564Abf6C01fc
+#operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
+operator_state_retriever_address: 0x1757B9f1EEc499BCADa04fc6C5bf3A27FB58DF30
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
 eth_ws_url: ws://localhost:8545
+#eth_rpc_url: https://ethereum-holesky-rpc.publicnode.com
+#eth_ws_url: wss://ethereum-holesky-rpc.publicnode.com
 
 # If you running this using eigenlayer CLI and the provided AVS packaging structure,
 # this should be /operator_keys/ecdsa_key.json as the host path will be asked while running
@@ -33,12 +38,12 @@ bls_private_key_store_path: tests/keys/test.bls.key.json
 aggregator_server_ip_port_address: localhost:8090
 
 # avs node spec compliance https://eigen.nethermind.io/docs/spec/intro
-eigen_metrics_ip_port_address: localhost:9090
+eigen_metrics_ip_port_address: localhost:9099
 enable_metrics: true
 node_api_ip_port_address: localhost:9010
 enable_node_api: true
 
-register_operator_on_startup: true
+register_operator_on_startup: false
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
-token_strategy_addr: 0x09635F643e140090A9A8Dcd712eD6285858ceBef
+token_strategy_addr: 0xae02f9a4bC8F65a6a0302300513a08AC8376e46F

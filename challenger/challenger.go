@@ -136,19 +136,19 @@ func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.Contr
 }
 
 func (c *Challenger) callChallengeModule(taskIndex uint32) error {
-	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
-	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
-	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
-
-	// checking if the answer in the response submitted by aggregator is correct
-	if trueAnswer.Cmp(answerInResponse) != 0 {
-		c.logger.Infof("The number squared is not correct")
-
-		// raise challenge
-		c.raiseChallenge(taskIndex)
-
-		return nil
-	}
+	//numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
+	//answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
+	//trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
+	//
+	//// checking if the answer in the response submitted by aggregator is correct
+	//if trueAnswer.Cmp(answerInResponse) != 0 {
+	//	c.logger.Infof("The number squared is not correct")
+	//
+	//	// raise challenge
+	//	c.raiseChallenge(taskIndex)
+	//
+	//	return nil
+	//}
 	return types.NoErrorInTaskResponse
 }
 

@@ -3,7 +3,6 @@ package operator
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -309,18 +308,29 @@ func (o *Operator) Start(ctx context.Context) error {
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
+	txHashBytes := newTaskCreatedLog.Task.TxToBeVerified
+	// convert bytes to hex
+	txHash := common.Bytes2Hex(txHashBytes[:])
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("Received new task",
-		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
 		"taskIndex", newTaskCreatedLog.TaskIndex,
+		"txHashToBeVerified", txHash,
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+	// check if txHash is mined
+	receipt, _ := o.ethClient.TransactionReceipt(context.Background(), common.HexToHash(txHash))
+	txSuccess := false
+	if receipt != nil {
+		o.logger.Info("tx verified by eth rpc", "txHash", txHash)
+		txSuccess = true
+	} else {
+		o.logger.Info("tx not found", "txHash", txHash)
+	}
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		NumberSquared:      numberSquared,
+		TxSuccess:          txSuccess,
 	}
 	return taskResponse
 }

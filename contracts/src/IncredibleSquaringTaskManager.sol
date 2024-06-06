@@ -41,7 +41,7 @@ contract IncredibleSquaringTaskManager is
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
-    mapping(uint32 => bool) public taskSuccesfullyChallenged;
+    mapping(uint32 => bool) public taskSuccessfullyChallenged;
 
     address public aggregator;
     address public generator;
@@ -81,13 +81,13 @@ contract IncredibleSquaringTaskManager is
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
     function createNewTask(
-        uint256 numberToBeSquared,
+        bytes32 txToBeVerified,
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers
     ) external onlyTaskGenerator {
         // create a new task struct
         Task memory newTask;
-        newTask.numberToBeSquared = numberToBeSquared;
+        newTask.txToBeVerified = txToBeVerified;
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
         newTask.quorumNumbers = quorumNumbers;
@@ -180,7 +180,7 @@ contract IncredibleSquaringTaskManager is
         BN254.G1Point[] memory pubkeysOfNonSigningOperators
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-        uint256 numberToBeSquared = task.numberToBeSquared;
+//        uint256 numberToBeSquared = task.numberToBeSquared;
         // some logical checks
         require(
             allTaskResponses[referenceTaskIndex] != bytes32(0),
@@ -192,7 +192,7 @@ contract IncredibleSquaringTaskManager is
             "Task response does not match the one recorded in the contract"
         );
         require(
-            taskSuccesfullyChallenged[referenceTaskIndex] == false,
+            taskSuccessfullyChallenged[referenceTaskIndex] == false,
             "The response to this task has already been challenged successfully."
         );
 
@@ -204,9 +204,10 @@ contract IncredibleSquaringTaskManager is
         );
 
         // logic for checking whether challenge is valid or not
-        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
-        bool isResponseCorrect = (actualSquaredOutput ==
-            taskResponse.numberSquared);
+//        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
+//        bool isResponseCorrect = (actualSquaredOutput ==
+//            taskResponse.numberSquared);
+        bool isResponseCorrect = true;
 
         // if response was correct, no slashing happens so we return
         if (isResponseCorrect == true) {
@@ -309,7 +310,7 @@ contract IncredibleSquaringTaskManager is
         // }
 
         // the task response has been challenged successfully
-        taskSuccesfullyChallenged[referenceTaskIndex] = true;
+        taskSuccessfullyChallenged[referenceTaskIndex] = true;
 
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }

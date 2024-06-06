@@ -1,0 +1,39 @@
+{
+  "addresses": {
+    "avsDirectory": "0x1B16664bB83666D05B8B46e29bd2BbCC3AE903C4",
+    "avsDirectoryImplementation": "0x0FcF6f6fac2c554D3e38ED6CeBF58aEf154d86C8",
+    "baseStrategyImplementation": "0x231Fd80468E6940D116b981eD5A00851eA393aE3",
+    "beaconOracle": "0x4C116BB629bff7A8373c2378bBd919f8349B8f25",
+    "delayedWithdrawalRouter": "0x8aDf6E9E27D02931d4B2c11A732Af47fb3BAa8F2",
+    "delayedWithdrawalRouterImplementation": "0x1fCd6A7A0daD4456Afff2e4518256Cc8b3E319dd",
+    "delegation": "0xB927f4783ac2210651E4d78FD5a04f8b78560585",
+    "delegationImplementation": "0xebA626a315bB32a5F076Fab10D61b43d3CE2e683",
+    "eigenLayerPauserReg": "0x1bb889EE5B8231Ac7E112F03D97813f6A9deB824",
+    "eigenLayerProxyAdmin": "0x6fc5993f18821e4F38F592D25242A8F571f2Fc95",
+    "eigenPodBeacon": "0xfDF0FbABbd9DefF2A35f8a2d96516cB1bCa4957F",
+    "eigenPodImplementation": "0x988467cbb290981FC2a420EC306338Bb20f81525",
+    "eigenPodManager": "0x5dD03E4F8e1F48F226Bd21d01A00d8b31ff7c50B",
+    "eigenPodManagerImplementation": "0xf7A7A79DfF84ef19521Fc15d65FD66ec94A9E016",
+    "emptyContract": "0xc34C4bAD95815cf1F00605eBA783c260202a27cC",
+    "slasher": "0x4fF349423C6AbA21827155749B2E025bc196F0df",
+    "slasherImplementation": "0x5156eC9A8cB3EEAc8Ec0a5Bb82aD2309f2B340cc",
+    "strategies": {
+      "WETH": "0xf7D9e2C5438C91D070CDcb7d5810C4F80AE20AfE",
+      "rETH": "0xf3c6c5222745C991D3b9707956E7dE3012f2Ed58",
+      "stETH": "0xdC98CEc2F60428ECF9b9e6e9340Ae0948a533AE5"
+    },
+    "strategyManager": "0xE654eF2c3d2C6B5c19202b4fFD71eF65001214D5",
+    "strategyManagerImplementation": "0xE6062FbA5991566F7030b0E398c3079FED752957"
+  },
+  "chainInfo": {
+    "chainId": 17000,
+    "deploymentBlock": 1637784
+  },
+  "parameters": {
+    "communityMultisig": "0xCb8d2f9e55Bc7B1FA9d089f9aC80C583D2BDD5F7",
+    "executorMultisig": "0x28Ade60640fdBDb2609D8d8734D1b5cBeFc0C348",
+    "operationsMultisig": "0xfaEF7338b7490b9E272d80A1a39f4657cAf2b97d",
+    "pauserMultisig": "0x53410249ec7d3a3F9F1ba3912D50D6A3Df6d10A7",
+    "timelock": "0x0000000000000000000000000000000000000000"
+  }
+}

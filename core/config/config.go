@@ -126,6 +126,8 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	if err != nil {
 		panic(err)
 	}
+	// log sender
+	logger.Info("txMgr Sender Address", "address", aggregatorAddr.String())
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &Config{

@@ -46,8 +46,9 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
 
     function testCreateNewTask() public {
         bytes memory quorumNumbers = new bytes(0);
+        bytes32 txToBeVerified = 0x5c8500d95f3c12403eb0cb43791581fdd58e3039257a9f93575c9e04d4f0557e;
         cheats.prank(generator, generator);
-        tm.createNewTask(2, 100, quorumNumbers);
+        tm.createNewTask(txToBeVerified, 100, quorumNumbers);
         assertEq(tm.latestTaskNum(), 1);
     }
 }

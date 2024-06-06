@@ -33,7 +33,7 @@ bls_private_key_store_path: tests/keys/test.bls.key.json
 aggregator_server_ip_port_address: incredible-squaring-aggregator:8090
 
 # avs node spec compliance https://eigen.nethermind.io/docs/spec/intro
-eigen_metrics_ip_port_address: 0.0.0.0:9090
+eigen_metrics_ip_port_address: 0.0.0.0:9099
 enable_metrics: true
 node_api_ip_port_address: 0.0.0.0:9010
 enable_node_api: true

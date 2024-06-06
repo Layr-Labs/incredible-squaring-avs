@@ -2,6 +2,9 @@ package aggregator
 
 import (
 	"context"
+	"errors"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"sync"
 	"time"
@@ -67,6 +70,7 @@ const (
 type Aggregator struct {
 	logger           logging.Logger
 	serverIpPortAddr string
+	ethClient        eth.Client
 	avsWriter        chainio.AvsWriterer
 	// aggregation related fields
 	blsAggregationService blsagg.BlsAggregationService
@@ -97,7 +101,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		RegistryCoordinatorAddr:    c.IncredibleSquaringRegistryCoordinatorAddr.String(),
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
 		AvsName:                    avsName,
-		PromMetricsIpPortAddress:   ":9090",
+		PromMetricsIpPortAddress:   ":9099",
 	}
 	clients, err := clients.BuildAll(chainioConfig, c.EcdsaPrivateKey, c.Logger)
 	if err != nil {
@@ -112,6 +116,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 	return &Aggregator{
 		logger:                c.Logger,
 		serverIpPortAddr:      c.AggregatorServerIpPortAddr,
+		ethClient:             c.EthHttpClient,
 		avsWriter:             avsWriter,
 		blsAggregationService: blsAggregationService,
 		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
@@ -129,10 +134,14 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	agg.logger.Infof("Aggregator set to send new task every 10 seconds...")
 	defer ticker.Stop()
 	taskNum := int64(0)
-	// ticker doesn't tick immediately, so we send the first task here
-	// see https://github.com/golang/go/issues/17601
-	_ = agg.sendNewTask(big.NewInt(taskNum))
-	taskNum++
+	// get eth client from config
+	testTxHash, err := agg.firstTxHashInBlock(ctx)
+	if err != nil {
+		// ticker doesn't tick immediately, so we send the first task here
+		// see https://github.com/golang/go/issues/17601
+		_ = agg.sendNewTask(testTxHash)
+		taskNum++
+	}
 
 	for {
 		select {
@@ -142,7 +151,12 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			err := agg.sendNewTask(big.NewInt(taskNum))
+			testTxHash, err = agg.firstTxHashInBlock(ctx)
+			if err != nil {
+				continue
+			}
+			agg.logger.Info("Found the first hash in the latest block", "hash", testTxHash)
+			err = agg.sendNewTask(testTxHash)
 			taskNum++
 			if err != nil {
 				// we log the errors inside sendNewTask() so here we just continue to the next task
@@ -193,12 +207,31 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 	}
 }
 
+func (agg *Aggregator) firstTxHashInBlock(ctx context.Context) (string, error) {
+	blockNumber, err := agg.ethClient.BlockNumber(ctx)
+	if err != nil {
+		return "", err
+	}
+	block, err := agg.ethClient.BlockByNumber(ctx, big.NewInt(int64(blockNumber)))
+	if err != nil {
+		return "", err
+	}
+	if len(block.Transactions()) == 0 {
+		return "", errors.New("no tx in block")
+	}
+	return block.Transactions()[0].Hash().String(), nil
+}
+
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
-	agg.logger.Info("Aggregator sending new task", "numberToSquare", numToSquare)
+func (agg *Aggregator) sendNewTask(txHash string) error {
+	agg.logger.Info("Aggregator sending new task", "txToBeVerified", txHash)
+	txHashBytesSlice := common.FromHex(txHash)
+	// convert txHashBytesSlice to byte[32]
+	var txHashBytes [32]byte
+	copy(txHashBytes[:], txHashBytesSlice)
 	// Send number to square to the task manager contract
-	newTask, taskIndex, err := agg.avsWriter.SendNewTaskNumberToSquare(context.Background(), numToSquare, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskHashToVerify(context.Background(), txHashBytes, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to send number to square", "err", err)
 		return err

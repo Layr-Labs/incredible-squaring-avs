@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"context"
-	"math/big"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -22,7 +21,6 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 
 	var TASK_INDEX = uint32(0)
 	var BLOCK_NUMBER = uint32(100)
-	var NUMBER_TO_SQUARE = uint32(3)
 
 	MOCK_OPERATOR_BLS_PRIVATE_KEY, err := bls.NewPrivateKey(MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING)
 	assert.Nil(t, err)
@@ -43,9 +41,9 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 	assert.Nil(t, err)
 
 	signedTaskResponse, err := createMockSignedTaskResponse(MockTask{
-		TaskNum:        TASK_INDEX,
-		BlockNumber:    BLOCK_NUMBER,
-		NumberToSquare: NUMBER_TO_SQUARE,
+		TaskNum:     TASK_INDEX,
+		BlockNumber: BLOCK_NUMBER,
+		TxSuccess:   true,
 	}, *MOCK_OPERATOR_KEYPAIR)
 	assert.Nil(t, err)
 	signedTaskResponseDigest, err := core.GetTaskResponseDigest(&signedTaskResponse.TaskResponse)
@@ -62,10 +60,9 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 
 // mocks an operator signing on a task response
 func createMockSignedTaskResponse(mockTask MockTask, keypair bls.KeyPair) (*SignedTaskResponse, error) {
-	numberToSquareBigInt := big.NewInt(int64(mockTask.NumberToSquare))
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: mockTask.TaskNum,
-		NumberSquared:      numberToSquareBigInt.Mul(numberToSquareBigInt, numberToSquareBigInt),
+		TxSuccess:          true,
 	}
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {

@@ -31,7 +31,8 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+// anvil --block-time 5 -f https://ethereum-holesky-rpc.publicnode.com
+// forge script script/InCredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url http://127.0.0.1:8545  --private-key 0x3b5d8eba232abf04faa6b3cdd0f72148ccd8b52ab4881aaf21a8bf378260e45a --legacy --broadcast
 contract IncredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;

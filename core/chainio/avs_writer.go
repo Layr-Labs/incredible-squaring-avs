@@ -2,16 +2,13 @@ package chainio
 
 import (
 	"context"
-	"math/big"
-
-	gethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -20,9 +17,9 @@ import (
 type AvsWriterer interface {
 	avsregistry.AvsRegistryWriter
 
-	SendNewTaskNumberToSquare(
+	SendNewTaskHashToVerify(
 		ctx context.Context,
-		numToSquare *big.Int,
+		txHash [32]byte,
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
@@ -76,13 +73,13 @@ func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBin
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
+func (w *AvsWriter) SendNewTaskHashToVerify(ctx context.Context, txHashBytes [32]byte, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, numToSquare, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
+	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, txHashBytes, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err

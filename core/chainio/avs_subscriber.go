@@ -54,8 +54,9 @@ func NewAvsSubscriber(avsContractBindings *AvsManagersBindings, logger sdkloggin
 }
 
 func (s *AvsSubscriber) SubscribeToNewTasks(newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) event.Subscription {
+	start := uint64(1637957)
 	sub, err := s.AvsContractBindings.TaskManager.WatchNewTaskCreated(
-		&bind.WatchOpts{}, newTaskCreatedChan, nil,
+		&bind.WatchOpts{Start: &start}, newTaskCreatedChan, nil,
 	)
 	if err != nil {
 		s.logger.Error("Failed to subscribe to new TaskManager tasks", "err", err)

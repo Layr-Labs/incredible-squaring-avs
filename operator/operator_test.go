@@ -3,6 +3,8 @@ package operator
 import (
 	"context"
 	"fmt"
+	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	"github.com/ethereum/go-ethereum/common"
 	"math/big"
 	"testing"
 	"time"
@@ -11,8 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-
-	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
@@ -27,11 +27,20 @@ func TestOperator(t *testing.T) {
 	const taskIndex = 1
 
 	t.Run("ProcessNewTaskCreatedLog", func(t *testing.T) {
-		var numberToBeSquared = big.NewInt(3)
+		var txToBeVerified = "0x5c8500d95f3c12403eb0cb43791581fdd58e3039257a9f93575c9e04d4f0557e"
+		// convert tx hash to byte array
+		var txHashBytesSlice = common.FromHex(txToBeVerified)
+		// convert txHashBytesSlice to byte[32]
+		var txHashBytes [32]byte
+		copy(txHashBytes[:], txHashBytesSlice)
+		// log txHashBytes
+		fmt.Println("txHashBytesSlice", txHashBytesSlice)
+		fmt.Println("txHashBytes", txHashBytes)
+		// convert txHashBytes to byte[32]
 		newTaskCreatedLog := &cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
 			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
-				NumberToBeSquared:         numberToBeSquared,
+				TxToBeVerified:            txHashBytes,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 				QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -39,22 +48,26 @@ func TestOperator(t *testing.T) {
 			Raw: types.Log{},
 		}
 		got := operator.ProcessNewTaskCreatedLog(newTaskCreatedLog)
-		numberSquared := big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared)
 		want := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskIndex,
-			NumberSquared:      numberSquared,
+			TxSuccess:          true,
 		}
 		assert.Equal(t, got, want)
 	})
 
 	t.Run("Start", func(t *testing.T) {
-		var numberToBeSquared = big.NewInt(3)
+		var txToBeVerified = "0x5c8500d95f3c12403eb0cb43791581fdd58e3039257a9f93575c9e04d4f0557e"
+		// convert tx hash to byte array
+		txHashBytesSlice := common.FromHex(txToBeVerified)
+		// convert txHashBytesSlice to byte[32]
+		var txHashBytes [32]byte
+		copy(txHashBytes[:], txHashBytesSlice)
 
 		// new task event
 		newTaskCreatedEvent := &cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
 			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
-				NumberToBeSquared:         numberToBeSquared,
+				TxToBeVerified:            txHashBytes,
 				TaskCreatedBlock:          1000,
 				QuorumNumbers:             aggtypes.QUORUM_NUMBERS.UnderlyingType(),
 				QuorumThresholdPercentage: uint32(aggtypes.QUORUM_THRESHOLD_NUMERATOR),
@@ -70,7 +83,7 @@ func TestOperator(t *testing.T) {
 		signedTaskResponse := &aggregator.SignedTaskResponse{
 			TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 				ReferenceTaskIndex: taskIndex,
-				NumberSquared:      big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared),
+				TxSuccess:          true,
 			},
 			BlsSignature: bls.Signature{
 				G1Point: bls.NewG1Point(X, Y),

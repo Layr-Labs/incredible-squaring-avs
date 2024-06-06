@@ -11,9 +11,9 @@ import (
 
 // ====== TaskManager Mocks ======
 
-func MockSendNewTaskNumberToSquareCall(blockNum, taskNum, numberToSquare uint32) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
+func MockSendNewTaskNumberToSquareCall(blockNum, taskNum uint32, txHashBytes [32]byte) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
 	task := cstaskmanager.IIncredibleSquaringTaskManagerTask{
-		NumberToBeSquared:         big.NewInt(int64(numberToSquare)),
+		TxToBeVerified:            txHashBytes,
 		TaskCreatedBlock:          blockNum,
 		QuorumNumbers:             types.QUORUM_NUMBERS.UnderlyingType(),
 		QuorumThresholdPercentage: uint32(types.QUORUM_THRESHOLD_NUMERATOR),
