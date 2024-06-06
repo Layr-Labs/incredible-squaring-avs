@@ -45,6 +45,20 @@ make start-operator
 
 > By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/31337/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`.
 
+### Running with a different CHAINID
+
+The AVS can be run with a network different that anvil, which CHAINID default to 31337.
+Firstly, the smart contracts have to deployed onto the chain (equivalent of the `start-anvil-chain-with-el-and-avs-deployed` make command).
+The output of the smart contract deployment (addresses) and the location of the execution client (host:port) have to saved into the configuration files in the appropriate folder.
+E.g. for the network with the chain id 32382, the configuration should be store in: `config-files/32382/{operator.anvil.yaml,aggregator.yaml}`.
+(Please keep _anvil_ in the operator configuration file name).
+After that the CHAINID variable has to be included to the make commands e.g.:
+```
+make CHAINID=32382 start-aggregator
+```
+
+The [ivynet iv1](https://github.com/ivy-net/iv1/) POS network, is an example of such deployment and should include more detailed informations.
+
 ## Running via docker compose
 
 We wrote a [docker-compose.yml](./docker-compose.yml) file to run and test everything on a single machine. It will start an anvil instance, loading a [state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) where the eigenlayer and incredible-squaring contracts are deployed, start the aggregator, and finally one operator, along with prometheus and grafana servers. The grafana server will be available at http://localhost:3000, with user and password both set to `admin`. We have created a simple [grafana dashboard](./grafana/provisioning/dashboards/AVSs/incredible_squaring.json) which can be used as a starting example and expanded to include AVS specific metrics. The eigen metrics should not be added to this dashboard as they will be exposed on the main eigenlayer dashboard provided by the eigenlayer-cli.
