@@ -2,7 +2,6 @@ package chainio
 
 import (
 	"context"
-	"math/big"
 
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -20,13 +19,8 @@ import (
 type AvsWriterer interface {
 	avsregistry.AvsRegistryWriter
 
-	SendNewTaskNumberToSquare(
-		ctx context.Context,
-		numToSquare *big.Int,
-		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
-		quorumNumbers sdktypes.QuorumNums,
-	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
 	SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error)
+	ResigterOperatorUrl(ctx context.Context, raftUrl string) error
 	RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
@@ -76,29 +70,38 @@ func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBin
 	}
 }
 
-// returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
+func (w *AvsWriter) ResigterOperatorUrl(ctx context.Context, raftUrl string) error {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
+
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
-		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
+		return err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, numToSquare, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
+
+	tx, err := w.AvsContractBindings.ServiceManager.RegisterOperatorConsensusUrl(txOpts, raftUrl)
+
 	if err != nil {
-		w.logger.Errorf("Error assembling CreateNewTask tx")
-		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
+		w.logger.Errorf("Error assembling RegisterOperatorConsensusUrl tx")
+		return err
 	}
+
 	receipt, err := w.TxMgr.Send(ctx, tx)
+
 	if err != nil {
-		w.logger.Errorf("Error submitting CreateNewTask tx")
-		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
+		w.logger.Errorf("Error submitting RegisterOperatorConsensusUrl tx")
+		return err
 	}
-	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractIncredibleSquaringTaskManagerFilterer.ParseNewTaskCreated(*receipt.Logs[0])
+
+	url, err := w.AvsContractBindings.ServiceManager.ContractIncredibleSquaringServiceManagerFilterer.ParseOperatorUrlRegistered(*receipt.Logs[0])
+
 	if err != nil {
-		w.logger.Error("Aggregator failed to parse new task created event", "err", err)
-		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
+		w.logger.Error("Operator failed to register consensus url", "err", err)
+		return err
 	}
-	return newTaskCreatedEvent.Task, newTaskCreatedEvent.TaskIndex, nil
+
+	w.logger.Info("Registered consensus url at", "url", url)
+
+	return nil
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)

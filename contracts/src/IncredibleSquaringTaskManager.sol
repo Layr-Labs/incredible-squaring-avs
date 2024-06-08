@@ -48,6 +48,12 @@ contract IncredibleSquaringTaskManager is
 
     mapping(string => AggregatedPrice) private aggregatedPriceFeed;
 
+    modifier onlyOperator() {
+        IRegistryCoordinator.OperatorInfo memory operatorInfo = registryCoordinator.getOperator(msg.sender);
+        require(operatorInfo.operatorId != bytes32(0));
+        _;
+    }
+
     constructor(
         IRegistryCoordinator _registryCoordinator,
         uint32 _taskResponseWindowBlock
@@ -92,7 +98,7 @@ contract IncredibleSquaringTaskManager is
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers,
         uint8 minNumOfOracleNetworks
-    ) external {
+    ) external onlyOperator {
         PriceUpdateTask memory task;
         task.taskCreatedBlock = uint32(block.number);
         task.feedName = feedName;
@@ -112,7 +118,7 @@ contract IncredibleSquaringTaskManager is
         PriceUpdateTask calldata task,
         PriceUpdateTaskResponse[] calldata taskResponses, // Each price feed source has a different response
         NonSignerStakesAndSignature[] memory nonSignerStakesAndSignatures
-    ) external {
+    ) external onlyOperator {
         uint32 taskCreatedBlock = task.taskCreatedBlock;
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
