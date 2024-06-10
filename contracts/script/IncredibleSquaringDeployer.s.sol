@@ -147,6 +147,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
         erc20Mock = new ERC20Mock();
         priceAdapter = new PriceFeedAdapter();
         priceAdapter.addFeed("btc/usdc", address(0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43));
+        //add the dia feed
+        priceAdapter.getPriceDia("BTC/USD");
         //priceAdapter.getPriceDia("BTC/USD");
         // Add price feeds on sepholia
 
