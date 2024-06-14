@@ -19,7 +19,7 @@ services:
     command: --host 0.0.0.0 --load-state /root/.anvil/state.json
     networks:
       - incredible-squaring-network
-  
+
   anvil-advance-chain-script:
     image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
     depends_on:
@@ -40,12 +40,12 @@ services:
     volumes:
       - ./:/incredible-squaring/
     working_dir: /incredible-squaring
-    command: 
-      - --config 
+    command:
+      - --config
       - config-files/aggregator-docker-compose.yaml
-      - --credible-squaring-deployment 
+      - --credible-squaring-deployment
       - contracts/script/output/31337/credible_squaring_avs_deployment_output.json
-      - --ecdsa-private-key 
+      - --ecdsa-private-key
       - "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
     networks:
       - incredible-squaring-network
@@ -84,7 +84,7 @@ services:
 
   # METRICS RELATED
   grafana:
-    image: grafana/grafana:9.4.1
+    image: grafana/grafana:10.4.4
     container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana
@@ -103,7 +103,7 @@ services:
       - incredible-squaring-network
 
   prometheus:
-    image: prom/prometheus:v2.42.0
+    image: prom/prometheus:v2.52.0
     container_name: prometheus
     volumes:
       - ./prometheus:/etc/prometheus
