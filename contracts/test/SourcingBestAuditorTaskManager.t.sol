@@ -44,10 +44,25 @@ contract SourcingBestAuditorTaskManagerTest is BLSMockAVSDeployer {
         );
     }
 
+    // function createNewTask(
+    //     bytes calldata auditJobSpecificationURI,
+    //     uint256 budgetInUSDC,
+    //     bytes calldata quorumNumbers,
+    //     uint32 quorumThresholdPercentage,
+    //     Bid[] calldata bids // Submitting the array of all the bids
+    // ) external onlyTaskGenerator {
+
     function testCreateNewTask() public {
         bytes memory quorumNumbers = new bytes(0);
+        SourcingBestAuditorTaskManager.Bid[]
+            memory bids = new SourcingBestAuditorTaskManager.Bid[](1);
+        bids[0] = SourcingBestAuditorTaskManager.Bid({
+            bidId: 1,
+            zkp: "zkp_example",  //@TODO: @akshatamohanty
+            bidPitchDocURI: "uri_example"
+        });
         cheats.prank(generator, generator);
-        tm.createNewTask(2, 100, quorumNumbers);
+        tm.createNewTask("specificationURI", 100, quorumNumbers, 50, bids);
         assertEq(tm.latestTaskNum(), 1);
     }
 }
