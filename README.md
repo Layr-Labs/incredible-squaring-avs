@@ -70,6 +70,21 @@ flowchart TD
 
 ## Workflow
 
+**Structural Flow of the AVS**
+
+1. **Request Creation:** A user initiates an audit request by providing the smart contract repository link, budget in USDC, bid deadline, audit criteria, desired number of ZKP reviewers, and the consensus threshold for ZKP verification.
+2. **Auditor Bidding:** Auditors assess the audit request and submit their bids in a Zero-Knowledge (ZK) manner. Each bid includes:
+   - **Encrypted Bid Amount:** The price in USDC, encrypted to maintain confidentiality.
+   - **Zero-Knowledge Proof (ZKP):** A cryptographic proof demonstrating that the auditor's qualifications meet the specified criteria without revealing the actual bid amount or specific details of their qualifications.
+3. **ZKP Reviewer Selection:** The AVS randomly selects (or selects based on reputation) a predetermined number of ZKP Reviewers from the registered pool.
+4. **ZKP Verification:** The selected ZKP Reviewers independently verify the ZKPs submitted by the auditors. They assess whether the proofs are valid and satisfy the audit criteria without revealing the bid amount. Each reviewer submits their verification result (pass/fail) to the AVS.
+5. **Consensus and Bid Selection:** The AVS aggregates the verification results from the ZKP Reviewers. If a bid's ZKP receives sufficient passing verifications (based on the predefined consensus threshold), it is considered valid. The AVS then selects the winning bid based on predefined criteria, such as the lowest valid bid amount or a combination of factors like price and reputation.
+6. **Funds Escrow:** Upon bid selection, the user's USDC payment is securely held in escrow within the AVS smart contract.
+7. **Audit Execution:** The winning auditor conducts a comprehensive audit of the smart contract, adhering to the specified criteria and industry best practices.
+8. **Report Submission:** After completing the audit, the auditor submits a detailed report to the AVS, outlining their findings, identified vulnerabilities, and recommendations.
+9. **Report Verification:** The AVS assesses the audit report, ensuring its quality, thoroughness, and adherence to the initial audit request criteria.
+10. **Payment and Funds Release:** If the audit report is deemed satisfactory, the escrowed funds are released to the winning auditor. Any remaining funds are returned to the user.
+
 ```mermaid
 flowchart TD
     A[Request Creation] --> B[Auditor Bidding]
@@ -144,57 +159,6 @@ flowchart TD
     J2 --> J
 ```
 
-**Structural Flow of the AVS**
-
-1. **Request Creation:** A user initiates an audit request by providing the smart contract repository link, budget in USDC, bid deadline, audit criteria, desired number of ZKP reviewers, and the consensus threshold for ZKP verification.
-2. **Auditor Bidding:** Auditors assess the audit request and submit their bids in a Zero-Knowledge (ZK) manner. Each bid includes:
-   - **Encrypted Bid Amount:** The price in USDC, encrypted to maintain confidentiality.
-   - **Zero-Knowledge Proof (ZKP):** A cryptographic proof demonstrating that the auditor's qualifications meet the specified criteria without revealing the actual bid amount or specific details of their qualifications.
-3. **ZKP Reviewer Selection:** The AVS randomly selects (or selects based on reputation) a predetermined number of ZKP Reviewers from the registered pool.
-4. **ZKP Verification:** The selected ZKP Reviewers independently verify the ZKPs submitted by the auditors. They assess whether the proofs are valid and satisfy the audit criteria without revealing the bid amount. Each reviewer submits their verification result (pass/fail) to the AVS.
-5. **Consensus and Bid Selection:** The AVS aggregates the verification results from the ZKP Reviewers. If a bid's ZKP receives sufficient passing verifications (based on the predefined consensus threshold), it is considered valid. The AVS then selects the winning bid based on predefined criteria, such as the lowest valid bid amount or a combination of factors like price and reputation.
-6. **Funds Escrow:** Upon bid selection, the user's USDC payment is securely held in escrow within the AVS smart contract.
-7. **Audit Execution:** The winning auditor conducts a comprehensive audit of the smart contract, adhering to the specified criteria and industry best practices.
-8. **Report Submission:** After completing the audit, the auditor submits a detailed report to the AVS, outlining their findings, identified vulnerabilities, and recommendations.
-9. **Report Verification:** The AVS assesses the audit report, ensuring its quality, thoroughness, and adherence to the initial audit request criteria.
-10. **Payment and Funds Release:** If the audit report is deemed satisfactory, the escrowed funds are released to the winning auditor. Any remaining funds are returned to the user.
-
-### Smart Contract Audit Requests
-
-### Bidding for Audit Requests
-
-Operators register with the AVS platform by opting into the OperatorRegistry contract. They must specify their desired roles (Auditor and/or ZKP Reviewer) and may need to stake a certain amount of tokens. Proof of qualifications or experience is required for eligibility
-
-- Price Determination: Auditors determine their proposed fee for the audit in USDC.
-- Zero-Knowledge Proof Generation: Auditors create a ZKP proving their qualifications without revealing the actual bid amount.
-- Bid Submission: Auditors submit their bid (price and ZKP) to the AuditRequestManager contract.
-
-TODO: Add interaction diagram between contracts
-
-### Verification of Bids
-
-Operators verify and determine if a bid's ZKP meets the required consensus.
-
-TODO: Add diagram for Zkp verification
-
-### Aggregation of Bids
-
-### Winner Selection
-
-The selected auditor conducts a comprehensive audit of the smart contract code according to specified criteria and industry best practices.
-
-TODO: Add phase 1 system diagram
-
-### Report Generation and Submission
-
-Upon completing the audit, the auditor generates a detailed report summarizing their findings, potential vulnerabilities, and recommendations, then submits it to the ReportVerifier contract.
-
-### Report Verification and Payment
-
-The ReportVerifier contract assesses the audit report and releases the escrowed USDC payment to the auditor if it meets the required standards.
-
-### Slashing on Hack Detection
-
 ## Details on the AVS Smart Contract
 
 1. **AuditRequestManager:**
@@ -234,28 +198,58 @@ The ReportVerifier contract assesses the audit report and releases the escrowed 
 
 ### Phase 1
 
-Current
+- **Add Bids and Request Together**: In this phase, the bid submission process is integrated with the initial audit request.
+- **Only ZKP for Bid Value Verification**: Zero-Knowledge Proofs are used solely for verifying the bid values without revealing them.
+- **Random Selection**: Auditors and ZKP Reviewers are selected randomly from the pool of available participants.
+  Frequency-Based Aggregation: Aggregation of results is based on the frequency of verified values.
 
-- add bids and request together
-- only zkp for bid value verification
-- random selection
-- frequency-based aggregation
+```mermaid
+flowchart TD
+    subgraph Phase1
+        U[Users]
+        A[Auditors]
+        Z[ZKP Reviewers]
 
-TODO: Add diagram
+        U -->|Submit Audit Requests| A
+        A -->|Submit Bids with ZKPs| Z
+        Z -->|Verify ZKPs| A
+        A -->|Submit Verified Bids| A
+        A -->|Most Frequent Bid Aggregation| U
+        U -->|Audit Requests Submitted| AVS_Platform
+        AVS_Platform -->|Random Selection| A
+        AVS_Platform -->|Random Selection| Z
+    end
+```
 
 ## Phase 2
 
-- separation of bids and request
-- allow node operators to be bidders; add stake
-- off-chain selection
-
-TODO: Add diagram
+- **Separation of Bids and Request**: The bid submission process is decoupled from the initial audit request, allowing for more flexibility and better management.
+- **Allow node operators to be bidders and add stake**: Node operators can participate as bidders and stake their assets, increasing their potential rewards for successful audits.
+- **Off-Chain Selection**: The selection process for auditors and ZKP Reviewers is moved off-chain to improve efficiency and scalability.
 
 ## Phase 3
 
-- Audit Execution and Verification
+- **Audit Execution and Verification**: This phase focuses on the comprehensive execution of the audit and verification of the audit reports, ensuring thoroughness and adherence to the specified criteria.
 
-### Report Generation and Submission
+```mermaid
+flowchart TD
+    subgraph Phase3
+        U[Users]
+        A[Auditors]
+        Z[ZKP Reviewers]
+        AVS[AVS Platform]
+
+        U -->|Submit Audit Requests| AVS
+        AVS -->|Select Auditors and ZKP Reviewers| A
+        AVS -->|Select Auditors and ZKP Reviewers| Z
+        A -->|Conduct Audits| AVS
+        A -->|Submit Audit Reports| AVS
+        AVS -->|Verify Reports| Z
+        Z -->|Verified Reports| AVS
+        AVS -->|Release Funds| A
+        AVS -->|Provide Reports| U
+    end
+```
 
 ## ZKP Implementation for Operator Bidding
 
@@ -313,3 +307,11 @@ TODO: Add the Circuit playground
 ## Further improvements
 
 - Point 1
+
+```
+
+```
+
+```
+
+```
