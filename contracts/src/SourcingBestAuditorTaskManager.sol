@@ -80,6 +80,7 @@ contract SourcingBestAuditorTaskManager is
 
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
+
     function createNewTask(
         bytes calldata AuditJobSpecificationURI,
         uint256 budgetInUSDC,
@@ -119,13 +120,12 @@ contract SourcingBestAuditorTaskManager is
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
 
-        // check that the task is valid, hasn't been responsed yet, and is being responsed in time
+        // Ensure the task includes AuditJobSpecificationURI and other new fields.
         require(
             keccak256(abi.encode(task)) ==
                 allTaskHashes[taskResponse.referenceTaskIndex],
             "supplied task does not match the one recorded in the contract"
         );
-        // some logical checks
         require(
             allTaskResponses[taskResponse.referenceTaskIndex] == bytes32(0),
             "Aggregator has already responded to the task"
@@ -168,12 +168,10 @@ contract SourcingBestAuditorTaskManager is
             uint32(block.number),
             hashOfNonSigners
         );
-        // updating the storage with task responsea
         allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(
             abi.encode(taskResponse, taskResponseMetadata)
         );
 
-        // emitting event
         emit TaskResponded(taskResponse, taskResponseMetadata);
     }
 

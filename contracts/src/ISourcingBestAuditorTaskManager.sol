@@ -23,7 +23,7 @@ interface ISourcingBestAuditorTaskManager {
         uint32 indexed taskIndex,
         address indexed challenger
     );
-    
+
     event TaskCreated(
         uint256 taskId,
         uint256 budget,
@@ -51,10 +51,10 @@ interface ISourcingBestAuditorTaskManager {
     // Task response is hashed and signed by operators.
     // these signatures are aggregated and sent to the contract as response.
     struct TaskResponse {
-        // Can be obtained by the operator from the event NewTaskCreated.
-        uint32 referenceTaskIndex;
-        // This is just the response that the operator has to compute by itself.
-        uint256 numberSquared;
+        uint32 referenceTaskIndex; // Can be obtained by the operator from the event NewTaskCreated.
+        string evaluatedBidURI; // URI pointing to the operator's evaluation of the bids.
+        uint256 selectedBidId; // The ID of the selected best bid.
+        // Other fields related to the operator's response
     }
 
     // Extra information related to taskResponse, which is filled inside the contract.
