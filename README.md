@@ -9,7 +9,7 @@ The platform aims to enhance the quality of smart contract audits by:
 1. ensuring a decentralized process of verifying and selecting the best auditors.
 2. enabling auditors to stake their own assets to earn greater rewards for their audits.
 
-![alt text](diagrams/overall_architecture.png.png)
+![overall-diagram](./diagrams/overall_architecture.png.png)
 
 ## Key Actors
 
