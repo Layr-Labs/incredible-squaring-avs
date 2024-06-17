@@ -221,6 +221,8 @@ flowchart TD
     end
 ```
 
+![phase1](diagrams/phase1.png)
+
 ## Phase 2
 
 - **Separation of Bids and Request**: The bid submission process is decoupled from the initial audit request, allowing for more flexibility and better management.
@@ -305,13 +307,3 @@ The goal is to allow auditors to submit bids privately, proving they meet the au
 TODO: Add the Circuit playground
 
 ## Further improvements
-
-- Point 1
-
-```
-
-```
-
-```
-
-```
