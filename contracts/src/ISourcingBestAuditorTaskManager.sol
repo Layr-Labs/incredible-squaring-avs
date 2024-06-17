@@ -23,19 +23,29 @@ interface IIncredibleSquaringTaskManager {
         uint32 indexed taskIndex,
         address indexed challenger
     );
+    
+    event TaskCreated(
+        uint256 taskId,
+        uint256 budget,
+        bytes AuditJobSpecificationURI,
+        bytes quorumNumbers,
+        uint32 quorumThresholdPercentage
+    );
 
     // STRUCTS
     struct Task {
-        uint256 numberToBeSquared;
-        uint32 taskCreatedBlock;
-        // task submitter decides on the criteria for a task to be completed
-        // note that this does not mean the task was "correctly" answered (i.e. the number was squared correctly)
-        //      this is for the challenge logic to verify
-        // task is completed (and contract will accept its TaskResponse) when each quorumNumbers specified here
-        // are signed by at least quorumThresholdPercentage of the operators
-        // note that we set the quorumThresholdPercentage to be the same for all quorumNumbers, but this could be changed
+        uint256 taskId;
+        bytes AuditJobSpecificationURI;
+        uint256 budget;
         bytes quorumNumbers;
         uint32 quorumThresholdPercentage;
+        Bid[] bids;
+    }
+
+    struct Bid {
+        uint256 bidId;
+        string zkp;
+        string bidPitchDocURI;
     }
 
     // Task response is hashed and signed by operators.
@@ -54,6 +64,9 @@ interface IIncredibleSquaringTaskManager {
         uint32 taskResponsedBlock;
         bytes32 hashOfNonSigners;
     }
+
+    mapping(uint256 => Task) public tasks;
+    uint256 public taskCounter;
 
     // FUNCTIONS
     // NOTE: this function creates new task.

@@ -12,7 +12,7 @@ import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRe
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IIncredibleSquaringTaskManager.sol";
 
-contract IncredibleSquaringTaskManager is
+contract SourcingBestAuditorTaskManager is
     Initializable,
     OwnableUpgradeable,
     Pausable,
@@ -81,21 +81,32 @@ contract IncredibleSquaringTaskManager is
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
     function createNewTask(
-        uint256 numberToBeSquared,
+        bytes calldata AuditJobSpecificationURI,
+        uint256 budgetInUSDC,
+        bytes calldata quorumNumbers,
         uint32 quorumThresholdPercentage,
-        bytes calldata quorumNumbers
+        Bid[] calldata bids // Submitting the array of all the bids
     ) external onlyTaskGenerator {
-        // create a new task struct
-        Task memory newTask;
-        newTask.numberToBeSquared = numberToBeSquared;
-        newTask.taskCreatedBlock = uint32(block.number);
-        newTask.quorumThresholdPercentage = quorumThresholdPercentage;
-        newTask.quorumNumbers = quorumNumbers;
+        taskCounter = taskCounter.add(1);
 
-        // store hash of task onchain, emit event, and increase taskNum
-        allTaskHashes[latestTaskNum] = keccak256(abi.encode(newTask));
-        emit NewTaskCreated(latestTaskNum, newTask);
-        latestTaskNum = latestTaskNum + 1;
+        Task storage newTask = tasks[taskCounter];
+        newTask.taskId = taskCounter;
+        newTask.budget = budgetInUSDC;
+        newTask.AuditJobSpecificationURI = AuditJobSpecificationURI;
+        newTask.quorumNumbers = quorumNumbers;
+        newTask.quorumThresholdPercentage = quorumThresholdPercentage;
+
+        for (uint i = 0; i < bids.length; i++) {
+            newTask.bids.push(bids[i]);
+        }
+
+        emit TaskCreated(
+            taskCounter,
+            budgetInUSDC,
+            AuditJobSpecificationURI,
+            quorumNumbers,
+            quorumThresholdPercentage
+        );
     }
 
     // NOTE: this function responds to existing tasks.
