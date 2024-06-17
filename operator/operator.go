@@ -3,8 +3,9 @@ package operator
 import (
 	"context"
 	"fmt"
-	"math/big"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -296,14 +297,41 @@ func (o *Operator) Start(ctx context.Context) error {
 			sub = o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
 		case newTaskCreatedLog := <-o.newTaskCreatedChan:
 			o.metrics.IncNumTasksReceived()
-			taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
-			signedTaskResponse, err := o.SignTaskResponse(taskResponse)
-			if err != nil {
-				continue
-			}
-			go o.aggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
+			response := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
+			// TODO: Call asyncronously when a bid is selected by an off-chain service. 
+			publishToAggregator(response)
 		}
 	}
+}
+
+// Takes a set of bids and verifies them.
+func getVerifiedBids(bids []Bid) []Bid {
+	var verifiedBids []Bid
+	for _, bid := range bids {
+		if verify(bid) {
+			verifiedBids = append(verifiedBids, bid)
+		}
+	}
+	return verifiedBids
+}
+
+// Selects a bid
+func selectBid(bids []{ id: int }) int {
+	if len(bids) == 0 {
+		return Bid{}, fmt.Errorf("no verified bids available")
+	}
+	New(NewSource(seed))
+	randomIndex := rand.Intn(len(bids))
+	return randomIndex
+}
+
+// Publishes to aggregator
+func publishToAggregator(taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) {
+	signedTaskResponse, err := o.SignTaskResponse(taskResponse)
+	if err != nil {
+		return nil
+	}
+	go o.aggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
 }
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
@@ -317,10 +345,11 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+
+	selectedIndex := selectBid(getVerifiedBids(newTaskCreatedLog.Task.bids))
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		NumberSquared:      numberSquared,
+		NumberSquared:      selectedIndex,
 	}
 	return taskResponse
 }
