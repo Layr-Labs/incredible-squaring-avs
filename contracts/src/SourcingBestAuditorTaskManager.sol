@@ -79,7 +79,7 @@ contract SourcingBestAuditorTaskManager is
     // NOTE: this function creates new task, assigns it a taskId
 
     function createNewTask(
-        bytes calldata AuditJobSpecificationURI,
+        bytes calldata auditJobSpecificationURI,
         uint256 budgetInUSDC,
         bytes calldata quorumNumbers,
         uint32 quorumThresholdPercentage,
@@ -90,7 +90,7 @@ contract SourcingBestAuditorTaskManager is
         Task storage newTask = tasks[taskCounter];
         newTask.taskId = taskCounter;
         newTask.budget = budgetInUSDC;
-        newTask.AuditJobSpecificationURI = AuditJobSpecificationURI;
+        newTask.auditJobSpecificationURI = auditJobSpecificationURI;
         newTask.quorumNumbers = quorumNumbers;
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
 
@@ -101,7 +101,7 @@ contract SourcingBestAuditorTaskManager is
         emit TaskCreated(
             taskCounter,
             budgetInUSDC,
-            AuditJobSpecificationURI,
+            auditJobSpecificationURI,
             quorumNumbers,
             quorumThresholdPercentage
         );
@@ -117,7 +117,6 @@ contract SourcingBestAuditorTaskManager is
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
 
-        // Ensure the task includes AuditJobSpecificationURI and other new fields.
         require(
             keccak256(abi.encode(task)) ==
                 allTaskHashes[taskResponse.referenceTaskIndex],
