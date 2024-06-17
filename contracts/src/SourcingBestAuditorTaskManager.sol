@@ -25,7 +25,6 @@ contract SourcingBestAuditorTaskManager is
     /* CONSTANT */
     // The number of blocks from the task initialization within which the aggregator has to respond to
     uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK;
-    uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
     uint256 internal constant _THRESHOLD_DENOMINATOR = 100;
 
     /* STORAGE */
@@ -40,8 +39,6 @@ contract SourcingBestAuditorTaskManager is
 
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
-
-    mapping(uint32 => bool) public taskSuccesfullyChallenged;
 
     address public aggregator;
     address public generator;
