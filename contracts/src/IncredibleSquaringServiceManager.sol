@@ -2,24 +2,24 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
-import "./IIncredibleSquaringTaskManager.sol";
+import "./ISourcingBestAuditorTaskManager.sol";
 import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
 
 /**
- * @title Primary entrypoint for procuring services from IncredibleSquaring.
+ * @title Primary entrypoint for procuring services from SourcingBestAuditorTaskManager.
  * @author Layr Labs, Inc.
  */
-contract IncredibleSquaringServiceManager is ServiceManagerBase {
+contract SourcingBestAuditorServiceManager is ServiceManagerBase {
     using BytesLib for bytes;
 
-    IIncredibleSquaringTaskManager
-        public immutable incredibleSquaringTaskManager;
+    ISourcingBestAuditorTaskManager
+        public immutable sourcingBestAuditorTaskManager;
 
     /// @notice when applied to a function, ensures that the function is only callable by the `registryCoordinator`.
-    modifier onlyIncredibleSquaringTaskManager() {
+    modifier onlySourcingBestAuditorTaskManager() {
         require(
-            msg.sender == address(incredibleSquaringTaskManager),
-            "onlyIncredibleSquaringTaskManager: not from credible squaring task manager"
+            msg.sender == address(sourcingBestAuditorTaskManager),
+            "onlySourcingBestAuditorTaskManager: not from credible task manager"
         );
         _;
     }
@@ -28,7 +28,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
         IAVSDirectory _avsDirectory,
         IRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
-        IIncredibleSquaringTaskManager _incredibleSquaringTaskManager
+        ISourcingBestAuditorTaskManager _sourcingBestAuditorTaskManager
     )
         ServiceManagerBase(
             _avsDirectory,
@@ -37,7 +37,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
             _stakeRegistry
         )
     {
-        incredibleSquaringTaskManager = _incredibleSquaringTaskManager;
+        sourcingBestAuditorTaskManager = _sourcingBestAuditorTaskManager;
     }
 
     /// @notice Called in the event of challenge resolution, in order to forward a call to the Slasher, which 'freezes' the `operator`.
@@ -45,7 +45,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     ///      We recommend writing slashing logic without integrating with the Slasher at this point in time.
     function freezeOperator(
         address operatorAddr
-    ) external onlyIncredibleSquaringTaskManager {
+    ) external onlySourcingBestAuditorTaskManager {
         // slasher.freezeOperator(operatorAddr);
     }
 }
