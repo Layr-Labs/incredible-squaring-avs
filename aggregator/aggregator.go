@@ -142,6 +142,7 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
 			agg.sendAggregatedResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
+			// TODO(akm): Update to send new Tasks with Bids.
 			err := agg.sendNewTask(big.NewInt(taskNum))
 			taskNum++
 			if err != nil {
@@ -159,6 +160,26 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 		// panicing to help with debugging (fail fast), but we shouldn't panic if we run this in production
 		panic(blsAggServiceResp.Err)
 	}
+
+	taskIndex := blsAggServiceResp.TaskIndex
+	task := agg.tasks[taskIndex]
+	// Count occurrences of taskResponse.NumberSquared
+	counts := make(map[*big.Int]int)
+	var mostFrequentTaskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+	var maxCount int
+
+	taskResponses := agg.taskResponses[taskIndex]
+	agg.taskResponsesMu.RLock()
+	for _, response := range taskResponses {
+		votedIndex := response.NumberSquared
+		counts[votedIndex]++
+		if counts[votedIndex] > maxCount {
+			maxCount = counts[votedIndex]
+			mostFrequentTaskResponse = response
+		}
+	}
+	agg.taskResponsesMu.RUnlock()
+
 	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
 	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
 		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
@@ -179,15 +200,10 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 	}
 
 	agg.logger.Info("Threshold reached. Sending aggregated response onchain.",
-		"taskIndex", blsAggServiceResp.TaskIndex,
+		"taskIndex", taskIndex,
 	)
-	agg.tasksMu.RLock()
-	task := agg.tasks[blsAggServiceResp.TaskIndex]
-	agg.tasksMu.RUnlock()
-	agg.taskResponsesMu.RLock()
-	taskResponse := agg.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
-	agg.taskResponsesMu.RUnlock()
-	_, err := agg.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
+
+	_, err := agg.avsWriter.SendAggregatedResponse(context.Background(), task, mostFrequentTaskResponse, nonSignerStakesAndSignature)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to respond to task", "err", err)
 	}
