@@ -42,6 +42,8 @@ contract SourcingBestAuditorTaskManager is
 
     address public aggregator;
     address public generator;
+    uint256 public taskCounter;
+
 
     /* MODIFIERS */
     modifier onlyAggregator() {
