@@ -18,9 +18,9 @@ import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
-import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
-import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
-import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
+import {SourcingBestAuditorServiceManager, IServiceManager} from "../src/SourcingBestAuditorServiceManager.sol";
+import {SourcingBestAuditorTaskManager} from "../src/SourcingBestAuditorTaskManager.sol";
+import {ISourcingBestAuditorTaskManager} from "../src/ISourcingBestAuditorTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
@@ -31,8 +31,8 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract IncredibleSquaringDeployer is Script, Utils {
+// forge script script/SourcingBestAuditorDeployer.s.sol:SourcingBestAuditorDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+contract SourcingBestAuditorDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
@@ -48,9 +48,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Credible Squaring contracts
-    ProxyAdmin public incredibleSquaringProxyAdmin;
-    PauserRegistry public incredibleSquaringPauserReg;
+    // Sourcing Best Auditor contracts
+    ProxyAdmin public sourcingBestAuditorProxyAdmin;
+    PauserRegistry public sourcingBestAuditorPauserReg;
 
     regcoord.RegistryCoordinator public registryCoordinator;
     regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
@@ -66,12 +66,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
     OperatorStateRetriever public operatorStateRetriever;
 
-    IncredibleSquaringServiceManager public incredibleSquaringServiceManager;
-    IServiceManager public incredibleSquaringServiceManagerImplementation;
+    SourcingBestAuditorServiceManager public sourcingBestAuditorServiceManager;
+    IServiceManager public sourcingBestAuditorServiceManagerImplementation;
 
-    IncredibleSquaringTaskManager public incredibleSquaringTaskManager;
-    IIncredibleSquaringTaskManager
-        public incredibleSquaringTaskManagerImplementation;
+    SourcingBestAuditorTaskManager public sourcingBestAuditorTaskManager;
+    ISourcingBestAuditorTaskManager
+        public sourcingBestAuditorTaskManagerImplementation;
 
     function run() external {
         // Eigenlayer contracts
@@ -115,8 +115,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             );
 
-        address credibleSquaringCommunityMultisig = msg.sender;
-        address credibleSquaringPauser = msg.sender;
+        address sourcingBestAuditorCommunityMultisig = msg.sender;
+        address sourcingBestAuditorPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
@@ -125,12 +125,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
             baseStrategyImplementation,
             strategyManager
         );
-        _deployCredibleSquaringContracts(
+        _deploySourcingBestAuditorContracts(
             delegationManager,
             avsDirectory,
             erc20MockStrategy,
-            credibleSquaringCommunityMultisig,
-            credibleSquaringPauser
+            sourcingBestAuditorCommunityMultisig,
+            sourcingBestAuditorPauser
         );
         vm.stopBroadcast();
     }
@@ -169,12 +169,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
     }
 
-    function _deployCredibleSquaringContracts(
+    function _deploySourcingBestAuditorContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IStrategy strat,
-        address incredibleSquaringCommunityMultisig,
-        address credibleSquaringPauser
+        address sourcingBestAuditorCommunityMultisig,
+        address sourcingBestAuditorPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -182,16 +182,16 @@ contract IncredibleSquaringDeployer is Script, Utils {
         uint numStrategies = deployedStrategyArray.length;
 
         // deploy proxy admin for ability to upgrade proxy contracts
-        incredibleSquaringProxyAdmin = new ProxyAdmin();
+        sourcingBestAuditorProxyAdmin = new ProxyAdmin();
 
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = credibleSquaringPauser;
-            pausers[1] = incredibleSquaringCommunityMultisig;
-            incredibleSquaringPauserReg = new PauserRegistry(
+            pausers[0] = sourcingBestAuditorPauser;
+            pausers[1] = sourcingBestAuditorCommunityMultisig;
+            sourcingBestAuditorPauserReg = new PauserRegistry(
                 pausers,
-                incredibleSquaringCommunityMultisig
+                sourcingBestAuditorCommunityMultisig
             );
         }
 
@@ -203,20 +203,21 @@ contract IncredibleSquaringDeployer is Script, Utils {
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
+        sourcingBestAuditorServiceManager = SourcingBestAuditorServiceManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
+                    address(sourcingBestAuditorProxyAdmin),
                     ""
                 )
             )
         );
-        incredibleSquaringTaskManager = IncredibleSquaringTaskManager(
+
+        sourcingBestAuditorTaskManager = SourcingBestAuditorTaskManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
+                    address(sourcingBestAuditorProxyAdmin),
                     ""
                 )
             )
@@ -225,7 +226,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
+                    address(sourcingBestAuditorProxyAdmin),
                     ""
                 )
             )
@@ -234,7 +235,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
+                    address(sourcingBestAuditorProxyAdmin),
                     ""
                 )
             )
@@ -243,7 +244,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
+                    address(sourcingBestAuditorProxyAdmin),
                     ""
                 )
             )
@@ -252,7 +253,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(incredibleSquaringProxyAdmin),
+                    address(sourcingBestAuditorProxyAdmin),
                     ""
                 )
             )
@@ -267,7 +268,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 delegationManager
             );
 
-            incredibleSquaringProxyAdmin.upgrade(
+            sourcingBestAuditorProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
@@ -276,7 +277,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 registryCoordinator
             );
 
-            incredibleSquaringProxyAdmin.upgrade(
+            sourcingBestAuditorProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
                 address(blsApkRegistryImplementation)
             );
@@ -285,14 +286,14 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 registryCoordinator
             );
 
-            incredibleSquaringProxyAdmin.upgrade(
+            sourcingBestAuditorProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
             );
         }
 
         registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
-            incredibleSquaringServiceManager,
+            sourcingBestAuditorServiceManager,
             regcoord.IStakeRegistry(address(stakeRegistry)),
             regcoord.IBLSApkRegistry(address(blsApkRegistry)),
             regcoord.IIndexRegistry(address(indexRegistry))
@@ -338,7 +339,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                         });
                 }
             }
-            incredibleSquaringProxyAdmin.upgradeAndCall(
+            sourcingBestAuditorProxyAdmin.upgradeAndCall(
                 TransparentUpgradeableProxy(
                     payable(address(registryCoordinator))
                 ),
@@ -346,10 +347,10 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 abi.encodeWithSelector(
                     regcoord.RegistryCoordinator.initialize.selector,
                     // we set churnApprover and ejector to communityMultisig because we don't need them
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringPauserReg,
+                    sourcingBestAuditorCommunityMultisig,
+                    sourcingBestAuditorCommunityMultisig,
+                    sourcingBestAuditorCommunityMultisig,
+                    sourcingBestAuditorPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
                     quorumsOperatorSetParams,
                     quorumsMinimumStake,
@@ -358,35 +359,35 @@ contract IncredibleSquaringDeployer is Script, Utils {
             );
         }
 
-        incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
+        sourcingBestAuditorServiceManagerImplementation = new InsourcingBestAuditorServiceManager(
             avsDirectory,
             registryCoordinator,
             stakeRegistry,
-            incredibleSquaringTaskManager
+            sourcingBestAuditorTaskManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        incredibleSquaringProxyAdmin.upgrade(
+        sourcingBestAuditorProxyAdmin.upgrade(
             TransparentUpgradeableProxy(
-                payable(address(incredibleSquaringServiceManager))
+                payable(address(sourcingBestAuditorServiceManager))
             ),
-            address(incredibleSquaringServiceManagerImplementation)
+            address(sourcingBestAuditorServiceManagerImplementation)
         );
 
-        incredibleSquaringTaskManagerImplementation = new IncredibleSquaringTaskManager(
+        sourcingBestAuditorTaskManagerImplementation = new InsourcingBestAuditorTaskManager(
             registryCoordinator,
             TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        incredibleSquaringProxyAdmin.upgradeAndCall(
+        sourcingBestAuditorProxyAdmin.upgradeAndCall(
             TransparentUpgradeableProxy(
-                payable(address(incredibleSquaringTaskManager))
+                payable(address(sourcingBestAuditorTaskManager))
             ),
-            address(incredibleSquaringTaskManagerImplementation),
+            address(sourcingBestAuditorTaskManagerImplementation),
             abi.encodeWithSelector(
-                incredibleSquaringTaskManager.initialize.selector,
-                incredibleSquaringPauserReg,
-                incredibleSquaringCommunityMultisig,
+                sourcingBestAuditorTaskManager.initialize.selector,
+                sourcingBestAuditorPauserReg,
+                sourcingBestAuditorCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR
             )
@@ -408,23 +409,23 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringServiceManager",
-            address(incredibleSquaringServiceManager)
+            "sourcingBestAuditorServiceManager",
+            address(sourcingBestAuditorServiceManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringServiceManagerImplementation",
-            address(incredibleSquaringServiceManagerImplementation)
+            "sourcingBestAuditorServiceManagerImplementation",
+            address(sourcingBestAuditorServiceManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringTaskManager",
-            address(incredibleSquaringTaskManager)
+            "sourcingBestAuditorTaskManager",
+            address(sourcingBestAuditorTaskManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringTaskManagerImplementation",
-            address(incredibleSquaringTaskManagerImplementation)
+            "sourcingBestAuditorTaskManagerImplementation",
+            address(sourcingBestAuditorTaskManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
@@ -449,6 +450,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             deployed_addresses_output
         );
 
-        writeOutput(finalJson, "credible_squaring_avs_deployment_output");
+        writeOutput(finalJson, "sourcing_best_auditor_avs_deployment_output");
     }
 }
