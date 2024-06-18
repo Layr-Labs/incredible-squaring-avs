@@ -16,9 +16,10 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     IIncredibleSquaringTaskManager
         public immutable incredibleSquaringTaskManager;
 
-    mapping(address => string) public operatorUrls;
+    mapping(address => string) public operatorHttpUrls;
+    mapping(address => string) public operatorRpcUrls;
 
-    event OperatorUrlRegistered(address operatorId, string url);
+    event OperatorUrlRegistered(address operatorId, string httpUrl, string rpcUrl);
 
     /// @notice when applied to a function, ensures that the function is only callable by the `registryCoordinator`.
     modifier onlyIncredibleSquaringTaskManager() {
@@ -60,13 +61,22 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
         // slasher.freezeOperator(operatorAddr);
     }
 
-    function registerOperatorConsensusUrl(string memory url) onlyOperator external {
-        operatorUrls[msg.sender] = url;
-        emit OperatorUrlRegistered(msg.sender, url);
+    function registerOperatorConsensusUrl(string memory httpUrl, string memory rpcUrl) onlyOperator external {
+        operatorHttpUrls[msg.sender] = httpUrl;
+        operatorRpcUrls[msg.sender] = rpcUrl;
+        emit OperatorUrlRegistered(msg.sender, httpUrl, rpcUrl);
     }
 
-    function fetchOperatorUrl(address operatorAddress) onlyOperator external view returns(string memory) {
-        require (bytes(operatorUrls[operatorAddress]).length != 0, "No url registered for requested address");
-        return operatorUrls[operatorAddress];
+    function fetchOperatorUrls(address operatorAddress) external view returns(string memory httpUrl, string memory rpcUrl) {
+        bytes memory httpUrl = bytes(operatorHttpUrls[operatorAddress]);
+        bytes memory rpcUrl = bytes(operatorRpcUrls[operatorAddress]);
+        require (httpUrl.length > 0 , "No url registered for requested address");
+        require (rpcUrl.length > 0 , "No url registered for requested address");
+        return (operatorHttpUrls[operatorAddress], operatorRpcUrls[operatorAddress]);
+    }
+
+    function isValidOperator(address operatorAddress) external view returns(bool) {
+        IRegistryCoordinator.OperatorInfo memory operatorInfo = _registryCoordinator.getOperator(operatorAddress);
+        return operatorInfo.operatorId != bytes32(0);
     }
 }

@@ -173,14 +173,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 
-	blockNumber, errr := ethRpcClient.BlockNumber(context.Background())
-	if errr != nil {
-		logger.Error("Cannot get blockNumber", "err", errr)
-		return nil, errr
-	}
-
-	logger.Info("Latest block number", "block", blockNumber)
-
 	ecdsaKeyPassword, ok := os.LookupEnv("OPERATOR_ECDSA_KEY_PASSWORD")
 	if !ok {
 		logger.Warnf("OPERATOR_ECDSA_KEY_PASSWORD env var not set. using empty string")
@@ -265,9 +257,17 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	// setup raft consensus client
-	consensusFSM := NewConcensusFSM(priceFeedClient, blsKeyPair)
+	consensusFSM := NewConcensusFSM(priceFeedClient, blsKeyPair, operatorEcdsaPrivateKey)
 
 	taskResponses := make(map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse)
+
+	// start http server with additional raft endpoints
+	h := NewService(c.HttpBindingURI, consensusFSM, blsAggregationService, &taskResponses, ethRpcClient)
+	h.avsReader = avsReader
+	h.logger = logger
+	if err := h.Start(); err != nil {
+		logger.Error("failed to start HTTP service: %s", err.Error())
+	}
 
 	operator := &Operator{
 		config:                             c,
@@ -297,12 +297,11 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 
 	if c.RegisterOperatorOnStartup {
 		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
-		avsWriter.ResigterOperatorUrl(context.Background(), c.HttpBindingURI)
+		avsWriter.ResigterOperatorUrl(context.Background(), c.HttpBindingURI, c.RaftBindingURI)
+		time.Sleep(5 * time.Second) // Ensure operator is registered
 	}
 
 	// Setup raft
-
-	// 3) Bootstrap cluster if no previous opertorId found
 	consensusFSM.RaftBind = c.RaftBindingURI
 	consensusFSM.RaftDir = c.RaftDirectoryPath
 	consensusFSM.RaftHttpBind = c.HttpBindingURI
@@ -318,24 +317,34 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	// If operator is joining an existing raft network make request to join
 	// iterate over up to 10 urls
 	hasJoinedCluster := false
+	hasError := false
 
 	for i := 0; i < 10; i++ {
 		event := results.Event
+
+		blockNumber, errr := ethRpcClient.BlockNumber(context.Background())
+		if errr != nil {
+			logger.Error("Cannot get blockNumber", "err", errr)
+			return nil, errr
+		}
+
+		logger.Info("Latest block number", "block", blockNumber)
 
 		// check if operatorId is different from this operator
 		if event.OperatorId.String() == common.HexToAddress(c.OperatorAddress).String() {
 			results.Next()
 			continue
 		} else {
-			url := event.Url
+			url := event.HttpUrl
 
 			logger.Info("Attempting to join existing raft cluster", "joinUrl", url)
 
 			// initialize raft consensus server
 			consensusFSM.Initialize(false, c.OperatorAddress)
 
-			if err := JoinExistingNetwork(url, c.RaftBindingURI, c.OperatorAddress); err != nil {
+			if err := consensusFSM.JoinExistingNetwork(url, c.RaftBindingURI, c.OperatorAddress, blockNumber); err != nil {
 				logger.Warn("failed to join node at", "url", url, "err", err)
+				hasError = true
 				results.Next()
 			}
 			// Joined network
@@ -345,15 +354,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 
 	}
 
-	if !hasJoinedCluster {
+	if !hasJoinedCluster && !hasError {
 		consensusFSM.Initialize(true, c.OperatorAddress)
-	}
-
-	// start http server with additional raft endpoints
-	h := NewService(c.HttpBindingURI, consensusFSM, blsAggregationService, &taskResponses)
-	h.logger = logger
-	if err := h.Start(); err != nil {
-		logger.Error("failed to start HTTP service: %s", err.Error())
+		logger.Info("Attempting to bootstrap raft cluster")
+	} else if !hasJoinedCluster && hasError {
+		logger.Error("Failed to join existing raft cluster")
+		return nil, err
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
@@ -518,7 +524,7 @@ func (o *Operator) sendAggregatedTaskResponseToContract(blsAggServiceResp blsagg
 	isLeader, _ := o.priceFSM.IsLeader()
 
 	if !isLeader {
-		return // Only leader create task
+		return // Only leader can submit aggregate task
 	}
 
 	if blsAggServiceResp.Err != nil {

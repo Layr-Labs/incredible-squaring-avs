@@ -20,7 +20,7 @@ type AvsWriterer interface {
 	avsregistry.AvsRegistryWriter
 
 	SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error)
-	ResigterOperatorUrl(ctx context.Context, raftUrl string) error
+	ResigterOperatorUrl(ctx context.Context, raftHttpUrl string, raftRpcUrl string) error
 	RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
@@ -70,7 +70,7 @@ func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBin
 	}
 }
 
-func (w *AvsWriter) ResigterOperatorUrl(ctx context.Context, raftUrl string) error {
+func (w *AvsWriter) ResigterOperatorUrl(ctx context.Context, raftHttpUrl string, raftRpcUrl string) error {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 
 	if err != nil {
@@ -78,7 +78,7 @@ func (w *AvsWriter) ResigterOperatorUrl(ctx context.Context, raftUrl string) err
 		return err
 	}
 
-	tx, err := w.AvsContractBindings.ServiceManager.RegisterOperatorConsensusUrl(txOpts, raftUrl)
+	tx, err := w.AvsContractBindings.ServiceManager.RegisterOperatorConsensusUrl(txOpts, raftHttpUrl, raftRpcUrl)
 
 	if err != nil {
 		w.logger.Errorf("Error assembling RegisterOperatorConsensusUrl tx")

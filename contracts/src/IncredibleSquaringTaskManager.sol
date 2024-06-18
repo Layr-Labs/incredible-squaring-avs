@@ -73,12 +73,11 @@ contract IncredibleSquaringTaskManager is
 
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
-    // Add onlyOperator modifier
     function createNewTask(
         uint256 numberToBeSquared,
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers
-    ) external {
+    ) external onlyOperator {
         // create a new task struct
         Task memory newTask;
         newTask.numberToBeSquared = numberToBeSquared;
@@ -92,7 +91,6 @@ contract IncredibleSquaringTaskManager is
         latestTaskNum = latestTaskNum + 1;
     }
 
-    // Add onlyOperator modifier
     function requestPriceFeedUpdate(
         string memory feedName,
         uint32 quorumThresholdPercentage,
@@ -113,7 +111,6 @@ contract IncredibleSquaringTaskManager is
     }
 
     // NOTE: this function responds to existing tasks.
-    // Add onlyOperator modifier
     function respondToTask(
         PriceUpdateTask calldata task,
         PriceUpdateTaskResponse[] calldata taskResponses, // Each price feed source has a different response
@@ -225,5 +222,10 @@ contract IncredibleSquaringTaskManager is
 
     function getTaskResponseWindowBlock() external view returns (uint32) {
         return TASK_RESPONSE_WINDOW_BLOCK;
+    }
+
+    function isValidOperator(address operatorAddress) external view onlyOperator returns(bool) {
+        IRegistryCoordinator.OperatorInfo memory operatorInfo = registryCoordinator.getOperator(operatorAddress);
+        return operatorInfo.operatorId != bytes32(0);
     }
 }
