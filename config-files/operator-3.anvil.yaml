@@ -47,4 +47,3 @@ token_strategy_addr: 0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E
 raft_log_directory: config-files/operator-3
 operator_raft_uri: localhost:12003
 operator_http_uri: localhost:11013
-raft_join_uri: 127.0.0.1:11011 # node used to join raft consensus

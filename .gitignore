@@ -29,4 +29,6 @@ logs.txt
 id_rsa
 
 
+config-files/
+
 node_modules/

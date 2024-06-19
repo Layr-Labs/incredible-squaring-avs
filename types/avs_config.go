@@ -21,5 +21,4 @@ type NodeConfig struct {
 	RaftDirectoryPath             string `yaml:"raft_log_directory"`
 	RaftBindingURI                string `yaml:"operator_raft_uri"`
 	HttpBindingURI                string `yaml:"operator_http_uri"`
-	RaftJoinURI                   string `yaml:"raft_join_uri"`
 }

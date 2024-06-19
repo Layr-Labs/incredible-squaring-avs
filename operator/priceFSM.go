@@ -2,7 +2,10 @@ package operator
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,6 +23,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/hashicorp/raft"
 	raftboltdb "github.com/hashicorp/raft-boltdb"
@@ -51,28 +56,48 @@ type PriceFSM struct {
 	priceFeedAdapter *priceFeedAdapter.ContractPriceFeedAdapter
 	blsKeypair       *bls.KeyPair
 	operatorId       sdktypes.OperatorId
+	privateKey       *ecdsa.PrivateKey
 }
 
-func NewConcensusFSM(feedAdapter *priceFeedAdapter.ContractPriceFeedAdapter, keyPair *bls.KeyPair) *PriceFSM {
+func NewConcensusFSM(feedAdapter *priceFeedAdapter.ContractPriceFeedAdapter, keyPair *bls.KeyPair, pk *ecdsa.PrivateKey) *PriceFSM {
 	return &PriceFSM{
 		priceData:        make(map[string]int),
 		logger:           log.New(os.Stderr, "[priceData] ", log.LstdFlags),
 		priceFeedAdapter: feedAdapter,
 		blsKeypair:       keyPair,
+		privateKey:       pk,
 	}
 }
 
-func JoinExistingNetwork(joinAddr, raftAddr, nodeID string) error {
-	b, err := json.Marshal(map[string]string{"addr": raftAddr, "id": nodeID})
-	if err != nil {
-		return err
-	}
-	resp, err := http.Post(fmt.Sprintf("http://%s/join", joinAddr), "application-type/json", bytes.NewReader(b))
+func (p *PriceFSM) JoinExistingNetwork(joinAddr, raftAddr, nodeID string, latestBlock uint64) error {
+
+	// Sign message with latest block and send to leader
+	data := []byte(strconv.FormatUint(latestBlock, 10))
+	hash := crypto.Keccak256Hash(data)
+
+	message, err := crypto.Sign(hash.Bytes(), p.privateKey)
+
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Joined raft consensus through uri %s:", joinAddr)
+	b, err := json.Marshal(map[string]string{"signedMessage": base64.StdEncoding.EncodeToString(message[:]), "messageHash": base64.StdEncoding.EncodeToString(hash.Bytes()[:]), "blockNumber": strconv.FormatUint(latestBlock, 10)})
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(fmt.Sprintf("http://%s/join", joinAddr), "application-type/json", bytes.NewReader(b))
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(fmt.Sprintf("Failed to join raft cluster because:"))
+	}
+
+	log.Printf("Joined raft consensus through uri %s", joinAddr)
 	defer resp.Body.Close()
 	return nil
 }

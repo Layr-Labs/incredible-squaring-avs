@@ -4,17 +4,22 @@ package operator
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 	"sync"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
+	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type IPriceFSM interface {
@@ -31,15 +36,18 @@ type Service struct {
 	taskResponsesMu       sync.RWMutex
 	taskResponses         *map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse
 	blsAggregationService blsagg.BlsAggregationService
+	avsReader             chainio.AvsReaderer
+	ethClient             eth.Client
 }
 
 // New returns an uninitialized HTTP service.
-func NewService(addr string, priceFSM IPriceFSM, blsAggregationService blsagg.BlsAggregationService, taskResponses *map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse) *Service {
+func NewService(addr string, priceFSM IPriceFSM, blsAggregationService blsagg.BlsAggregationService, taskResponses *map[uint32]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTaskResponse, ethClient eth.Client) *Service {
 	return &Service{
 		addr:                  addr,
 		priceFSM:              priceFSM,
 		taskResponses:         taskResponses,
 		blsAggregationService: blsAggregationService,
+		ethClient:             ethClient,
 	}
 }
 
@@ -77,8 +85,6 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handlePriceUpdateTaskSubmittion(w, r)
 	} else if r.URL.Path == "/join" {
 		s.handleJoin(w, r)
-	} else if r.URL.Path == "/verify" {
-		s.handleVerify(w, r)
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
@@ -91,30 +97,89 @@ func (s *Service) handleJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(m) != 2 {
+	if len(m) != 3 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	remoteAddr, ok := m["addr"]
+	signedMessage, ok := m["signedMessage"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	nodeID, ok := m["id"]
+	messageHash, ok := m["messageHash"]
 	if !ok {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// 1 - Add call to send a message requesting it be signed by remoteAddr
-	// 2 - Verify remote add is a valid operator by verifying signature
+	blockNumber, ok := m["blockNumber"]
+	if !ok {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	if err := s.priceFSM.Join(nodeID, remoteAddr); err != nil {
+	signedMessageBytes, err := base64.StdEncoding.DecodeString(signedMessage)
+
+	if err != nil {
+		s.logger.Warn("Failed to decode signed message", "err", err)
+	}
+
+	messageBytes, err := base64.StdEncoding.DecodeString(messageHash)
+
+	if err != nil {
+		s.logger.Warn("Failed to decode message hash", "err", err)
+	}
+
+	sigPublicKey, err := crypto.SigToPub(messageBytes, signedMessageBytes)
+
+	if err != nil {
+		s.logger.Warn("Failed to parse operator signature", "err", err)
+	}
+
+	validOperatorUrls, err := s.avsReader.FetchOperatorUrl(context.Background(), crypto.PubkeyToAddress(*sigPublicKey))
+
+	if err != nil {
+		s.logger.Warn("Resolved address is not a valid operator", "address", crypto.PubkeyToAddress(*sigPublicKey), "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Resolved address is not a valid operator"))
+		return
+	} else {
+		s.logger.Warn("Resolved operator address joining raft cluster is", "address", crypto.PubkeyToAddress(*sigPublicKey))
+	}
+
+	data := []byte(blockNumber)
+	hash := crypto.Keccak256Hash(data)
+	resolvedBlockNumberHash := base64.StdEncoding.EncodeToString(hash.Bytes()[:])
+
+	if messageHash != resolvedBlockNumberHash {
+		s.logger.Warn("Blocknumber hash does not match block number")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Blocknumber hash does not match block number"))
+		return
+	}
+
+	// Verify block number is within last 2 blocks to protect against stale signatures
+	latestBlock, _ := s.ethClient.BlockNumber(context.Background())
+
+	blockAsInt, _ := strconv.ParseUint(blockNumber, 10, 64)
+
+	if blockAsInt != latestBlock && blockAsInt != latestBlock-1 {
+		s.logger.Warn("Blocknumber in signature is to old")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Blocknumber in signature is to old"))
+		return
+	}
+
+	nodeID := crypto.PubkeyToAddress(*sigPublicKey).String()
+
+	if err := s.priceFSM.Join(nodeID, validOperatorUrls.RpcUrl); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http.Request) {
@@ -161,9 +226,4 @@ func (s *Service) handlePriceUpdateTaskSubmittion(w http.ResponseWriter, r *http
 			"operatorId", signedResponse.OperatorId.LogValue().String(),
 		)
 	}
-}
-
-func (s *Service) handleVerify(w http.ResponseWriter, r *http.Request) {
-	// 1 - Sign a message with nodeId + operator address
-	// 2 - Return signed message
 }
