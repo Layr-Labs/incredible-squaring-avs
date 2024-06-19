@@ -220,9 +220,9 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 	if err != nil {
 		f.logger.Printf("Failed to fetch price", "err", err)
 		return nil
-	
+
 	}
-	diaResponse := PriceUpdateTaskResponse{Price: uint32(diaPrice.Uint64()), Source: "dia", TaskId: request.TaskId, Decimals: 18}
+	diaResponse := PriceUpdateTaskResponse{Price: uint32(diaPrice.Uint64()), Source: "dia", TaskId: request.TaskId, Decimals: 8}
 
 	// Fetch chainlink price
 	resolvePrice, err := f.priceFeedAdapter.GetLatestPrice(&bind.CallOpts{}, request.FeedName)
@@ -236,9 +236,9 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 
 	chainlinkResponse := PriceUpdateTaskResponse{Price: uint32(resolvePrice.Uint64()), Source: "chainlink", TaskId: request.TaskId, Decimals: 18}
 
-	f.logger.Printf("Chainlink response: %v", chainlinkResponse)
-	f.logger.Printf("Dia response: %v", diaResponse)
-	response = append(response,chainlinkResponse, diaResponse)
+	f.logger.Printf("Chainlink response for feed %s: %v", request.FeedName, chainlinkResponse)
+	f.logger.Printf("Dia response for feed %s : %v", request.FeedName, diaResponse)
+	response = append(response, chainlinkResponse, diaResponse)
 
 	if err := f.SubmitTaskToLeader(request, response, request.LeaderUrl); err != nil {
 		f.logger.Printf("Failed to submit task response", "err", err)
@@ -248,7 +248,6 @@ func (f *fsm) Apply(l *raft.Log) interface{} {
 }
 
 // Triggers operator to fetch the requested price feed and sumbit to leader
-
 
 func (f *fsm) SubmitTaskToLeader(request PriceUpdateRequest, responses []PriceUpdateTaskResponse, leaderUrl string) error {
 

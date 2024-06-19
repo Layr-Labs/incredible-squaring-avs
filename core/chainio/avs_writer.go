@@ -26,7 +26,7 @@ type AvsWriterer interface {
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
-	SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error)
+	SendNewPriceUpdate(ctx context.Context, feedName string) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error)
 	RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
@@ -102,13 +102,12 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error) {
+func (w *AvsWriter) SendNewPriceUpdate(ctx context.Context, feedName string) (cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask, uint32, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.IIncredibleSquaringTaskManagerPriceUpdateTask{}, 0, err
 	}
-	feedName := "btc/usdc"
 	tx, err := w.AvsContractBindings.TaskManager.RequestPriceFeedUpdate(txOpts, feedName, uint32(sdktypes.QuorumThresholdPercentage(66)), sdktypes.QuorumNums{0}.UnderlyingType(), uint8(1))
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")

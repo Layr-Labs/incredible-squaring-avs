@@ -12,7 +12,7 @@ interface IDIAOracleV2{
 contract PriceFeedAdapter is Ownable {
     mapping(string => AggregatorV3Interface) public feeds;
 
-    address immutable diaORACLE = 0xCD5F78206ca1FF96Ff4c043C61a2299B2Febf3cB; // sepolia
+    address immutable diaORACLE = 0xA2D2A0a48991513495182692F330185B774407e2; // sepolia
 
     event FeedAdded(string symbol, address feedAddress);
     event FeedRemoved(string symbol);
