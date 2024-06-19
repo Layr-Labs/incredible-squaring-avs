@@ -12,7 +12,7 @@ interface IDIAOracleV2{
 contract PriceFeedAdapter is Ownable {
     mapping(string => AggregatorV3Interface) public feeds;
 
-    address immutable diaORACLE = 0xCD5F78206ca1FF96Ff4c043C61a2299B2Febf3cB; // sepolia
+    address immutable diaORACLE = 0xA2D2A0a48991513495182692F330185B774407e2; // sepolia
 
     event FeedAdded(string symbol, address feedAddress);
     event FeedRemoved(string symbol);
@@ -40,7 +40,8 @@ contract PriceFeedAdapter is Ownable {
         return price;
     }
 
-    function getPriceDia(string memory _symbol, uint128 _timestampOflatestPrice) external view {
-        (, _timestampOflatestPrice) = IDIAOracleV2(diaORACLE).getValue(_symbol);
+    function getPriceDia(string memory _symbol) external view returns (uint128 Price){
+        (, Price) = IDIAOracleV2(diaORACLE).getValue(_symbol);
+        return Price;
     }
 }

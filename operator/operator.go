@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
@@ -405,7 +406,7 @@ func (o *Operator) Start(ctx context.Context) error {
 		metricsErrChan = make(chan error, 1)
 	}
 
-	ticker := time.NewTicker(15 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	// TODO(samlaf): wrap this call with increase in avs-node-spec metric
@@ -434,9 +435,19 @@ func (o *Operator) Start(ctx context.Context) error {
 			o.logger.Info("Received response from blsAggregationService")
 			o.sendAggregatedTaskResponseToContract(blsAggServiceResp)
 		case <-ticker.C:
-			err := o.sendNewTask()
-			if err != nil {
-				continue
+
+			isEven := rand.Intn(100) % 2
+
+			if isEven == 0 {
+				err := o.sendNewTask("BTC/USD")
+				if err != nil {
+					continue
+				}
+			} else {
+				err = o.sendNewTask("ETH/USD")
+				if err != nil {
+					continue
+				}
 			}
 		}
 	}
@@ -481,7 +492,7 @@ func (o *Operator) ProcessNewPriceUpdateCreatedLog(newPriceUpdateTaskCreatedLog 
 	return err
 }
 
-func (o *Operator) sendNewTask() error {
+func (o *Operator) sendNewTask(feedName string) error {
 	// If not leader ignore request
 	isLeader, _ := o.priceFSM.IsLeader()
 
@@ -490,8 +501,8 @@ func (o *Operator) sendNewTask() error {
 	}
 
 	o.logger.Info("Sending new task")
-	// Send number to square to the task manager contract
-	newTask, taskIndex, err := o.avsWriter.SendNewPriceUpdate(context.Background())
+	// Send new price update task
+	newTask, taskIndex, err := o.avsWriter.SendNewPriceUpdate(context.Background(), feedName)
 	if err != nil {
 		o.logger.Error("Aggregator failed to send number to square", "err", err)
 		return err

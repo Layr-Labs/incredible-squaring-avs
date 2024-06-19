@@ -1,14 +1,14 @@
 {
   "addresses": {
-    "credibleSquaringServiceManager": "0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9",
-    "credibleSquaringServiceManagerImplementation": "0x4c5859f0F772848b2D91F1D83E2Fe57935348029",
-    "credibleSquaringTaskManager": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
-    "credibleSquaringTaskManagerImplementation": "0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154",
+    "credibleSquaringServiceManager": "0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8",
+    "credibleSquaringServiceManagerImplementation": "0x1291Be112d480055DaFd8a610b7d1e203891C274",
+    "credibleSquaringTaskManager": "0x851356ae760d987E095750cCeb3bC6014560891C",
+    "credibleSquaringTaskManagerImplementation": "0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575",
     "erc20Mock": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
-    "erc20MockStrategy": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
-    "operatorStateRetriever": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
+    "erc20MockStrategy": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "operatorStateRetriever": "0x4826533B4897376654Bb4d4AD88B7faFD0C98528",
     "priceFeedAdapter": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
-    "registryCoordinator": "0x851356ae760d987E095750cCeb3bC6014560891C",
-    "registryCoordinatorImplementation": "0x36C02dA8a0983159322a80FFE9F24b1acfF8B570"
+    "registryCoordinator": "0xf5059a5D33d5853360D16C683c16e67980206f36",
+    "registryCoordinatorImplementation": "0x809d550fca64d94Bd9F66E60752A544199cfAC3D"
   }
 }

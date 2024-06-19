@@ -24,6 +24,6 @@ contract PriceAdapterTest {
 
     function test_fetch_btc_usd_price() public {
         emit TestValue(priceFeedAdapter.getLatestPrice("BTC/USD"));
-        priceFeedAdapter.getPriceDia("BTC/USD", 1715446929); // https://www.unixtimestamp.com/
+        priceFeedAdapter.getPriceDia("BTC/USD"); // https://www.unixtimestamp.com/
     }
 }
