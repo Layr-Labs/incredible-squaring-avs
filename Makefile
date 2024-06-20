@@ -31,73 +31,18 @@ deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-sav
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
 
-bindings: ## generates contract bindings
-	cd contracts && ./generate-go-bindings.sh
-
-___DOCKER___: ## 
-docker-build-and-publish-images: ## builds and publishes operator and aggregator docker images using Ko
-	KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build aggregator/cmd/main.go --preserve-import-paths
-	KO_DOCKER_REPO=ghcr.io/layr-labs/incredible-squaring ko build operator/cmd/main.go --preserve-import-paths
-docker-compose-up: ## runs docker compose pull first and then up
-	docker compose pull && docker compose up -d
 
 __CLI__: ## 
 
 cli-setup-operator: send-fund cli-register-operator-with-eigenlayer cli-deposit-into-mocktoken-strategy cli-register-operator-with-avs ## registers operator with eigenlayer and avs
 
-cli-register-operator-with-eigenlayer: ## registers operator with delegationManager
-	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-eigenlayer
-
 cli-deposit-into-mocktoken-strategy: ## 
 	./scripts/deposit-into-mocktoken-strategy.sh
-
-cli-register-operator-with-avs: ## 
-	go run cli/main.go --config config-files/operator.anvil.yaml register-operator-with-avs
-
-cli-deregister-operator-with-avs: ## 
-	go run cli/main.go --config config-files/operator.anvil.yaml deregister-operator-with-avs
-
-cli-print-operator-status: ## 
-	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
 send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 	cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
------------------------------: ## 
-# We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
-# TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
-____OFFCHAIN_SOFTWARE___: ## 
-start-aggregator: ## 
-	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
-		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
-		2>&1 | zap-pretty
-
-start-operator: ## 
-	go run operator/cmd/main.go --config config-files/operator.anvil.yaml \
-		2>&1 | zap-pretty
-
-start-challenger: ## 
-	go run challenger/cmd/main.go --config config-files/challenger.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
-		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
-		2>&1 | zap-pretty
-
-run-plugin: ## 
-	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml
------------------------------: ## 
-_____HELPER_____: ## 
-mocks: ## generates mocks for tests
-	go install go.uber.org/mock/mockgen@v0.3.0
-	go generate ./...
-
-tests-unit: ## runs all unit tests
-	go test $$(go list ./... | grep -v /integration) -coverprofile=coverage.out -covermode=atomic --timeout 15s
-	go tool cover -html=coverage.out -o coverage.html
-
 tests-contract: ## runs all forge tests
 	cd contracts && forge test
 
-tests-integration: ## runs all integration tests
-	go test ./tests/integration/... -v -count=1
 

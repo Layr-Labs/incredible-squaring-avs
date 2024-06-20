@@ -1,0 +1,58 @@
+[workspace]
+members = ["crates/*"
+]
+
+resolver = "2"
+
+[workspace.package]
+version = "0.0.1-alpha"
+edition = "2021"
+rust-version = "1.79"
+repository = "https://github.com/Layr-Labs/incredible-squaring-avs/tree/rust"
+homepage = ""
+license-file = "LICENSE"
+
+
+[workspace.lints]
+rust.missing_debug_implementations = "warn"
+rust.missing_docs = "warn"
+rust.unreachable_pub = "warn"
+rust.unused_must_use = "deny"
+rust.rust_2018_idioms = "deny"
+rustdoc.all = "warn"
+
+
+[workspace.dependencies]
+
+
+
+#misc 
+parking_lot = "0.12"
+
+#alloy
+alloy-chains = "0.1.15"
+alloy-primitives = "0.7.2"
+alloy-dyn-abi = "0.7.2"
+alloy-sol-types = "0.7.2"
+alloy-rlp = "0.3.4"
+alloy-trie = "0.3.1"
+alloy-rpc-types = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-rpc-types-anvil = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-rpc-types-trace = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-rpc-types-engine = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-genesis = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-node-bindings = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-provider = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93", default-features = false, features = [
+    "reqwest","ws"
+] }
+alloy-transport-http = {git = "https://github.com/alloy-rs/alloy", rev = "cc68b93"}
+alloy-eips = { git = "https://github.com/alloy-rs/alloy", default-features = false, rev = "cc68b93" }
+alloy-signer = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-signer-wallet = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-network = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-consensus = { git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-contract = {git = "https://github.com/alloy-rs/alloy", rev = "cc68b93" }
+alloy-transport =  {git = "https://github.com/alloy-rs/alloy", rev = "cc68b93"}
+alloy-transport-ws = {git = "https://github.com/alloy-rs/alloy", rev = "cc68b93"}
+alloy-rpc-client = {git = "https://github.com/alloy-rs/alloy", rev = "cc68b93"}
+
