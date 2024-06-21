@@ -18,6 +18,10 @@ You will also need to [install docker](https://docs.docker.com/get-docker/), and
 ```
 make build-contracts
 ```
+You will also need to [install abigen](https://geth.ethereum.org/docs/tools/abigen) if you want to make changes to the smart contracts and then generate the go bindings 
+```
+make bindings
+```
 
 ## Running via make
 
