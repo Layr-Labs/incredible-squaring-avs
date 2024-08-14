@@ -25,7 +25,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
-	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
 	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
@@ -52,8 +51,8 @@ type Operator struct {
 	avsWriter        *chainio.AvsWriter
 	avsReader        chainio.AvsReaderer
 	avsSubscriber    chainio.AvsSubscriberer
-	eigenlayerReader sdkelcontracts.ELReader
-	eigenlayerWriter sdkelcontracts.ELWriter
+	eigenlayerReader sdkelcontracts.Reader
+	eigenlayerWriter sdkelcontracts.Writer
 	blsKeypair       *bls.KeyPair
 	operatorId       sdktypes.OperatorId
 	operatorAddr     common.Address
@@ -73,11 +72,11 @@ type Operator struct {
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	var logLevel logging.LogLevel
 	if c.Production {
-		logLevel = sdklogging.Production
+		logLevel = logging.Production
 	} else {
-		logLevel = sdklogging.Development
+		logLevel = logging.Development
 	}
-	logger, err := sdklogging.NewZapLogger(logLevel)
+	logger, err := logging.NewZapLogger(logLevel)
 	if err != nil {
 		return nil, err
 	}

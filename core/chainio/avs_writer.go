@@ -18,7 +18,7 @@ import (
 )
 
 type AvsWriterer interface {
-	avsregistry.AvsRegistryWriter
+	avsregistry.Writer
 
 	SendNewTaskNumberToSquare(
 		ctx context.Context,
@@ -41,7 +41,7 @@ type AvsWriterer interface {
 }
 
 type AvsWriter struct {
-	avsregistry.AvsRegistryWriter
+	avsregistry.Writer
 	AvsContractBindings *AvsManagersBindings
 	logger              logging.Logger
 	TxMgr               txmgr.TxManager
@@ -66,9 +66,9 @@ func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStat
 	}
 	return NewAvsWriter(avsRegistryWriter, avsServiceBindings, logger, txMgr), nil
 }
-func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
+func NewAvsWriter(avsRegistryWriter avsregistry.Writer, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
 	return &AvsWriter{
-		AvsRegistryWriter:   avsRegistryWriter,
+		Writer:              avsRegistryWriter,
 		AvsContractBindings: avsServiceBindings,
 		logger:              logger,
 		TxMgr:               txMgr,
