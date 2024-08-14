@@ -48,13 +48,11 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 		NumberToSquare: NUMBER_TO_SQUARE,
 	}, *MOCK_OPERATOR_KEYPAIR)
 	assert.Nil(t, err)
-	signedTaskResponseDigest, err := core.GetTaskResponseDigest(&signedTaskResponse.TaskResponse)
-	assert.Nil(t, err)
 
 	// TODO(samlaf): is this the right way to test writing to external service?
 	// or is there some wisdom to "don't mock 3rd party code"?
 	// see https://hynek.me/articles/what-to-mock-in-5-mins/
-	mockBlsAggServ.EXPECT().ProcessNewSignature(context.Background(), TASK_INDEX, signedTaskResponseDigest,
+	mockBlsAggServ.EXPECT().ProcessNewSignature(context.Background(), TASK_INDEX, signedTaskResponse.TaskResponse,
 		&signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId)
 	err = aggregator.ProcessSignedTaskResponse(signedTaskResponse, nil)
 	assert.Nil(t, err)
