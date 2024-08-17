@@ -106,13 +106,13 @@ func (o *Operator) RegisterOperatorWithAvs(
 		o.logger.Errorf("Unable to get current block number")
 		return err
 	}
-	curBlock, err := o.ethClient.BlockByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
+	curBlock, err := o.ethClient.HeaderByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
 	if err != nil {
 		o.logger.Errorf("Unable to get current block")
 		return err
 	}
 	sigValidForSeconds := int64(1_000_000)
-	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time()) + sigValidForSeconds)
+	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time) + sigValidForSeconds)
 	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 		context.Background(),
 		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
