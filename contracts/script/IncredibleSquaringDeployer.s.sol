@@ -31,18 +31,12 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+// forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --constructor-args $AGGREGATOR_ADDR $TASK_GENERATOR_ADDR --broadcast -vvvv
 contract IncredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     uint32 public constant TASK_DURATION_BLOCKS = 0;
-    // TODO: right now hardcoding these (this address is anvil's default address 9)
-    address public constant AGGREGATOR_ADDR =
-        0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
-    address public constant TASK_GENERATOR_ADDR =
-        0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
-
     // ERC20 and Strategy: we need to deploy this erc20, create a strategy for it, and whitelist this strategy in the strategymanager
 
     ERC20Mock public erc20Mock;
@@ -73,7 +67,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
     IIncredibleSquaringTaskManager
         public incredibleSquaringTaskManagerImplementation;
 
+    address public aggregatorAddr;
+    address public taskGeneratorAddr;
+
     function run() external {
+        aggregatorAddr = vm.envAddress("AGGREGATOR_ADDR");
+        taskGeneratorAddr = vm.envAddress("TASK_GENERATOR_ADDR");
         // Eigenlayer contracts
         string memory eigenlayerDeployedContracts = readOutput(
             "eigenlayer_deployment_output"
@@ -387,8 +386,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 incredibleSquaringTaskManager.initialize.selector,
                 incredibleSquaringPauserReg,
                 incredibleSquaringCommunityMultisig,
-                AGGREGATOR_ADDR,
-                TASK_GENERATOR_ADDR
+                aggregatorAddr,
+                taskGeneratorAddr
             )
         );
 
