@@ -46,7 +46,7 @@ contract IncredibleSquaringTaskManager is
     address public aggregator;
     address public generator;
 
-    /* MODIFIERS */
+
     modifier onlyAggregator() {
         require(msg.sender == aggregator, "Aggregator must be the caller");
         _;
@@ -74,8 +74,16 @@ contract IncredibleSquaringTaskManager is
     ) public initializer {
         _initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
-        aggregator = _aggregator;
-        generator = _generator;
+        _setAggregator(_aggregator);
+        _setGenerator(_generator);
+    }
+
+    function setGenerator(address newGenerator) external onlyOwner {
+        _setGenerator(newGenerator);
+    }
+
+    function setAggregator(address newAggregator) external onlyOwner {
+        _setAggregator(newAggregator);
     }
 
     /* FUNCTIONS */
@@ -317,4 +325,18 @@ contract IncredibleSquaringTaskManager is
     function getTaskResponseWindowBlock() external view returns (uint32) {
         return TASK_RESPONSE_WINDOW_BLOCK;
     }
+
+    function _setGenerator(address newGenerator) internal {
+        address oldGenerator = generator;
+        generator = newGenerator;
+        emit GeneratorUpdated(oldGenerator, newGenerator);
+    }
+
+    function _setAggregator(address newAggregator) internal {
+        address oldAggregator = aggregator;
+        aggregator = newAggregator;
+        emit AggregatorUpdated(oldAggregator, newAggregator);
+    }
+
+
 }

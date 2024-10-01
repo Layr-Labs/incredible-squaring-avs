@@ -24,6 +24,10 @@ interface IIncredibleSquaringTaskManager {
         address indexed challenger
     );
 
+    event AggregatorUpdated(address indexed oldAggregator, address indexed newAggregator);
+    
+    event GeneratorUpdated(address indexed oldGenerator, address indexed newGenerator);
+
     // STRUCTS
     struct Task {
         uint256 numberToBeSquared;
