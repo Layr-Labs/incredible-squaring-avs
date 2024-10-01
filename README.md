@@ -6,6 +6,14 @@
 
 Basic repo demoing a simple AVS middleware with full eigenlayer integration. See this [video walkthrough](https://www.loom.com/share/50314b3ec0f34e2ba386d45724602d76?sid=9d68d8cb-d2d5-4123-bd06-776de2076de0).
 
+## Set environment variables
+
+```
+cp .env.template .env
+cp contracts/.env.template contracts/.env
+```
+The .env templates provide default values for devnet development, you should modify them for testnet deployment. 
+
 ## Dependencies
 
 You will need [foundry](https://book.getfoundry.sh/getting-started/installation) and [zap-pretty](https://github.com/maoueh/zap-pretty) and docker to run the examples below.
@@ -18,6 +26,7 @@ You will also need to [install docker](https://docs.docker.com/get-docker/), and
 ```
 make build-contracts
 ```
+
 
 ## Running via make
 
