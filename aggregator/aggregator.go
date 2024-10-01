@@ -2,6 +2,8 @@ package aggregator
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -9,7 +11,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/services/avsregistry"
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
@@ -91,7 +92,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		return nil, err
 	}
 
-	chainioConfig := sdkclients.BuildAllConfig{
+	chainioConfig := clients.BuildAllConfig{
 		EthHttpUrl:                 c.EthHttpRpcUrl,
 		EthWsUrl:                   c.EthWsRpcUrl,
 		RegistryCoordinatorAddr:    c.IncredibleSquaringRegistryCoordinatorAddr.String(),
@@ -105,9 +106,9 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		return nil, err
 	}
 
-	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, c.Logger)
+	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, nil, c.Logger)
 	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, operatorPubkeysService, c.Logger)
-	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, c.Logger)
+	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, hashTaskResponse, c.Logger)
 
 	return &Aggregator{
 		logger:                c.Logger,
@@ -221,4 +222,13 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 	}
 	agg.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
 	return nil
+}
+
+func hashTaskResponse(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
+	response, ok := taskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
+	fmt.Println("taskResponse", taskResponse)
+	if !ok {
+		return sdktypes.TaskResponseDigest{}, errors.New("invalid task response")
+	}
+	return core.GetTaskResponseDigest(&response)
 }
