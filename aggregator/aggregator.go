@@ -2,6 +2,8 @@ package aggregator
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"math/big"
 	"sync"
 	"time"
@@ -106,8 +108,17 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 	}
 
 	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, c.Logger)
+
+	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
+		taskResponseBytes, err := json.Marshal(taskResponse)
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, err
+		}
+		return sdktypes.TaskResponseDigest(sha256.Sum256(taskResponseBytes)), nil
+	}
+
 	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, operatorPubkeysService, c.Logger)
-	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, c.Logger)
+	blsAggregationService := blsagg.NewBlsAggregatorService(avsRegistryService, hashFunction, c.Logger)
 
 	return &Aggregator{
 		logger:                c.Logger,
