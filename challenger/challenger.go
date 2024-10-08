@@ -18,7 +18,7 @@ import (
 
 type Challenger struct {
 	logger             logging.Logger
-	ethClient          ethclient.Client
+	ethClient          ethclient.InstrumentedClient
 	avsReader          chainio.AvsReaderer
 	avsWriter          chainio.AvsWriterer
 	avsSubscriber      chainio.AvsSubscriberer
@@ -47,10 +47,10 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 	}
 
 	challenger := &Challenger{
-		ethClient:          c.EthHttpClient,
 		logger:             c.Logger,
-		avsWriter:          avsWriter,
+		ethClient:          c.EthHttpClient,
 		avsReader:          avsReader,
+		avsWriter:          avsWriter,
 		avsSubscriber:      avsSubscriber,
 		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
 		taskResponses:      make(map[uint32]types.TaskResponseData),
