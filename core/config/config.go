@@ -16,6 +16,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
@@ -31,8 +32,8 @@ type Config struct {
 	// only take an ethclient or an rpcUrl (and build the ethclient at each constructor site)
 	EthHttpRpcUrl                             string
 	EthWsRpcUrl                               string
-	EthHttpClient                             eth.Client
-	EthWsClient                               eth.Client
+	EthHttpClient                             eth.InstrumentedClient
+	EthWsClient                               eth.WsBackend
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
 	AggregatorServerIpPortAddr                string
@@ -84,13 +85,14 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	ethRpcClient, err := eth.NewClient(configRaw.EthRpcUrl)
+	ethRpcClient, err := ethclient.Dial(configRaw.EthRpcUrl)
 	if err != nil {
 		logger.Errorf("Cannot create http ethclient", "err", err)
 		return nil, err
 	}
+	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethRpcClient, nil)
 
-	ethWsClient, err := eth.NewClient(configRaw.EthWsUrl)
+	ethWsClient, err := ethclient.Dial(configRaw.EthWsUrl)
 	if err != nil {
 		logger.Errorf("Cannot create ws ethclient", "err", err)
 		return nil, err
@@ -133,7 +135,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		Logger:                     logger,
 		EthWsRpcUrl:                configRaw.EthWsUrl,
 		EthHttpRpcUrl:              configRaw.EthRpcUrl,
-		EthHttpClient:              ethRpcClient,
+		EthHttpClient:              *ethRpcClientInstrumented,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
