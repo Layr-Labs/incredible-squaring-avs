@@ -13,8 +13,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	blsaggservmock "github.com/Layr-Labs/eigensdk-go/services/mocks/blsagg"
+	"github.com/Layr-Labs/eigensdk-go/testutils"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/mocks"
@@ -79,7 +79,7 @@ func TestSendNewTask(t *testing.T) {
 func createMockAggregator(
 	mockCtrl *gomock.Controller, operatorPubkeyDict map[sdktypes.OperatorId]types.OperatorInfo,
 ) (*Aggregator, *chainiomocks.MockAvsWriterer, *blsaggservmock.MockBlsAggregationService, error) {
-	logger := sdklogging.NewNoopLogger()
+	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
 	mockBlsAggregationService := blsaggservmock.NewMockBlsAggregationService(mockCtrl)
 

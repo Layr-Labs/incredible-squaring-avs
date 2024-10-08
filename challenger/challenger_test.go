@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	mockethclient "github.com/Layr-Labs/eigensdk-go/chainio/mocks"
-	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/Layr-Labs/eigensdk-go/testutils"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/mocks"
 	chtypes "github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
@@ -171,7 +171,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 }
 
 func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomocks.MockAvsWriterer, *chainiomocks.MockAvsReaderer, *chainiomocks.MockAvsSubscriberer, *mockethclient.MockEthClient, error) {
-	logger := sdklogging.NewNoopLogger()
+	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
 	mockAvsReader := chainiomocks.NewMockAvsReaderer(mockCtrl)
 	mockAvsSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
