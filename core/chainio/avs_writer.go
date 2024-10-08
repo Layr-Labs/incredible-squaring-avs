@@ -87,7 +87,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
+	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
@@ -115,7 +115,7 @@ func (w *AvsWriter) SendAggregatedResponse(
 		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
 		return nil, err
 	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
+	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting respondToTask tx")
 		return nil, err
@@ -140,7 +140,7 @@ func (w *AvsWriter) RaiseChallenge(
 		w.logger.Errorf("Error assembling RaiseChallenge tx")
 		return nil, err
 	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
+	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting RaiseChallenge tx")
 		return nil, err
