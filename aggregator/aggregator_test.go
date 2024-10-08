@@ -3,6 +3,7 @@ package aggregator
 import (
 	"context"
 	"math/big"
+	"reflect"
 	"testing"
 	"time"
 
@@ -13,7 +14,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	blsaggservmock "github.com/Layr-Labs/eigensdk-go/services/mocks/blsagg"
+	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
+
 	"github.com/Layr-Labs/eigensdk-go/testutils"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 
@@ -26,6 +28,71 @@ import (
 var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
 var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
+
+// MockBlsAggregationService is a mock of BlsAggregationService interface.
+type MockBlsAggregationService struct {
+	ctrl     *gomock.Controller
+	recorder *MockBlsAggregationServiceMockRecorder
+}
+
+// MockBlsAggregationServiceMockRecorder is the mock recorder for MockBlsAggregationService.
+type MockBlsAggregationServiceMockRecorder struct {
+	mock *MockBlsAggregationService
+}
+
+// NewMockBlsAggregationService creates a new mock instance.
+func NewMockBlsAggregationService(ctrl *gomock.Controller) *MockBlsAggregationService {
+	mock := &MockBlsAggregationService{ctrl: ctrl}
+	mock.recorder = &MockBlsAggregationServiceMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockBlsAggregationService) EXPECT() *MockBlsAggregationServiceMockRecorder {
+	return m.recorder
+}
+
+// GetResponseChannel mocks base method.
+func (m *MockBlsAggregationService) GetResponseChannel() <-chan blsagg.BlsAggregationServiceResponse {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetResponseChannel")
+	ret0, _ := ret[0].(<-chan blsagg.BlsAggregationServiceResponse)
+	return ret0
+}
+
+// GetResponseChannel indicates an expected call of GetResponseChannel.
+func (mr *MockBlsAggregationServiceMockRecorder) GetResponseChannel() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResponseChannel", reflect.TypeOf((*MockBlsAggregationService)(nil).GetResponseChannel))
+}
+
+// InitializeNewTask mocks base method.
+func (m *MockBlsAggregationService) InitializeNewTask(arg0, arg1 uint32, arg2 sdktypes.QuorumNums, arg3 sdktypes.QuorumThresholdPercentages, arg4 time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitializeNewTask", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitializeNewTask indicates an expected call of InitializeNewTask.
+func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTask(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeNewTask", reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask), arg0, arg1, arg2, arg3, arg4)
+}
+
+// ProcessNewSignature mocks base method.
+func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, arg1 uint32, arg2 sdktypes.Bytes32, arg3 *bls.Signature, arg4 sdktypes.Bytes32) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessNewSignature", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessNewSignature indicates an expected call of ProcessNewSignature.
+func (mr *MockBlsAggregationServiceMockRecorder) ProcessNewSignature(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNewSignature", reflect.TypeOf((*MockBlsAggregationService)(nil).ProcessNewSignature), arg0, arg1, arg2, arg3, arg4)
+}
 
 type MockTask struct {
 	TaskNum        uint32
@@ -78,10 +145,10 @@ func TestSendNewTask(t *testing.T) {
 
 func createMockAggregator(
 	mockCtrl *gomock.Controller, operatorPubkeyDict map[sdktypes.OperatorId]types.OperatorInfo,
-) (*Aggregator, *chainiomocks.MockAvsWriterer, *blsaggservmock.MockBlsAggregationService, error) {
+) (*Aggregator, *chainiomocks.MockAvsWriterer, *MockBlsAggregationService, error) {
 	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
-	mockBlsAggregationService := blsaggservmock.NewMockBlsAggregationService(mockCtrl)
+	mockBlsAggregationService := NewMockBlsAggregationService(mockCtrl)
 
 	aggregator := &Aggregator{
 		logger:                logger,
