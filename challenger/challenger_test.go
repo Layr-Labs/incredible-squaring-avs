@@ -3,9 +3,10 @@ package challenger
 import (
 	"context"
 	"math/big"
+	"reflect"
 	"testing"
 
-	mockethclient "github.com/Layr-Labs/eigensdk-go/chainio/mocks"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/testutils"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/mocks"
@@ -13,6 +14,7 @@ import (
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -21,6 +23,66 @@ import (
 var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
 var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
+
+const (
+	TransactionHash          = "0x0000000000000000000000000000000000000000000000000000000000001234"
+	TransactionNashNotInFake = "0xabcd"
+	BlockNumber              = 1234
+)
+
+// MockEthClient is a mock of Client interface.
+type MockEthClient struct {
+	ctrl     *gomock.Controller
+	recorder *MockEthClientMockRecorder
+}
+
+// MockEthClientMockRecorder is the mock recorder for MockEthClient.
+type MockEthClientMockRecorder struct {
+	mock *MockEthClient
+}
+
+// NewMockEthClient creates a new mock instance.
+func NewMockEthClient(ctrl *gomock.Controller) *MockEthClient {
+	mock := &MockEthClient{ctrl: ctrl}
+	mock.recorder = &MockEthClientMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEthClient) EXPECT() *MockEthClientMockRecorder {
+	return m.recorder
+}
+
+// BalanceAt mocks base method.
+func (m *MockEthClient) BalanceAt(arg0 context.Context, arg1 common.Address, arg2 *big.Int) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BalanceAt", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BalanceAt indicates an expected call of BalanceAt.
+func (mr *MockEthClientMockRecorder) BalanceAt(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceAt", reflect.TypeOf((*MockEthClient)(nil).BalanceAt), arg0, arg1, arg2)
+}
+
+// TransactionByHash indicates an expected call of TransactionByHash.
+func (mr *MockEthClientMockRecorder) TransactionByHash(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionByHash", reflect.TypeOf((*MockEthClient)(nil).TransactionByHash), arg0, arg1)
+}
+
+// TransactionByHash mocks base method.
+func (m *MockEthClient) TransactionByHash(arg0 context.Context, arg1 common.Hash) (*types.Transaction, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransactionByHash", arg0, arg1)
+	ret0, _ := ret[0].(*types.Transaction)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
 
 // @samlaf I tried pulling the MockTask struct froma ggregator_test but getting error: "undefined: aggregator.MockTask"
 type MockTask struct {
@@ -170,17 +232,19 @@ func TestProcessTaskResponseLog(t *testing.T) {
 
 }
 
-func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomocks.MockAvsWriterer, *chainiomocks.MockAvsReaderer, *chainiomocks.MockAvsSubscriberer, *mockethclient.MockEthClient, error) {
+func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomocks.MockAvsWriterer, *chainiomocks.MockAvsReaderer, *chainiomocks.MockAvsSubscriberer, *MockEthClient, error) {
 	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
 	mockAvsReader := chainiomocks.NewMockAvsReaderer(mockCtrl)
 	mockAvsSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
-	mockEthClient := mockethclient.NewMockEthClient(mockCtrl)
+	mockEthClient := NewMockEthClient(mockCtrl)
+	mockEthClientInstrumented, _ := eth.NewInstrumentedClient("", nil) // TODO, add RPC URL
+
 	challenger := &Challenger{
 		logger:             logger,
 		avsWriter:          mockAvsWriter,
 		avsReader:          mockAvsReader,
-		ethClient:          mockEthClient,
+		ethClient:          *mockEthClientInstrumented,
 		avsSubscriber:      mockAvsSubscriber,
 		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),

@@ -5,7 +5,7 @@ import (
 	"context"
 	"math/big"
 
-	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -18,7 +18,7 @@ import (
 
 type Challenger struct {
 	logger             logging.Logger
-	ethClient          ethclient.InstrumentedClient
+	ethClient          eth.InstrumentedClient
 	avsReader          chainio.AvsReaderer
 	avsWriter          chainio.AvsWriterer
 	avsSubscriber      chainio.AvsSubscriberer
