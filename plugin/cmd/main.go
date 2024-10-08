@@ -222,13 +222,13 @@ func plugin(ctx *cli.Context) {
 			logger.Errorf("Error assembling Mint tx")
 			return
 		}
-		_, err = avsWriter.TxMgr.Send(context.Background(), tx)
+		_, err = avsWriter.TxMgr.Send(context.Background(), tx, true)
 		if err != nil {
 			logger.Errorf("Error submitting Mint tx")
 			return
 		}
 
-		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
 		if err != nil {
 			logger.Errorf("Error depositing into strategy")
 			return

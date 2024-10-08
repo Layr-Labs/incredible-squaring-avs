@@ -51,8 +51,8 @@ func (o *Operator) registerOperatorOnStartup(
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
 	op := eigenSdkTypes.Operator{
-		Address:                 o.operatorAddr.String(),
-		EarningsReceiverAddress: o.operatorAddr.String(),
+		Address:                   o.operatorAddr.String(),
+		DelegationApproverAddress: o.operatorAddr.String(),
 	}
 	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op)
 	if err != nil {
@@ -79,7 +79,7 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		o.logger.Errorf("Error assembling Mint tx")
 		return err
 	}
-	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx)
+	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx, true)
 	if err != nil {
 		o.logger.Errorf("Error submitting Mint tx")
 		return err
