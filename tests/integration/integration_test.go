@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -60,11 +61,11 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
-	ethRpcClient, err := eth.NewClient(aggConfigRaw.EthRpcUrl)
+	ethRpcClient, err := ethclient.Dial(aggConfigRaw.EthRpcUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
-	ethWsClient, err := eth.NewClient(aggConfigRaw.EthWsUrl)
+	ethWsClient, err := ethclient.Dial(aggConfigRaw.EthWsUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
@@ -97,11 +98,13 @@ func TestIntegration(t *testing.T) {
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
+	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethRpcClient, nil)
+
 	config := &config.Config{
 		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
 		Logger:                     logger,
 		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
-		EthHttpClient:              ethRpcClient,
+		EthHttpClient:              *ethRpcClientInstrumented,
 		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
