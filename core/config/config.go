@@ -32,7 +32,7 @@ type Config struct {
 	// only take an ethclient or an rpcUrl (and build the ethclient at each constructor site)
 	EthHttpRpcUrl                             string
 	EthWsRpcUrl                               string
-	EthHttpClient                             eth.HttpBackend
+	EthHttpClient                             eth.InstrumentedClient
 	EthWsClient                               eth.WsBackend
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
@@ -90,6 +90,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		logger.Errorf("Cannot create http ethclient", "err", err)
 		return nil, err
 	}
+	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethRpcClient, nil)
 
 	ethWsClient, err := ethclient.Dial(configRaw.EthWsUrl)
 	if err != nil {
@@ -134,7 +135,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		Logger:                     logger,
 		EthWsRpcUrl:                configRaw.EthWsUrl,
 		EthHttpRpcUrl:              configRaw.EthRpcUrl,
-		EthHttpClient:              ethRpcClient,
+		EthHttpClient:              *ethRpcClientInstrumented,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
