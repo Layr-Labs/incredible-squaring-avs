@@ -18,7 +18,7 @@ import (
 )
 
 type AvsWriterer interface {
-	avsregistry.ChainWriter
+	//avsregistry.ChainWriter
 
 	SendNewTaskNumberToSquare(
 		ctx context.Context,

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
@@ -16,12 +17,20 @@ import (
 )
 
 type AvsReaderer interface {
-	sdkavsregistry.ChainReader
+	//sdkavsregistry.ChainReader
 
 	CheckSignatures(
 		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 	) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error)
 	GetErc20Mock(ctx context.Context, tokenAddr gethcommon.Address) (*erc20mock.ContractERC20Mock, error)
+	GetOperatorId(
+		opts *bind.CallOpts,
+		operatorAddress common.Address,
+	) ([32]byte, error)
+	IsOperatorRegistered(
+		opts *bind.CallOpts,
+		operatorAddress common.Address,
+	) (bool, error)
 }
 
 type AvsReader struct {
