@@ -54,7 +54,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 		Address:                   o.operatorAddr.String(),
 		DelegationApproverAddress: o.operatorAddr.String(),
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op)
+	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
 	if err != nil {
 		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
@@ -85,7 +85,7 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		return err
 	}
 
-	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
 	if err != nil {
 		o.logger.Errorf("Error depositing into strategy", "err", err)
 		return err
@@ -116,8 +116,9 @@ func (o *Operator) RegisterOperatorWithAvs(
 	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 		context.Background(),
 		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-		o.blsKeypair, quorumNumbers, socket,
+		o.blsKeypair, quorumNumbers, socket, true,
 	)
+
 	if err != nil {
 		o.logger.Errorf("Unable to register operator with avs registry coordinator")
 		return err
