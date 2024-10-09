@@ -23,6 +23,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 )
 
@@ -104,7 +105,7 @@ func plugin(ctx *cli.Context) {
 		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
 	}
 	logger, _ := logging.NewZapLogger(logging.Development)
-	ethHttpClient, err := eth.NewClient(avsConfig.EthRpcUrl)
+	ethHttpClient, err := ethclient.Dial(avsConfig.EthRpcUrl)
 	if err != nil {
 		fmt.Println("can't connect to eth client")
 		fmt.Println(err)
@@ -152,11 +153,12 @@ func plugin(ctx *cli.Context) {
 		return
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethHttpClient, logger, common.HexToAddress(avsConfig.OperatorAddress))
+	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethHttpClient, nil)
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
-		ethHttpClient,
+		*ethRpcClientInstrumented,
 		logger,
 	)
 	if err != nil {
