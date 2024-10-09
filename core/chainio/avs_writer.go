@@ -18,7 +18,7 @@ import (
 )
 
 type AvsWriterer interface {
-	avsregistry.AvsRegistryWriter
+	avsregistry.ChainWriter
 
 	SendNewTaskNumberToSquare(
 		ctx context.Context,
@@ -41,20 +41,20 @@ type AvsWriterer interface {
 }
 
 type AvsWriter struct {
-	avsregistry.AvsRegistryWriter
+	avsregistry.ChainWriter
 	AvsContractBindings *AvsManagersBindings
 	logger              logging.Logger
 	TxMgr               txmgr.TxManager
-	client              eth.Client
+	client              eth.HttpBackend
 }
 
-var _ AvsWriterer = (*AvsWriter)(nil)
+//var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
 }
 
-func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.Client, logger logging.Logger) (*AvsWriter, error) {
+func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.HttpBackend, logger logging.Logger) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		logger.Error("Failed to create contract bindings", "err", err)
@@ -64,11 +64,11 @@ func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStat
 	if err != nil {
 		return nil, err
 	}
-	return NewAvsWriter(avsRegistryWriter, avsServiceBindings, logger, txMgr), nil
+	return NewAvsWriter(*avsRegistryWriter, avsServiceBindings, logger, txMgr), nil
 }
-func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
+func NewAvsWriter(avsRegistryWriter avsregistry.ChainWriter, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
 	return &AvsWriter{
-		AvsRegistryWriter:   avsRegistryWriter,
+		ChainWriter:         avsRegistryWriter,
 		AvsContractBindings: avsServiceBindings,
 		logger:              logger,
 		TxMgr:               txMgr,

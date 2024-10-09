@@ -16,7 +16,7 @@ import (
 )
 
 type AvsReaderer interface {
-	sdkavsregistry.AvsRegistryReader
+	sdkavsregistry.ChainReader
 
 	CheckSignatures(
 		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
@@ -25,17 +25,17 @@ type AvsReaderer interface {
 }
 
 type AvsReader struct {
-	sdkavsregistry.AvsRegistryReader
+	sdkavsregistry.ChainReader
 	AvsServiceBindings *AvsManagersBindings
 	logger             logging.Logger
 }
 
-var _ AvsReaderer = (*AvsReader)(nil)
+//var _ AvsReaderer = (*AvsReader)(nil)
 
 func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
 }
-func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.Client, logger logging.Logger) (*AvsReader, error) {
+func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.HttpBackend, logger logging.Logger) (*AvsReader, error) {
 	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		return nil, err
@@ -44,11 +44,11 @@ func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcomm
 	if err != nil {
 		return nil, err
 	}
-	return NewAvsReader(avsRegistryReader, avsManagersBindings, logger)
+	return NewAvsReader(*avsRegistryReader, avsManagersBindings, logger)
 }
-func NewAvsReader(avsRegistryReader sdkavsregistry.AvsRegistryReader, avsServiceBindings *AvsManagersBindings, logger logging.Logger) (*AvsReader, error) {
+func NewAvsReader(avsRegistryReader sdkavsregistry.ChainReader, avsServiceBindings *AvsManagersBindings, logger logging.Logger) (*AvsReader, error) {
 	return &AvsReader{
-		AvsRegistryReader:  avsRegistryReader,
+		ChainReader:        avsRegistryReader,
 		AvsServiceBindings: avsServiceBindings,
 		logger:             logger,
 	}, nil
