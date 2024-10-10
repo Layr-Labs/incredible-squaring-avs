@@ -46,25 +46,26 @@ func TestIntegration(t *testing.T) {
 	}
 
 	/* Prepare the config file for aggregator */
-	var aggConfigRaw config.ConfigRaw
-	aggConfigFilePath := "../../config-files/aggregator.yaml"
-	sdkutils.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
-	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
-	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
+	// aggConfigFilePath := "../../config-files/aggregator.yaml"
+	// sdkutils.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
+	Environment := sdklogging.LogLevel("production")
+	EthRpcUrl := "http://" + anvilEndpoint
+	EthWsUrl := "ws://" + anvilEndpoint
+	AggregatorServerIpPortAddr := "localhost:8090"
 
 	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
 	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
-	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
+	logger, err := sdklogging.NewZapLogger(Environment)
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
-	ethRpcClient, err := eth.NewClient(aggConfigRaw.EthRpcUrl)
+	ethRpcClient, err := eth.NewClient(EthRpcUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
-	ethWsClient, err := eth.NewClient(aggConfigRaw.EthWsUrl)
+	ethWsClient, err := eth.NewClient(EthWsUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
@@ -97,17 +98,19 @@ func TestIntegration(t *testing.T) {
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
+	RegisterOperatorOnStartup := true // default value
+
 	config := &config.Config{
 		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
 		Logger:                     logger,
-		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
+		EthHttpRpcUrl:              EthRpcUrl,
 		EthHttpClient:              ethRpcClient,
-		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
+		EthWsRpcUrl:                EthWsUrl,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
+		AggregatorServerIpPortAddr:                AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:                 RegisterOperatorOnStartup,
 		TxMgr:                                     txMgr,
 		AggregatorAddress:                         aggregatorAddr,
 	}
