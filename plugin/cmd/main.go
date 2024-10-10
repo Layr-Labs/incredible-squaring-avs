@@ -23,6 +23,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 )
 
@@ -104,7 +105,7 @@ func plugin(ctx *cli.Context) {
 		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
 	}
 	logger, _ := logging.NewZapLogger(logging.Development)
-	ethHttpClient, err := eth.NewClient(avsConfig.EthRpcUrl)
+	ethHttpClient, err := ethclient.Dial(avsConfig.EthRpcUrl)
 	if err != nil {
 		fmt.Println("can't connect to eth client")
 		fmt.Println(err)
@@ -152,11 +153,12 @@ func plugin(ctx *cli.Context) {
 		return
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethHttpClient, logger, common.HexToAddress(avsConfig.OperatorAddress))
+	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethHttpClient, nil)
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
-		ethHttpClient,
+		*ethRpcClientInstrumented,
 		logger,
 	)
 	if err != nil {
@@ -184,7 +186,7 @@ func plugin(ctx *cli.Context) {
 		r, err := clients.AvsRegistryChainWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 			goCtx,
 			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-			blsKeypair, quorumNumbers, socket,
+			blsKeypair, quorumNumbers, socket, true,
 		)
 		if err != nil {
 			logger.Errorf("Error assembling CreateNewTask tx")
@@ -222,13 +224,13 @@ func plugin(ctx *cli.Context) {
 			logger.Errorf("Error assembling Mint tx")
 			return
 		}
-		_, err = avsWriter.TxMgr.Send(context.Background(), tx)
+		_, err = avsWriter.TxMgr.Send(context.Background(), tx, true)
 		if err != nil {
 			logger.Errorf("Error submitting Mint tx")
 			return
 		}
 
-		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
 		if err != nil {
 			logger.Errorf("Error depositing into strategy")
 			return
