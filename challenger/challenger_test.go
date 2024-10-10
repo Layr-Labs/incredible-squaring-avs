@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/testutils"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/mocks"
@@ -238,13 +237,12 @@ func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomoc
 	mockAvsReader := chainiomocks.NewMockAvsReaderer(mockCtrl)
 	mockAvsSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
 	mockEthClient := NewMockEthClient(mockCtrl)
-	mockEthClientInstrumented, _ := eth.NewInstrumentedClient("", nil) // TODO, add RPC URL
 
 	challenger := &Challenger{
 		logger:             logger,
 		avsWriter:          mockAvsWriter,
 		avsReader:          mockAvsReader,
-		ethClient:          *mockEthClientInstrumented,
+		ethClient:          mockEthClient,
 		avsSubscriber:      mockAvsSubscriber,
 		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
 		taskResponses:      make(map[uint32]chtypes.TaskResponseData),

@@ -81,7 +81,7 @@ func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTask(arg0, arg1, a
 }
 
 // ProcessNewSignature mocks base method.
-func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, arg1 uint32, arg2 sdktypes.Bytes32, arg3 *bls.Signature, arg4 sdktypes.Bytes32) error {
+func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, arg1 uint32, arg2 interface{}, arg3 *bls.Signature, arg4 sdktypes.Bytes32) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessNewSignature", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
