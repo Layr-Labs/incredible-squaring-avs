@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
@@ -33,7 +32,7 @@ type Config struct {
 	EthHttpRpcUrl                             string
 	EthWsRpcUrl                               string
 	EthHttpClient                             ethclient.Client
-	EthWsClient                               eth.WsBackend
+	EthWsClient                               ethclient.Client
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
 	AggregatorServerIpPortAddr                string
@@ -135,7 +134,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		EthWsRpcUrl:                configRaw.EthWsUrl,
 		EthHttpRpcUrl:              configRaw.EthRpcUrl,
 		EthHttpClient:              *ethRpcClient,
-		EthWsClient:                ethWsClient,
+		EthWsClient:                *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,

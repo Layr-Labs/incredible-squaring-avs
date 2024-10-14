@@ -103,7 +103,7 @@ func TestIntegration(t *testing.T) {
 		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
 		EthHttpClient:              *ethRpcClient,
 		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
-		EthWsClient:                ethWsClient,
+		EthWsClient:                *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
