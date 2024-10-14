@@ -9,7 +9,6 @@ import (
 	"time"
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
@@ -153,12 +152,11 @@ func plugin(ctx *cli.Context) {
 		return
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethHttpClient, logger, common.HexToAddress(avsConfig.OperatorAddress))
-	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethHttpClient, nil)
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
-		*ethRpcClientInstrumented,
+		ethHttpClient,
 		logger,
 	)
 	if err != nil {

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
@@ -98,13 +97,11 @@ func TestIntegration(t *testing.T) {
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
-	ethRpcClientInstrumented := eth.NewInstrumentedClientFromClient(ethRpcClient, nil)
-
 	config := &config.Config{
 		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
 		Logger:                     logger,
 		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
-		EthHttpClient:              *ethRpcClientInstrumented,
+		EthHttpClient:              *ethRpcClient,
 		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
 		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
