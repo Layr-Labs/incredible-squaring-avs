@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"sync"
 	"time"
@@ -124,6 +125,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 			},
 		})
 		if err != nil {
+			fmt.Println("Error creating taskResponseType")
 			return sdktypes.TaskResponseDigest{}, err
 		}
 		arguments := abi.Arguments{
@@ -134,10 +136,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 
 		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
 		if err != nil {
-			return sdktypes.TaskResponseDigest{}, err
-		}
-
-		if err != nil {
+			fmt.Println("Error Packing taskResponse")
 			return sdktypes.TaskResponseDigest{}, err
 		}
 
