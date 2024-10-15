@@ -2,13 +2,13 @@ package aggregator
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/json"
 	"math/big"
 	"sync"
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
@@ -110,12 +110,43 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 
 	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, nil, operatorsinfo.Opts{}, c.Logger)
 
+	// This is the same hash function used by the operator to hash the task response before signing it.
 	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
-		taskResponseBytes, err := json.Marshal(taskResponse)
+		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
+			{
+				Name: "referenceTaskIndex",
+				Type: "uint32",
+			},
+			{
+				Name: "numberSquared",
+				Type: "uint256",
+			},
+		})
 		if err != nil {
 			return sdktypes.TaskResponseDigest{}, err
 		}
-		return sdktypes.TaskResponseDigest(sha256.Sum256(taskResponseBytes)), nil
+		arguments := abi.Arguments{
+			{
+				Type: taskResponseType,
+			},
+		}
+
+		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, err
+		}
+
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, err
+		}
+
+		var taskResponseDigest [32]byte
+		hasher := sha3.NewLegacyKeccak256()
+		hasher.Write(encodeTaskResponseByte)
+		copy(taskResponseDigest[:], hasher.Sum(nil)[:32])
+
+		return taskResponseDigest, nil
 	}
 
 	avsRegistryService := avsregistry.NewAvsRegistryServiceChainCaller(avsReader, operatorPubkeysService, c.Logger)
