@@ -13,17 +13,14 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     IncredibleSquaringTaskManager tmImplementation;
 
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
-    address aggregator =
-        address(uint160(uint256(keccak256(abi.encodePacked("aggregator")))));
-    address generator =
-        address(uint160(uint256(keccak256(abi.encodePacked("generator")))));
+    address aggregator = address(uint160(uint256(keccak256(abi.encodePacked("aggregator")))));
+    address generator = address(uint160(uint256(keccak256(abi.encodePacked("generator")))));
 
     function setUp() public {
         _setUpBLSMockAVSDeployer();
 
         tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)),
-            TASK_RESPONSE_WINDOW_BLOCK
+            incsqsm.IRegistryCoordinator(address(registryCoordinator)), TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
@@ -33,11 +30,7 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
                     address(tmImplementation),
                     address(proxyAdmin),
                     abi.encodeWithSelector(
-                        tm.initialize.selector,
-                        pauserRegistry,
-                        registryCoordinatorOwner,
-                        aggregator,
-                        generator
+                        tm.initialize.selector, pauserRegistry, registryCoordinatorOwner, aggregator, generator
                     )
                 )
             )
