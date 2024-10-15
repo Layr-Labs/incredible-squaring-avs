@@ -7,25 +7,16 @@ interface IIncredibleSquaringTaskManager {
     // EVENTS
     event NewTaskCreated(uint32 indexed taskIndex, Task task);
 
-    event TaskResponded(
-        TaskResponse taskResponse,
-        TaskResponseMetadata taskResponseMetadata
-    );
+    event TaskResponded(TaskResponse taskResponse, TaskResponseMetadata taskResponseMetadata);
 
     event TaskCompleted(uint32 indexed taskIndex);
 
-    event TaskChallengedSuccessfully(
-        uint32 indexed taskIndex,
-        address indexed challenger
-    );
+    event TaskChallengedSuccessfully(uint32 indexed taskIndex, address indexed challenger);
 
-    event TaskChallengedUnsuccessfully(
-        uint32 indexed taskIndex,
-        address indexed challenger
-    );
+    event TaskChallengedUnsuccessfully(uint32 indexed taskIndex, address indexed challenger);
 
     event AggregatorUpdated(address indexed oldAggregator, address indexed newAggregator);
-    
+
     event GeneratorUpdated(address indexed oldGenerator, address indexed newGenerator);
 
     // STRUCTS
@@ -61,11 +52,8 @@ interface IIncredibleSquaringTaskManager {
 
     // FUNCTIONS
     // NOTE: this function creates new task.
-    function createNewTask(
-        uint256 numberToBeSquared,
-        uint32 quorumThresholdPercentage,
-        bytes calldata quorumNumbers
-    ) external;
+    function createNewTask(uint256 numberToBeSquared, uint32 quorumThresholdPercentage, bytes calldata quorumNumbers)
+        external;
 
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
