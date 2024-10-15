@@ -175,16 +175,24 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Task hash is empty")
 	}
 
-	// check if the task response is recorded in the contract for task index 1
-	taskResponseHash, err := avsReader.AvsServiceBindings.TaskManager.AllTaskResponses(&bind.CallOpts{}, 1)
-	log.Printf("taskResponseHash: %v", taskResponseHash)
-	if err != nil {
-		t.Fatalf("Cannot get task response hash: %s", err.Error())
-	}
-	if taskResponseHash == [32]byte{} {
-		t.Fatalf("Task response hash is empty")
+	received := false
+	for i := 0; i < 3; i++ {
+		// check if the task response is recorded in the contract for task index 1
+		taskResponseHash, err := avsReader.AvsServiceBindings.TaskManager.AllTaskResponses(&bind.CallOpts{}, 1)
+		log.Printf("taskResponseHash: %v", taskResponseHash)
+		if err != nil {
+			t.Fatalf("Cannot get task response hash: %s", err.Error())
+		}
+
+		if taskResponseHash != [32]byte{} {
+			received = true
+			break
+		}
 	}
 
+	if !received {
+		t.Fatalf("Task response hash is empty")
+	}
 }
 
 // TODO(samlaf): have to advance chain to a block where the task is answered
