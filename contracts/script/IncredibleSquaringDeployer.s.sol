@@ -17,7 +17,7 @@ import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
-
+import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
@@ -86,6 +86,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
         StrategyBaseTVLLimits baseStrategyImplementation = StrategyBaseTVLLimits(
             stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.baseStrategyImplementation")
         );
+        IRewardsCoordinator rewardsCoordinator =
+            IRewardsCoordinator(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.rewardsCoordinator"));
 
         address credibleSquaringCommunityMultisig = msg.sender;
         address credibleSquaringPauser = msg.sender;
@@ -97,6 +99,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         _deployCredibleSquaringContracts(
             delegationManager,
             avsDirectory,
+            rewardsCoordinator,
             erc20MockStrategy,
             credibleSquaringCommunityMultisig,
             credibleSquaringPauser
@@ -138,6 +141,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
     function _deployCredibleSquaringContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
+        IRewardsCoordinator rewardsCoordinator,
         IStrategy strat,
         address incredibleSquaringCommunityMultisig,
         address credibleSquaringPauser
@@ -265,7 +269,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         }
 
         incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
-            avsDirectory, registryCoordinator, stakeRegistry, incredibleSquaringTaskManager
+            avsDirectory, rewardsCoordinator, registryCoordinator, stakeRegistry, incredibleSquaringTaskManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgrade(
