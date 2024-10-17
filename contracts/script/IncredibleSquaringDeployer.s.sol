@@ -48,7 +48,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
     address public constant AGGREGATOR_ADDR = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
     address public constant TASK_GENERATOR_ADDR = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
 
-    // ERC20 and Strategy: we need to deploy this erc20, create a strategy for it, and whitelist this strategy in the strategymanager
+    // ERC20 and Strategy: we need to deploy this ERC20, create a strategy for it, and whitelist this strategy in the strategymanager
 
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
@@ -264,7 +264,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         {
             uint256 numQuorums = 1;
-            // for each quorum to setup, we need to define
+            // for each quorum to set up, we need to define
             // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
             regcoord.IRegistryCoordinator.OperatorSetParam[] memory quorumsOperatorSetParams =
                 new regcoord.IRegistryCoordinator.OperatorSetParam[](numQuorums);

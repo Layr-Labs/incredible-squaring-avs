@@ -51,7 +51,7 @@ interface IIncredibleSquaringTaskManager {
     }
 
     // FUNCTIONS
-    // NOTE: this function creates new task.
+    // NOTE: this function creates a new task.
     function createNewTask(
         uint256 numberToBeSquared,
         uint32 quorumThresholdPercentage,
@@ -61,7 +61,7 @@ interface IIncredibleSquaringTaskManager {
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
 
-    // NOTE: this function raises challenge to existing tasks.
+    // NOTE: this function raises a challenge to existing tasks.
     function raiseAndResolveChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
