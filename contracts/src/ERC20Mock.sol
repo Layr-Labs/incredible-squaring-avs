@@ -51,7 +51,9 @@ contract ERC20Mock is Context, IERC20 {
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(
+        address account
+    ) public view virtual override returns (uint256) {
         return _balances[account];
     }
 
@@ -76,7 +78,10 @@ contract ERC20Mock is Context, IERC20 {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -90,7 +95,10 @@ contract ERC20Mock is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address, /*spender*/ uint256 /*amount*/ ) public virtual override returns (bool) {
+    function approve(
+        address, /*spender*/
+        uint256 /*amount*/
+    ) public virtual override returns (bool) {
         return true;
     }
 
@@ -110,7 +118,11 @@ contract ERC20Mock is Context, IERC20 {
      * - the caller must have allowance for ``from``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
         _transfer(from, to, amount);
         return true;
     }
