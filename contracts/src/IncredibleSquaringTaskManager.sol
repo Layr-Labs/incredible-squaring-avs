@@ -29,7 +29,7 @@ contract IncredibleSquaringTaskManager is
     // The number of blocks from the task initialization within which the aggregator has to respond to
     uint32 public immutable TASK_RESPONSE_WINDOW_BLOCK;
     uint32 public constant TASK_CHALLENGE_WINDOW_BLOCK = 100;
-    uint256 internal constant _THRESHOLD_DENOMINATOR = 100;
+    uint256 internal constant THRESHOLD_DENOMINATOR = 100;
 
     /* STORAGE */
     // The latest task index
@@ -44,7 +44,7 @@ contract IncredibleSquaringTaskManager is
     // mapping of task indices to hash of abi.encode(taskResponse, taskResponseMetadata)
     mapping(uint32 => bytes32) public allTaskResponses;
 
-    mapping(uint32 => bool) public taskSuccesfullyChallenged;
+    mapping(uint32 => bool) public taskSuccessfullyChallenged;
 
     address public aggregator;
     address public generator;
@@ -122,7 +122,7 @@ contract IncredibleSquaringTaskManager is
         bytes calldata quorumNumbers = task.quorumNumbers;
         uint32 quorumThresholdPercentage = task.quorumThresholdPercentage;
 
-        // check that the task is valid, hasn't been responsed yet, and is being responsed in time
+        // check that the task is valid, hasn't been responded to yet, and is being responded to in time
         require(
             keccak256(abi.encode(task)) == allTaskHashes[taskResponse.referenceTaskIndex],
             "supplied task does not match the one recorded in the contract"
@@ -145,12 +145,12 @@ contract IncredibleSquaringTaskManager is
         (QuorumStakeTotals memory quorumStakeTotals, bytes32 hashOfNonSigners) =
             checkSignatures(message, quorumNumbers, taskCreatedBlock, nonSignerStakesAndSignature);
 
-        // check that signatories own at least a threshold percentage of each quourm
+        // check that signatories own at least a threshold percentage of each quorum
         for (uint256 i = 0; i < quorumNumbers.length; i++) {
             // we don't check that the quorumThresholdPercentages are not >100 because a greater value would trivially fail the check, implying
             // signed stake > total stake
             require(
-                quorumStakeTotals.signedStakeForQuorum[i] * _THRESHOLD_DENOMINATOR
+                quorumStakeTotals.signedStakeForQuorum[i] * THRESHOLD_DENOMINATOR
                     >= quorumStakeTotals.totalStakeForQuorum[i] * uint8(quorumThresholdPercentage),
                 "Signatories do not own at least threshold percentage of a quorum"
             );
@@ -158,7 +158,7 @@ contract IncredibleSquaringTaskManager is
 
         TaskResponseMetadata memory taskResponseMetadata =
             TaskResponseMetadata(uint32(block.number), hashOfNonSigners);
-        // updating the storage with task responsea
+        // updating the storage with task response
         allTaskResponses[taskResponse.referenceTaskIndex] =
             keccak256(abi.encode(taskResponse, taskResponseMetadata));
 
@@ -191,13 +191,13 @@ contract IncredibleSquaringTaskManager is
             "Task response does not match the one recorded in the contract"
         );
         require(
-            taskSuccesfullyChallenged[referenceTaskIndex] == false,
+            taskSuccessfullyChallenged[referenceTaskIndex] == false,
             "The response to this task has already been challenged successfully."
         );
 
         require(
             uint32(block.number)
-                <= taskResponseMetadata.taskResponsedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
+                <= taskResponseMetadata.taskRespondedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
             "The challenge period for this task has already expired."
         );
 
@@ -231,10 +231,10 @@ contract IncredibleSquaringTaskManager is
         );
 
         // get the address of operators who didn't sign
-        address[] memory addresssOfNonSigningOperators =
+        address[] memory addressesOfNonSigningOperators =
             new address[](pubkeysOfNonSigningOperators.length);
         for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addresssOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
+            addressesOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
                 .pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
 
@@ -275,14 +275,14 @@ contract IncredibleSquaringTaskManager is
         //             bool wasSigningOperator = true;
         //             for (
         //                 uint k = 0;
-        //                 k < addresssOfNonSigningOperators.length;
+        //                 k < addressesOfNonSigningOperators.length;
         //                 k++
         //             ) {
         //                 if (
-        //                     operatorAddress == addresssOfNonSigningOperators[k]
+        //                     operatorAddress == addressesOfNonSigningOperators[k]
         //                 ) {
         //                     // if the operator was a non-signer, then we set the flag to false
-        //                     wasSigningOperator == false;
+        //                     wasSigningOperator = false;
         //                     break;
         //                 }
         //             }
@@ -297,7 +297,7 @@ contract IncredibleSquaringTaskManager is
         // }
 
         // the task response has been challenged successfully
-        taskSuccesfullyChallenged[referenceTaskIndex] = true;
+        taskSuccessfullyChallenged[referenceTaskIndex] = true;
 
         emit TaskChallengedSuccessfully(referenceTaskIndex, msg.sender);
     }

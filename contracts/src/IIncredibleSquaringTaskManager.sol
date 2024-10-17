@@ -34,7 +34,7 @@ interface IIncredibleSquaringTaskManager {
     }
 
     // Task response is hashed and signed by operators.
-    // these signatures are aggregated and sent to the contract as response.
+    // These signatures are aggregated and sent to the contract as response.
     struct TaskResponse {
         // Can be obtained by the operator from the event NewTaskCreated.
         uint32 referenceTaskIndex;
@@ -46,7 +46,7 @@ interface IIncredibleSquaringTaskManager {
     // It thus cannot be signed by operators, so we keep it in a separate struct than TaskResponse
     // This metadata is needed by the challenger, so we emit it in the TaskResponded event
     struct TaskResponseMetadata {
-        uint32 taskResponsedBlock;
+        uint32 taskRespondedBlock;
         bytes32 hashOfNonSigners;
     }
 
@@ -61,7 +61,7 @@ interface IIncredibleSquaringTaskManager {
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
 
-    // // NOTE: this function raises challenge to existing tasks.
+    // NOTE: this function raises challenge to existing tasks.
     function raiseAndResolveChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
