@@ -1,0 +1,46 @@
+name: Check Storage Layout
+on:
+  pull_request:
+    branches:
+      - master
+jobs:
+  check_storage:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: "Generate and prepare the contract artifacts"
+        run: |
+          cd contracts && mkdir pr
+          for file in $(find src -name '*.sol'); do
+              contract_name=$(basename "$file" .sol)
+              forge inspect "$contract_name" storage --pretty > pr/"$contract_name".md
+          done
+
+      - name: Checkout Base Branch
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch origin $BASE
+          git checkout $BASE
+
+      - name: "Generate and prepare the contract artifacts"
+        run: |
+          cd contracts && mkdir base
+          for file in $(find src -name '*.sol'); do
+              contract_name=$(basename "$file" .sol)
+              forge inspect "$contract_name" storage --pretty > base/"$contract_name".md
+          done
+      - name: Compare outputs
+        run: |
+          if ! diff --unified contracts/pr contracts/base; then
+            # Note: We are only creating a warning because storage changes might be intentional but should be looked into
+            # reach out to steven if you see a warning on this workflow and need help validating if it is expected or not
+            echo "::warning::Differences found between PR and base storage layouts"
+          fi
