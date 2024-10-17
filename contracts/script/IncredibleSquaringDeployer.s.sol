@@ -12,13 +12,20 @@ import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBa
 import "@eigenlayer/test/mocks/EmptyContract.sol";
 
 import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
-import {IBLSApkRegistry, IIndexRegistry, IStakeRegistry} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
+import {
+    IBLSApkRegistry,
+    IIndexRegistry,
+    IStakeRegistry
+} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
+import {
+    IncredibleSquaringServiceManager,
+    IServiceManager
+} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
 import "../src/ERC20Mock.sol";
@@ -73,21 +80,29 @@ contract IncredibleSquaringDeployer is Script, Utils {
     function run() external {
         // Eigenlayer contracts
         string memory eigenlayerDeployedContracts = readOutput("eigenlayer_deployment_output");
-        IStrategyManager strategyManager =
-            IStrategyManager(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.strategyManager"));
-        IDelegationManager delegationManager =
-            IDelegationManager(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.delegation"));
-        IAVSDirectory avsDirectory =
-            IAVSDirectory(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.avsDirectory"));
-        ProxyAdmin eigenLayerProxyAdmin =
-            ProxyAdmin(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.eigenLayerProxyAdmin"));
-        PauserRegistry eigenLayerPauserReg =
-            PauserRegistry(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.eigenLayerPauserReg"));
-        StrategyBaseTVLLimits baseStrategyImplementation = StrategyBaseTVLLimits(
-            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.baseStrategyImplementation")
+        IStrategyManager strategyManager = IStrategyManager(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.strategyManager")
         );
-        IRewardsCoordinator rewardsCoordinator =
-            IRewardsCoordinator(stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.rewardsCoordinator"));
+        IDelegationManager delegationManager = IDelegationManager(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.delegation")
+        );
+        IAVSDirectory avsDirectory = IAVSDirectory(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.avsDirectory")
+        );
+        ProxyAdmin eigenLayerProxyAdmin = ProxyAdmin(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.eigenLayerProxyAdmin")
+        );
+        PauserRegistry eigenLayerPauserReg = PauserRegistry(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.eigenLayerPauserReg")
+        );
+        StrategyBaseTVLLimits baseStrategyImplementation = StrategyBaseTVLLimits(
+            stdJson.readAddress(
+                eigenlayerDeployedContracts, ".addresses.baseStrategyImplementation"
+            )
+        );
+        IRewardsCoordinator rewardsCoordinator = IRewardsCoordinator(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.rewardsCoordinator")
+        );
 
         address credibleSquaringCommunityMultisig = msg.sender;
         address credibleSquaringPauser = msg.sender;
@@ -159,7 +174,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address[] memory pausers = new address[](2);
             pausers[0] = credibleSquaringPauser;
             pausers[1] = incredibleSquaringCommunityMultisig;
-            incredibleSquaringPauserReg = new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
+            incredibleSquaringPauserReg =
+                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
         }
 
         EmptyContract emptyContract = new EmptyContract();
@@ -171,22 +187,46 @@ contract IncredibleSquaringDeployer is Script, Utils {
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
         incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(incredibleSquaringProxyAdmin), ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
         );
         incredibleSquaringTaskManager = IncredibleSquaringTaskManager(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(incredibleSquaringProxyAdmin), ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
         );
         registryCoordinator = regcoord.RegistryCoordinator(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(incredibleSquaringProxyAdmin), ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
         );
         blsApkRegistry = IBLSApkRegistry(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(incredibleSquaringProxyAdmin), ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
         );
         indexRegistry = IIndexRegistry(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(incredibleSquaringProxyAdmin), ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
         );
         stakeRegistry = IStakeRegistry(
-            address(new TransparentUpgradeableProxy(address(emptyContract), address(incredibleSquaringProxyAdmin), ""))
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
         );
 
         operatorStateRetriever = new OperatorStateRetriever();
@@ -196,19 +236,22 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stakeRegistryImplementation = new StakeRegistry(registryCoordinator, delegationManager);
 
             incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(stakeRegistry))), address(stakeRegistryImplementation)
+                TransparentUpgradeableProxy(payable(address(stakeRegistry))),
+                address(stakeRegistryImplementation)
             );
 
             blsApkRegistryImplementation = new BLSApkRegistry(registryCoordinator);
 
             incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(blsApkRegistry))), address(blsApkRegistryImplementation)
+                TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
+                address(blsApkRegistryImplementation)
             );
 
             indexRegistryImplementation = new IndexRegistry(registryCoordinator);
 
             incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(indexRegistry))), address(indexRegistryImplementation)
+                TransparentUpgradeableProxy(payable(address(indexRegistry))),
+                address(indexRegistryImplementation)
             );
         }
 
@@ -228,8 +271,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
             for (uint256 i = 0; i < numQuorums; i++) {
                 // hard code these for now
                 quorumsOperatorSetParams[i] = regcoord.IRegistryCoordinator.OperatorSetParam({
-                    maxOperatorCount: 10000,
-                    kickBIPsOfOperatorStake: 15000,
+                    maxOperatorCount: 10_000,
+                    kickBIPsOfOperatorStake: 15_000,
                     kickBIPsOfTotalStake: 100
                 });
             }
@@ -269,7 +312,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
         }
 
         incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
-            avsDirectory, rewardsCoordinator, registryCoordinator, stakeRegistry, incredibleSquaringTaskManager
+            avsDirectory,
+            rewardsCoordinator,
+            registryCoordinator,
+            stakeRegistry,
+            incredibleSquaringTaskManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgrade(
@@ -300,14 +347,20 @@ contract IncredibleSquaringDeployer is Script, Utils {
         vm.serializeAddress(deployed_addresses, "erc20Mock", address(erc20Mock));
         vm.serializeAddress(deployed_addresses, "erc20MockStrategy", address(erc20MockStrategy));
         vm.serializeAddress(
-            deployed_addresses, "credibleSquaringServiceManager", address(incredibleSquaringServiceManager)
+            deployed_addresses,
+            "credibleSquaringServiceManager",
+            address(incredibleSquaringServiceManager)
         );
         vm.serializeAddress(
             deployed_addresses,
             "credibleSquaringServiceManagerImplementation",
             address(incredibleSquaringServiceManagerImplementation)
         );
-        vm.serializeAddress(deployed_addresses, "credibleSquaringTaskManager", address(incredibleSquaringTaskManager));
+        vm.serializeAddress(
+            deployed_addresses,
+            "credibleSquaringTaskManager",
+            address(incredibleSquaringTaskManager)
+        );
         vm.serializeAddress(
             deployed_addresses,
             "credibleSquaringTaskManagerImplementation",
@@ -315,13 +368,17 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
         vm.serializeAddress(deployed_addresses, "registryCoordinator", address(registryCoordinator));
         vm.serializeAddress(
-            deployed_addresses, "registryCoordinatorImplementation", address(registryCoordinatorImplementation)
+            deployed_addresses,
+            "registryCoordinatorImplementation",
+            address(registryCoordinatorImplementation)
         );
-        string memory deployed_addresses_output =
-            vm.serializeAddress(deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever));
+        string memory deployed_addresses_output = vm.serializeAddress(
+            deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever)
+        );
 
         // serialize all the data
-        string memory finalJson = vm.serializeString(parent_object, deployed_addresses, deployed_addresses_output);
+        string memory finalJson =
+            vm.serializeString(parent_object, deployed_addresses, deployed_addresses_output);
 
         writeOutput(finalJson, "credible_squaring_avs_deployment_output");
     }
