@@ -9,7 +9,7 @@ import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
 contract Utils is Script {
-    // Note that this fct will only work for the ERC20Mock that has a public mint function
+    // Note that this function will only work for the ERC20Mock that has a public mint function
     function _mintTokens(
         address strategyAddress,
         address[] memory tos,

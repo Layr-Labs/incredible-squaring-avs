@@ -38,7 +38,7 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/CredibleSquaringDeployer.s.sol:CredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+// forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract IncredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
@@ -48,12 +48,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
     address public constant AGGREGATOR_ADDR = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
     address public constant TASK_GENERATOR_ADDR = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
 
-    // ERC20 and Strategy: we need to deploy this erc20, create a strategy for it, and whitelist this strategy in the strategymanager
+    // ERC20 and Strategy: we need to deploy this ERC20, create a strategy for it, and whitelist this strategy in the strategymanager
 
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Credible Squaring contracts
+    // Incredible Squaring contracts
     ProxyAdmin public incredibleSquaringProxyAdmin;
     PauserRegistry public incredibleSquaringPauserReg;
 
@@ -104,20 +104,20 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.rewardsCoordinator")
         );
 
-        address credibleSquaringCommunityMultisig = msg.sender;
-        address credibleSquaringPauser = msg.sender;
+        address incredibleSquaringCommunityMultisig = msg.sender;
+        address incredibleSquaringPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
             eigenLayerProxyAdmin, eigenLayerPauserReg, baseStrategyImplementation, strategyManager
         );
-        _deployCredibleSquaringContracts(
+        _deployIncredibleSquaringContracts(
             delegationManager,
             avsDirectory,
             rewardsCoordinator,
             erc20MockStrategy,
-            credibleSquaringCommunityMultisig,
-            credibleSquaringPauser
+            incredibleSquaringCommunityMultisig,
+            incredibleSquaringPauser
         );
         vm.stopBroadcast();
     }
@@ -153,13 +153,13 @@ contract IncredibleSquaringDeployer is Script, Utils {
         strategyManager.addStrategiesToDepositWhitelist(strats, thirdPartyTransfersForbiddenValues);
     }
 
-    function _deployCredibleSquaringContracts(
+    function _deployIncredibleSquaringContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IRewardsCoordinator rewardsCoordinator,
         IStrategy strat,
         address incredibleSquaringCommunityMultisig,
-        address credibleSquaringPauser
+        address incredibleSquaringPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -172,7 +172,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = credibleSquaringPauser;
+            pausers[0] = incredibleSquaringPauser;
             pausers[1] = incredibleSquaringCommunityMultisig;
             incredibleSquaringPauserReg =
                 new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
@@ -264,7 +264,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         {
             uint256 numQuorums = 1;
-            // for each quorum to setup, we need to define
+            // for each quorum to set up, we need to define
             // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
             regcoord.IRegistryCoordinator.OperatorSetParam[] memory quorumsOperatorSetParams =
                 new regcoord.IRegistryCoordinator.OperatorSetParam[](numQuorums);
