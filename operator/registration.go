@@ -85,6 +85,19 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		return err
 	}
 
+	// Approve tokens
+	tx, err = contractErc20Mock.Approve(txOpts, strategyAddr, amount)
+	if err != nil {
+		o.logger.Error("Error assembling Approve tx", "err", err)
+		return err
+	}
+	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx)
+	if err != nil {
+		o.logger.Error("Error submitting Approve tx", "err", err)
+		return err
+	}
+
+	// Deposit into strategy
 	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
 	if err != nil {
 		o.logger.Errorf("Error depositing into strategy", "err", err)
