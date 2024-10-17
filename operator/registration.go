@@ -33,9 +33,20 @@ func (o *Operator) registerOperatorOnStartup(
 	} else {
 		o.logger.Infof("Registered operator with eigenlayer")
 	}
-
 	// TODO(samlaf): shouldn't hardcode number here
 	amount := big.NewInt(1000)
+	// Approve tokens
+	tx, err = contractErc20Mock.Approve(txOpts, strategyAddr, amount)
+	if err != nil {
+		o.logger.Error("Error assembling Approve tx", "err", err)
+		return err
+	}
+	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx)
+	if err != nil {
+		o.logger.Error("Error submitting Approve tx", "err", err)
+		return err
+	}
+
 	err = o.DepositIntoStrategy(mockTokenStrategyAddr, amount)
 	if err != nil {
 		o.logger.Fatal("Error depositing into strategy", "err", err)
