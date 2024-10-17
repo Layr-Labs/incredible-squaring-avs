@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/Layr-Labs/eigensdk-go/testutils"
 
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
@@ -32,7 +32,7 @@ func IntegrationTestOperatorRegistration(t *testing.T) {
 }
 
 func createMockOperator() (*Operator, error) {
-	logger := sdklogging.NewNoopLogger()
+	logger := testutils.GetTestLogger()
 	reg := prometheus.NewRegistry()
 	noopMetrics := metrics.NewNoopMetrics()
 
