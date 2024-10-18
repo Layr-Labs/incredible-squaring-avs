@@ -136,7 +136,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 
 		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
 		if err != nil {
-			fmt.Println("Error Packing taskResponse")
+			c.Logger.Error("Error Packing taskResponse", err)
 			return sdktypes.TaskResponseDigest{}, err
 		}
 
