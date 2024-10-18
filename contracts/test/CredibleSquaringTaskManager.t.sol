@@ -4,7 +4,8 @@ pragma solidity ^0.8.12;
 import "../src/IncredibleSquaringServiceManager.sol" as incsqsm;
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from
+    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     incsqsm.IncredibleSquaringServiceManager sm;
@@ -13,17 +14,14 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     IncredibleSquaringTaskManager tmImplementation;
 
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
-    address aggregator =
-        address(uint160(uint256(keccak256(abi.encodePacked("aggregator")))));
-    address generator =
-        address(uint160(uint256(keccak256(abi.encodePacked("generator")))));
+    address aggregator = address(uint160(uint256(keccak256(abi.encodePacked("aggregator")))));
+    address generator = address(uint160(uint256(keccak256(abi.encodePacked("generator")))));
 
     function setUp() public {
         _setUpBLSMockAVSDeployer();
 
         tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)),
-            TASK_RESPONSE_WINDOW_BLOCK
+            incsqsm.IRegistryCoordinator(address(registryCoordinator)), TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.

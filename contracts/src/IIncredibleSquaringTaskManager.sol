@@ -7,25 +7,16 @@ interface IIncredibleSquaringTaskManager {
     // EVENTS
     event NewTaskCreated(uint32 indexed taskIndex, Task task);
 
-    event TaskResponded(
-        TaskResponse taskResponse,
-        TaskResponseMetadata taskResponseMetadata
-    );
+    event TaskResponded(TaskResponse taskResponse, TaskResponseMetadata taskResponseMetadata);
 
     event TaskCompleted(uint32 indexed taskIndex);
 
-    event TaskChallengedSuccessfully(
-        uint32 indexed taskIndex,
-        address indexed challenger
-    );
+    event TaskChallengedSuccessfully(uint32 indexed taskIndex, address indexed challenger);
 
-    event TaskChallengedUnsuccessfully(
-        uint32 indexed taskIndex,
-        address indexed challenger
-    );
+    event TaskChallengedUnsuccessfully(uint32 indexed taskIndex, address indexed challenger);
 
     event AggregatorUpdated(address indexed oldAggregator, address indexed newAggregator);
-    
+
     event GeneratorUpdated(address indexed oldGenerator, address indexed newGenerator);
 
     // STRUCTS
@@ -43,7 +34,7 @@ interface IIncredibleSquaringTaskManager {
     }
 
     // Task response is hashed and signed by operators.
-    // these signatures are aggregated and sent to the contract as response.
+    // These signatures are aggregated and sent to the contract as response.
     struct TaskResponse {
         // Can be obtained by the operator from the event NewTaskCreated.
         uint32 referenceTaskIndex;
@@ -55,12 +46,12 @@ interface IIncredibleSquaringTaskManager {
     // It thus cannot be signed by operators, so we keep it in a separate struct than TaskResponse
     // This metadata is needed by the challenger, so we emit it in the TaskResponded event
     struct TaskResponseMetadata {
-        uint32 taskResponsedBlock;
+        uint32 taskRespondedBlock;
         bytes32 hashOfNonSigners;
     }
 
     // FUNCTIONS
-    // NOTE: this function creates new task.
+    // NOTE: this function creates a new task.
     function createNewTask(
         uint256 numberToBeSquared,
         uint32 quorumThresholdPercentage,
@@ -70,7 +61,7 @@ interface IIncredibleSquaringTaskManager {
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
 
-    // // NOTE: this function raises challenge to existing tasks.
+    // NOTE: this function raises a challenge to existing tasks.
     function raiseAndResolveChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
