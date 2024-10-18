@@ -4,6 +4,7 @@ import (
 	"context"
 	"math/big"
 
+	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -18,7 +19,7 @@ import (
 )
 
 type AvsWriterer interface {
-	avsregistry.AvsRegistryWriter
+	//avsregistry.ChainWriter
 
 	SendNewTaskNumberToSquare(
 		ctx context.Context,
@@ -41,20 +42,20 @@ type AvsWriterer interface {
 }
 
 type AvsWriter struct {
-	avsregistry.AvsRegistryWriter
+	avsregistry.ChainWriter
 	AvsContractBindings *AvsManagersBindings
 	logger              logging.Logger
 	TxMgr               txmgr.TxManager
-	client              eth.Client
+	client              eth.HttpBackend
 }
 
 var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
-	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, &c.EthHttpClient, c.Logger)
 }
 
-func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.Client, logger logging.Logger) (*AvsWriter, error) {
+func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		logger.Error("Failed to create contract bindings", "err", err)
@@ -64,11 +65,11 @@ func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStat
 	if err != nil {
 		return nil, err
 	}
-	return NewAvsWriter(avsRegistryWriter, avsServiceBindings, logger, txMgr), nil
+	return NewAvsWriter(*avsRegistryWriter, avsServiceBindings, logger, txMgr), nil
 }
-func NewAvsWriter(avsRegistryWriter avsregistry.AvsRegistryWriter, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
+func NewAvsWriter(avsRegistryWriter avsregistry.ChainWriter, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
 	return &AvsWriter{
-		AvsRegistryWriter:   avsRegistryWriter,
+		ChainWriter:         avsRegistryWriter,
 		AvsContractBindings: avsServiceBindings,
 		logger:              logger,
 		TxMgr:               txMgr,
@@ -87,7 +88,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
+	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
@@ -115,7 +116,7 @@ func (w *AvsWriter) SendAggregatedResponse(
 		w.logger.Error("Error submitting SubmitTaskResponse tx while calling respondToTask", "err", err)
 		return nil, err
 	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
+	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting respondToTask tx")
 		return nil, err
@@ -140,7 +141,7 @@ func (w *AvsWriter) RaiseChallenge(
 		w.logger.Errorf("Error assembling RaiseChallenge tx")
 		return nil, err
 	}
-	receipt, err := w.TxMgr.Send(ctx, tx)
+	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting RaiseChallenge tx")
 		return nil, err
