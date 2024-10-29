@@ -7,6 +7,11 @@ help:
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
 
+ETH_RPC_URL=http://localhost:8545
+ETH_WS_URL=ws://localhost:8545
+
+AGGREGATOR_SERVER_IP_PORT_ADDRESS=localhost:8090
+
 CHAINID=31337
 # Make sure to update this if the strategy address changes
 # check in contracts/script/output/${CHAINID}/credible_squaring_avs_deployment_output.json
@@ -68,7 +73,8 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
-	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
+	set -a && source .env && set +a && \
+	go run aggregator/cmd/main.go --environment production \
 		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
