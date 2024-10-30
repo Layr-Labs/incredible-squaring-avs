@@ -1,28 +1,28 @@
 {
   "addresses": {
-    "avsDirectory": "0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134",
-    "avsDirectoryImplementation": "0xaC9fCBA56E42d5960f813B9D0387F3D3bC003338",
-    "baseStrategyImplementation": "0x3C15538ED063e688c8DF3d571Cb7a0062d2fB18D",
-    "delegation": "0x5133BBdfCCa3Eb4F739D599ee4eC45cBCD0E16c5",
-    "delegationImplementation": "0x63fea6E447F120B8Faf85B53cdaD8348e645D80E",
-    "eigenLayerPauserReg": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6",
-    "eigenLayerProxyAdmin": "0x02df3a3F960393F5B349E40A599FEda91a7cc1A7",
-    "eigenPodBeacon": "0x9BcC604D4381C5b0Ad12Ff3Bf32bEdE063416BC7",
-    "eigenPodImplementation": "0xaC47e91215fb80462139756f43438402998E4A3a",
-    "eigenPodManager": "0xeF31027350Be2c7439C1b0BE022d49421488b72C",
-    "eigenPodManagerImplementation": "0x54B8d8E2455946f2A5B8982283f2359812e815ce",
-    "emptyContract": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd",
-    "rewardsCoordinator": "0x12Bcb546bC60fF39F1Adfc7cE4605d5Bd6a6A876",
-    "rewardsCoordinatorImplementation": "0xf090f16dEc8b6D24082Edd25B1C8D26f2bC86128",
-    "slasher": "0xC66AB83418C20A65C3f8e83B3d11c8C3a6097b6F",
-    "slasherImplementation": "0x38A70c040CA5F5439ad52d0e821063b0EC0B52b6",
+    "avsDirectory": "0xc7cDb7A2E5dDa1B7A0E792Fe1ef08ED20A6F56D4",
+    "avsDirectoryImplementation": "0x683d9CDD3239E0e01E8dC6315fA50AD92aB71D2d",
+    "baseStrategyImplementation": "0x1343248Cbd4e291C6979e70a138f4c774e902561",
+    "delegation": "0xcC4c41415fc68B2fBf70102742A83cDe435e0Ca7",
+    "delegationImplementation": "0x6A59CC73e334b018C9922793d96Df84B538E6fD5",
+    "eigenLayerPauserReg": "0x942ED2fa862887Dc698682cc6a86355324F0f01e",
+    "eigenLayerProxyAdmin": "0x8bEe2037448F096900Fd9affc427d38aE6CC0350",
+    "eigenPodBeacon": "0x871ACbEabBaf8Bed65c22ba7132beCFaBf8c27B5",
+    "eigenPodImplementation": "0x8e264821AFa98DD104eEcfcfa7FD9f8D8B320adA",
+    "eigenPodManager": "0xe1708FA6bb2844D5384613ef0846F9Bc1e8eC55E",
+    "eigenPodManagerImplementation": "0x0fe4223AD99dF788A6Dcad148eB4086E6389cEB6",
+    "emptyContract": "0x8D81A3DCd17030cD5F23Ac7370e4Efb10D2b3cA4",
+    "rewardsCoordinator": "0x0aec7c174554AF8aEc3680BB58431F6618311510",
+    "rewardsCoordinatorImplementation": "0x71a0b8A2245A9770A4D887cE1E4eCc6C1d4FF28c",
+    "slasher": "0x967AB65ef14c58bD4DcfFeaAA1ADb40a022140E5",
+    "slasherImplementation": "0x1c9fD50dF7a4f066884b58A05D91e4b55005876A",
     "strategies": "",
-    "strategyManager": "0x71089Ba41e478702e1904692385Be3972B2cBf9e",
-    "strategyManagerImplementation": "0xdFdE6B33f13de2CA1A75A6F7169f50541B14f75b"
+    "strategyManager": "0xa722bdA6968F50778B973Ae2701e90200C564B49",
+    "strategyManagerImplementation": "0xC1e0A9DB9eA830c52603798481045688c8AE99C2"
   },
   "chainInfo": {
     "chainId": 31337,
-    "deploymentBlock": 438
+    "deploymentBlock": 470
   },
   "parameters": {
     "executorMultisig": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
