@@ -14,12 +14,18 @@ source ./utils.sh
 set +a
 
 
-run_deployment() {
+deploy_eigenlayer() {
     forge script script/deploy/devnet/M2_Deploy_From_Scratch.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast --sig "run(string memory configFile)" -- M2_deploy_from_scratch.anvil.config.json
     echo "deployment done"
     mv script/output/devnet/M2_from_scratch_deployment_data.json ../../../../script/output/31337/eigenlayer_deployment_output.json
     mv script/output/devnet/M2_from_scratch_deployment_data.json.bak script/output/devnet/M2_from_scratch_deployment_data.json
     echo "deployment output moved"
+}
+
+deploy_avs() {
+    echo "deploying avs"
+    forge script ../../../../script/IncredibleSquaringDeployer.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast -v
+    echo "avs deployed"
 }
 
 start_anvil() {
@@ -32,17 +38,18 @@ start_anvil() {
 cd ../../contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts
 pwd
 # deployment overwrites this file, so we save it as backup, because we want that output in our local files, and not in the eigenlayer-contracts submodule files
-mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devnet/M2_from_scratch_deployment_data.json.bak
+# mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devnet/M2_from_scratch_deployment_data.json.bak
 
 
 start_anvil &
-run_deployment &
+deploy_eigenlayer &
+deploy_avs &
 
-cd ../../contracts
-# we need to restart the anvil chain at the correct block, otherwise the indexRegistry has a quorumUpdate at the block number
-# at which it was deployed (aka quorum was created/updated), but when we start anvil by loading state file it starts at block number 0
-# so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0
-# advancing chain manually like this is a current hack until https://github.com/foundry-rs/foundry/issues/6679 is merged
-cast rpc anvil_mine 100 --rpc-url $RPC_URL
-echo "advancing chain... current block-number:" $(cast block-number)
+# cd ../../contracts
+# # we need to restart the anvil chain at the correct block, otherwise the indexRegistry has a quorumUpdate at the block number
+# # at which it was deployed (aka quorum was created/updated), but when we start anvil by loading state file it starts at block number 0
+# # so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0
+# # advancing chain manually like this is a current hack until https://github.com/foundry-rs/foundry/issues/6679 is merged
+# cast rpc anvil_mine 100 --rpc-url $RPC_URL
+# echo "advancing chain... current block-number:" $(cast block-number)
 
