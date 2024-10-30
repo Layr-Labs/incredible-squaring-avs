@@ -1,28 +1,28 @@
 {
   "addresses": {
-    "avsDirectory": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    "avsDirectoryImplementation": "0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82",
-    "baseStrategyImplementation": "0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44",
-    "delayedWithdrawalRouter": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-    "delayedWithdrawalRouterImplementation": "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1",
-    "delegation": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    "delegationImplementation": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e",
-    "eigenLayerPauserReg": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "eigenLayerProxyAdmin": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "eigenPodBeacon": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
-    "eigenPodImplementation": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
-    "eigenPodManager": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-    "eigenPodManagerImplementation": "0x0B306BF915C4d645ff596e518fAf3F9669b97016",
-    "emptyContract": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    "slasher": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-    "slasherImplementation": "0x9A676e781A523b5d0C0e43731313A708CB607508",
+    "avsDirectory": "0x8F4ec854Dd12F1fe79500a1f53D0cbB30f9b6134",
+    "avsDirectoryImplementation": "0xaC9fCBA56E42d5960f813B9D0387F3D3bC003338",
+    "baseStrategyImplementation": "0x3C15538ED063e688c8DF3d571Cb7a0062d2fB18D",
+    "delegation": "0x5133BBdfCCa3Eb4F739D599ee4eC45cBCD0E16c5",
+    "delegationImplementation": "0x63fea6E447F120B8Faf85B53cdaD8348e645D80E",
+    "eigenLayerPauserReg": "0x821f3361D454cc98b7555221A06Be563a7E2E0A6",
+    "eigenLayerProxyAdmin": "0x02df3a3F960393F5B349E40A599FEda91a7cc1A7",
+    "eigenPodBeacon": "0x9BcC604D4381C5b0Ad12Ff3Bf32bEdE063416BC7",
+    "eigenPodImplementation": "0xaC47e91215fb80462139756f43438402998E4A3a",
+    "eigenPodManager": "0xeF31027350Be2c7439C1b0BE022d49421488b72C",
+    "eigenPodManagerImplementation": "0x54B8d8E2455946f2A5B8982283f2359812e815ce",
+    "emptyContract": "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd",
+    "rewardsCoordinator": "0x12Bcb546bC60fF39F1Adfc7cE4605d5Bd6a6A876",
+    "rewardsCoordinatorImplementation": "0xf090f16dEc8b6D24082Edd25B1C8D26f2bC86128",
+    "slasher": "0xC66AB83418C20A65C3f8e83B3d11c8C3a6097b6F",
+    "slasherImplementation": "0x38A70c040CA5F5439ad52d0e821063b0EC0B52b6",
     "strategies": "",
-    "strategyManager": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    "strategyManagerImplementation": "0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0"
+    "strategyManager": "0x71089Ba41e478702e1904692385Be3972B2cBf9e",
+    "strategyManagerImplementation": "0xdFdE6B33f13de2CA1A75A6F7169f50541B14f75b"
   },
   "chainInfo": {
     "chainId": 31337,
-    "deploymentBlock": 0
+    "deploymentBlock": 438
   },
   "parameters": {
     "executorMultisig": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
