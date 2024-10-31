@@ -24,7 +24,8 @@ deploy_eigenlayer() {
 
 deploy_avs() {
     echo "deploying avs"
-    forge script ../../../../script/IncredibleSquaringDeployer.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast -v
+    cd ../../../../../contracts
+    forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast -v
     echo "avs deployed"
 }
 
@@ -38,14 +39,13 @@ start_anvil() {
 cd ../../contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts
 pwd
 # deployment overwrites this file, so we save it as backup, because we want that output in our local files, and not in the eigenlayer-contracts submodule files
-# mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devnet/M2_from_scratch_deployment_data.json.bak
+mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devnet/M2_from_scratch_deployment_data.json.bak
 
 
 start_anvil &
-deploy_eigenlayer &
+# deploy_eigenlayer &
 deploy_avs &
 
-# cd ../../contracts
 # # we need to restart the anvil chain at the correct block, otherwise the indexRegistry has a quorumUpdate at the block number
 # # at which it was deployed (aka quorum was created/updated), but when we start anvil by loading state file it starts at block number 0
 # # so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0
