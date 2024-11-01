@@ -20,14 +20,16 @@ deploy_eigenlayer() {
     mv script/output/devnet/M2_from_scratch_deployment_data.json ../../../../script/output/31337/eigenlayer_deployment_output.json
     mv script/output/devnet/M2_from_scratch_deployment_data.json.bak script/output/devnet/M2_from_scratch_deployment_data.json
     echo "deployment output moved"
-}
-
-deploy_avs() {
     echo "deploying avs"
     cd ../../../../../contracts
+    pwd
     forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast -v
-    echo "avs deployed"
+    # echo "avs deployed"
 }
+
+# deploy_avs() {
+
+# }
 
 start_anvil() {
     anvil
@@ -43,8 +45,8 @@ mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devne
 
 
 start_anvil &
-# deploy_eigenlayer &
-deploy_avs &
+deploy_eigenlayer
+
 
 # # we need to restart the anvil chain at the correct block, otherwise the indexRegistry has a quorumUpdate at the block number
 # # at which it was deployed (aka quorum was created/updated), but when we start anvil by loading state file it starts at block number 0
