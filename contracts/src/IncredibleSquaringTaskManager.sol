@@ -80,11 +80,15 @@ contract IncredibleSquaringTaskManager is
         _setGenerator(_generator);
     }
 
-    function setGenerator(address newGenerator) external onlyOwner {
+    function setGenerator(
+        address newGenerator
+    ) external onlyOwner {
         _setGenerator(newGenerator);
     }
 
-    function setAggregator(address newAggregator) external onlyOwner {
+    function setAggregator(
+        address newAggregator
+    ) external onlyOwner {
         _setAggregator(newAggregator);
     }
 
@@ -305,13 +309,17 @@ contract IncredibleSquaringTaskManager is
         return TASK_RESPONSE_WINDOW_BLOCK;
     }
 
-    function _setGenerator(address newGenerator) internal {
+    function _setGenerator(
+        address newGenerator
+    ) internal {
         address oldGenerator = generator;
         generator = newGenerator;
         emit GeneratorUpdated(oldGenerator, newGenerator);
     }
 
-    function _setAggregator(address newAggregator) internal {
+    function _setAggregator(
+        address newAggregator
+    ) internal {
         address oldAggregator = aggregator;
         aggregator = newAggregator;
         emit AggregatorUpdated(oldAggregator, newAggregator);

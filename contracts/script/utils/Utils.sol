@@ -22,7 +22,9 @@ contract Utils is Script {
         }
     }
 
-    function convertBoolToString(bool input) public pure returns (string memory) {
+    function convertBoolToString(
+        bool input
+    ) public pure returns (string memory) {
         if (input) {
             return "true";
         } else {
@@ -30,11 +32,9 @@ contract Utils is Script {
         }
     }
 
-    function convertOperatorStatusToString(IRegistryCoordinator.OperatorStatus operatorStatus)
-        public
-        pure
-        returns (string memory)
-    {
+    function convertOperatorStatusToString(
+        IRegistryCoordinator.OperatorStatus operatorStatus
+    ) public pure returns (string memory){
         if (operatorStatus == IRegistryCoordinator.OperatorStatus.NEVER_REGISTERED) {
             return "NEVER_REGISTERED";
         } else if (operatorStatus == IRegistryCoordinator.OperatorStatus.REGISTERED) {
@@ -47,14 +47,18 @@ contract Utils is Script {
     }
 
     // Forge scripts best practice: https://book.getfoundry.sh/tutorials/best-practices#scripts
-    function readInput(string memory inputFileName) internal view returns (string memory) {
+    function readInput(
+        string memory inputFileName
+    ) internal view returns (string memory) {
         string memory inputDir = string.concat(vm.projectRoot(), "/script/input/");
         string memory chainDir = string.concat(vm.toString(block.chainid), "/");
         string memory file = string.concat(inputFileName, ".json");
         return vm.readFile(string.concat(inputDir, chainDir, file));
     }
 
-    function readOutput(string memory outputFileName) internal view returns (string memory) {
+    function readOutput(
+        string memory outputFileName
+    ) internal view returns (string memory) {
         string memory inputDir = string.concat(vm.projectRoot(), "/script/output/");
         string memory chainDir = string.concat(vm.toString(block.chainid), "/");
         string memory file = string.concat(outputFileName, ".json");
