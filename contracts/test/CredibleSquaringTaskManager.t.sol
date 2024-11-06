@@ -4,8 +4,7 @@ pragma solidity ^0.8.12;
 import "../src/IncredibleSquaringServiceManager.sol" as incsqsm;
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
-import {TransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     incsqsm.IncredibleSquaringServiceManager sm;
@@ -31,11 +30,7 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
                     address(tmImplementation),
                     address(proxyAdmin),
                     abi.encodeWithSelector(
-                        tm.initialize.selector,
-                        pauserRegistry,
-                        registryCoordinatorOwner,
-                        aggregator,
-                        generator
+                        tm.initialize.selector, pauserRegistry, registryCoordinatorOwner, aggregator, generator
                     )
                 )
             )
