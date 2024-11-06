@@ -143,7 +143,7 @@ contract IncredibleSquaringTaskManager is
 
         // check the BLS signature
         (QuorumStakeTotals memory quorumStakeTotals, bytes32 hashOfNonSigners) =
-            checkSignatures(message, quorumNumbers, taskCreatedBlock, nonSignerStakesAndSignature);
+            checkSignatures(keccak256(abi.encode(taskResponse)), quorumNumbers, taskCreatedBlock, nonSignerStakesAndSignature);
 
         // check that signatories own at least a threshold percentage of each quorum
         for (uint256 i = 0; i < quorumNumbers.length; i++) {
@@ -202,8 +202,7 @@ contract IncredibleSquaringTaskManager is
         );
 
         // logic for checking whether challenge is valid or not
-        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
-        bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
+        bool isResponseCorrect = ((numberToBeSquared * numberToBeSquared) == taskResponse.numberSquared);
 
         // if response was correct, no slashing happens so we return
         if (isResponseCorrect == true) {
@@ -230,18 +229,18 @@ contract IncredibleSquaringTaskManager is
             "The pubkeys of non-signing operators supplied by the challenger are not correct."
         );
 
-        // get the address of operators who didn't sign
-        address[] memory addressesOfNonSigningOperators =
-            new address[](pubkeysOfNonSigningOperators.length);
-        for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addressesOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
-                .pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
-        }
 
         // @dev the below code is commented out for the upcoming M2 release
         //      in which there will be no slashing. The slasher is also being redesigned
         //      so its interface may very well change.
         // ==========================================
+        // get the address of operators who didn't sign
+        // address[] memory addressesOfNonSigningOperators =
+        //     new address[](pubkeysOfNonSigningOperators.length);
+        // for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
+        //     addressesOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
+        //         .pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
+        // }
         // // get the list of all operators who were active when the task was initialized
         // Operator[][] memory allOperatorInfo = getOperatorState(
         //     IRegistryCoordinator(address(registryCoordinator)),

@@ -14,7 +14,7 @@ source ./utils.sh
 set +a
 
 
-deploy_eigenlayer() {
+deploy_eigenlayer_and_avs() {
     forge script script/deploy/devnet/M2_Deploy_From_Scratch.s.sol --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast --sig "run(string memory configFile)" -- M2_deploy_from_scratch.anvil.config.json
     echo "deployment done"
     mv script/output/devnet/M2_from_scratch_deployment_data.json ../../../../script/output/31337/eigenlayer_deployment_output.json
@@ -27,15 +27,6 @@ deploy_eigenlayer() {
     # echo "avs deployed"
 }
 
-# deploy_avs() {
-
-# }
-
-start_anvil() {
-    anvil
-    sleep 2
-}
-
 
 
 cd ../../contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts
@@ -43,9 +34,10 @@ pwd
 # deployment overwrites this file, so we save it as backup, because we want that output in our local files, and not in the eigenlayer-contracts submodule files
 mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devnet/M2_from_scratch_deployment_data.json.bak
 
+# private key used for operations multisig which is the strategy whitelister
+export OPERATIONS_MULTISIG_PK="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 
-start_anvil &
-deploy_eigenlayer
+deploy_eigenlayer_and_avs
 
 
 # # we need to restart the anvil chain at the correct block, otherwise the indexRegistry has a quorumUpdate at the block number
