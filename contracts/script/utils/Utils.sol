@@ -34,7 +34,7 @@ contract Utils is Script {
 
     function convertOperatorStatusToString(
         IRegistryCoordinator.OperatorStatus operatorStatus
-    ) public pure returns (string memory){
+    ) public pure returns (string memory) {
         if (operatorStatus == IRegistryCoordinator.OperatorStatus.NEVER_REGISTERED) {
             return "NEVER_REGISTERED";
         } else if (operatorStatus == IRegistryCoordinator.OperatorStatus.REGISTERED) {
