@@ -22,9 +22,8 @@ deploy_eigenlayer_and_avs() {
     echo "deployment output moved"
     echo "deploying avs"
     cd ../../../../../contracts
-    pwd
     forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url http://localhost:8545 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 --broadcast -v
-    # echo "avs deployed"
+    echo "avs deployed"
 }
 
 
