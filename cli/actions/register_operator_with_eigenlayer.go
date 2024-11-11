@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -15,7 +16,7 @@ func RegisterOperatorWithEigenlayer(ctx *cli.Context) error {
 
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
 	nodeConfig := types.NodeConfig{}
-	err := ReadYamlConfig(configPath, &nodeConfig)
+	err := commonincredible.ReadYamlConfig(configPath, &nodeConfig)
 	if err != nil {
 		return err
 	}

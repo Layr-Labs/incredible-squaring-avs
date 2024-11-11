@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/big"
 
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -17,7 +18,7 @@ func DepositIntoStrategy(ctx *cli.Context) error {
 
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
 	nodeConfig := types.NodeConfig{}
-	err := ReadYamlConfig(configPath, &nodeConfig)
+	err := commonincredible.ReadYamlConfig(configPath, &nodeConfig)
 	if err != nil {
 		return err
 	}

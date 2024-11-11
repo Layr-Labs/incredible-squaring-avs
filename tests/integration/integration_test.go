@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
@@ -48,13 +50,13 @@ func TestIntegration(t *testing.T) {
 	/* Prepare the config file for aggregator */
 	var aggConfigRaw config.ConfigRaw
 	aggConfigFilePath := "../../config-files/aggregator.yaml"
-	sdkutils.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
+	commonincredible.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
 	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
-	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
+	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
 	if err != nil {
@@ -115,7 +117,7 @@ func TestIntegration(t *testing.T) {
 	/* Prepare the config file for operator */
 	nodeConfig := types.NodeConfig{}
 	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
-	err = sdkutils.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
+	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}

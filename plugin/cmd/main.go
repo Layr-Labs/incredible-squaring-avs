@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
@@ -17,7 +19,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -86,7 +87,7 @@ func plugin(ctx *cli.Context) {
 	configPath := ctx.GlobalString(ConfigFileFlag.Name)
 
 	avsConfig := types.NodeConfig{}
-	err := utils.ReadYamlConfig(configPath, &avsConfig)
+	err := commonincredible.ReadYamlConfig(configPath, &avsConfig)
 	if err != nil {
 		fmt.Println(err)
 		return

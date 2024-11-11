@@ -1,6 +1,7 @@
-package actions
+package common
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -32,4 +33,18 @@ func ReadFile(path string) ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
+}
+
+func ReadJsonConfig(path string, o interface{}) error {
+	b, err := ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(b, o)
+	if err != nil {
+		log.Fatalf("unable to parse file with error %#v", err)
+	}
+
+	return nil
 }
