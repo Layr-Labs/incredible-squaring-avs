@@ -8,6 +8,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/Layr-Labs/eigensdk-go/telemetry"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -23,6 +24,9 @@ func main() {
 	app.Description = "Service that reads numbers onchain, squares, signs, and sends them to the aggregator."
 
 	app.Action = operatorMain
+
+	_ = telemetry.InitTelemetry("phc_AGsxzgr4ETSVddRFfZXdHUnWLIW8ExxCBSqPLmc6qbl", "e77c390f-223e-4dda-aa3d-3e554c3f7270")
+
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatalln("Application failed. Message:", err)

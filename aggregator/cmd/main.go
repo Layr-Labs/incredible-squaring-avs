@@ -9,6 +9,7 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/Layr-Labs/eigensdk-go/telemetry"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
@@ -21,6 +22,8 @@ var (
 )
 
 func main() {
+
+	_ = telemetry.InitTelemetry("phc_AGsxzgr4ETSVddRFfZXdHUnWLIW8ExxCBSqPLmc6qbl", "e77c390f-223e-4dda-aa3d-3e554c3f7270")
 
 	app := cli.NewApp()
 	app.Flags = config.Flags
