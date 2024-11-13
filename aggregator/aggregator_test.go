@@ -144,7 +144,7 @@ func TestSendNewTask(t *testing.T) {
 }
 
 func createMockAggregator(
-	mockCtrl *gomock.Controller, operatorPubkeyDict map[sdktypes.OperatorId]types.OperatorInfo,
+	mockCtrl *gomock.Controller, _ map[sdktypes.OperatorId]types.OperatorInfo,
 ) (*Aggregator, *chainiomocks.MockAvsWriterer, *MockBlsAggregationService, error) {
 	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)

@@ -16,10 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	eigenSdkTypes "github.com/Layr-Labs/eigensdk-go/types"
-
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 )
 
 func (o *Operator) registerOperatorOnStartup(
@@ -63,7 +60,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
+	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
@@ -74,6 +71,10 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		return err
 	}
 	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		o.logger.Error("Failed to fetch GetNoSendTxOpts", "err", err)
+		return err
+	}
 	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
 	if err != nil {
 		o.logger.Errorf("Error assembling Mint tx")
@@ -174,11 +175,4 @@ func (o *Operator) PrintOperatorStatus() error {
 	}
 	fmt.Println(string(operatorStatusJson))
 	return nil
-}
-
-func pubKeyG1ToBN254G1Point(p *bls.G1Point) regcoord.BN254G1Point {
-	return regcoord.BN254G1Point{
-		X: p.X.BigInt(new(big.Int)),
-		Y: p.Y.BigInt(new(big.Int)),
-	}
 }
