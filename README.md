@@ -28,9 +28,11 @@ make bindings
 This simple session illustrates the basic flow of the AVS. The makefile commands are hardcoded for a single operator, but it's however easy to create new operator config files, and start more operators manually (see the actual commands that the makefile calls).
 
 Start anvil in a separate terminal:
-
 ```bash
-make start-anvil-chain-with-el-and-avs-deployed
+make anvil
+```
+```bash
+make deploy-eigenlayer-and-avs
 ```
 
 The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and incredible-squaring contracts already deployed (but no operator registered).

@@ -17,6 +17,9 @@ DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 
 ___CONTRACTS___: ## 
 
+anvil: ## starts anvil
+	anvil 
+
 build-contracts: ## builds all contracts
 	cd contracts && forge build
 
@@ -28,8 +31,8 @@ deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
 
 deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
-start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
+deploy-eigenlayer-and-avs: ## starts anvil from a saved state file (with el and avs contracts deployed)
+	./tests/anvil/deploy-eigenlayer-and-avs.sh
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh

@@ -39,7 +39,7 @@ import "forge-std/console.sol";
 
 // # To deploy and verify our contract
 // forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract IncredibleSquaringDeployer is Script, Utils {
+contract IncredibleSquaringDeployer is Script, Utils, Test {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
@@ -77,6 +77,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
     IncredibleSquaringTaskManager public incredibleSquaringTaskManager;
     IIncredibleSquaringTaskManager public incredibleSquaringTaskManagerImplementation;
 
+    address public operationsMultisig;
+
     function run() external {
         // Eigenlayer contracts
         string memory eigenlayerDeployedContracts = readOutput("eigenlayer_deployment_output");
@@ -104,13 +106,27 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.rewardsCoordinator")
         );
 
+        operationsMultisig =
+            stdJson.readAddress(eigenlayerDeployedContracts, ".parameters.operationsMultisig");
+
         address incredibleSquaringCommunityMultisig = msg.sender;
         address incredibleSquaringPauser = msg.sender;
 
         vm.startBroadcast();
-        _deployErc20AndStrategyAndWhitelistStrategy(
+        StrategyBaseTVLLimits erc20MockStrategy = _deployErc20AndStrategyAndWhitelistStrategy(
             eigenLayerProxyAdmin, eigenLayerPauserReg, baseStrategyImplementation, strategyManager
         );
+        vm.stopBroadcast();
+
+        vm.startBroadcast(vm.envUint(("OPERATIONS_MULTISIG_PK")));
+        IStrategy[] memory strats = new IStrategy[](1);
+        strats[0] = erc20MockStrategy;
+        bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
+        thirdPartyTransfersForbiddenValues[0] = false;
+        strategyManager.addStrategiesToDepositWhitelist(strats, thirdPartyTransfersForbiddenValues);
+        vm.stopBroadcast();
+
+        vm.startBroadcast();
         _deployIncredibleSquaringContracts(
             delegationManager,
             avsDirectory,
@@ -127,10 +143,14 @@ contract IncredibleSquaringDeployer is Script, Utils {
         PauserRegistry eigenLayerPauserReg,
         StrategyBaseTVLLimits baseStrategyImplementation,
         IStrategyManager strategyManager
-    ) internal {
+    ) internal returns (StrategyBaseTVLLimits) {
         erc20Mock = new ERC20Mock();
         // TODO(samlaf): any reason why we are using the strategybase with tvl limits instead of just using strategybase?
         // the maxPerDeposit and maxDeposits below are just arbitrary values.
+        emit log_named_address("baseStrategyImplementation", address(baseStrategyImplementation));
+        emit log_named_bytes(
+            "baseStrategyImplementation code", address(baseStrategyImplementation).code
+        );
         erc20MockStrategy = StrategyBaseTVLLimits(
             address(
                 new TransparentUpgradeableProxy(
@@ -146,11 +166,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        IStrategy[] memory strats = new IStrategy[](1);
-        strats[0] = erc20MockStrategy;
-        bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
-        thirdPartyTransfersForbiddenValues[0] = false;
-        strategyManager.addStrategiesToDepositWhitelist(strats, thirdPartyTransfersForbiddenValues);
+
+        return erc20MockStrategy;
     }
 
     function _deployIncredibleSquaringContracts(
