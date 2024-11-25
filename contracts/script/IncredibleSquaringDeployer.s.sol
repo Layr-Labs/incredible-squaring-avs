@@ -107,10 +107,15 @@ contract IncredibleSquaringDeployer is Script, Utils {
         address incredibleSquaringCommunityMultisig = msg.sender;
         address incredibleSquaringPauser = msg.sender;
 
-        vm.startBroadcast();
-        _deployErc20AndStrategyAndWhitelistStrategy(
-            eigenLayerProxyAdmin, eigenLayerPauserReg, baseStrategyImplementation, strategyManager
+        erc20MockStrategy = StrategyBaseTVLLimits(
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.strategies.MockETH")
         );
+        erc20Mock = ERC20Mock(address(erc20MockStrategy.underlyingToken()));
+
+        vm.startBroadcast();
+        // _deployErc20AndStrategyAndWhitelistStrategy(
+        //     eigenLayerProxyAdmin, eigenLayerPauserReg, baseStrategyImplementation, strategyManager
+        // );
         _deployIncredibleSquaringContracts(
             delegationManager,
             avsDirectory,
@@ -122,36 +127,36 @@ contract IncredibleSquaringDeployer is Script, Utils {
         vm.stopBroadcast();
     }
 
-    function _deployErc20AndStrategyAndWhitelistStrategy(
-        ProxyAdmin eigenLayerProxyAdmin,
-        PauserRegistry eigenLayerPauserReg,
-        StrategyBaseTVLLimits baseStrategyImplementation,
-        IStrategyManager strategyManager
-    ) internal {
-        erc20Mock = new ERC20Mock();
-        // TODO(samlaf): any reason why we are using the strategybase with tvl limits instead of just using strategybase?
-        // the maxPerDeposit and maxDeposits below are just arbitrary values.
-        erc20MockStrategy = StrategyBaseTVLLimits(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(baseStrategyImplementation),
-                    address(eigenLayerProxyAdmin),
-                    abi.encodeWithSelector(
-                        StrategyBaseTVLLimits.initialize.selector,
-                        1 ether, // maxPerDeposit
-                        100 ether, // maxDeposits
-                        IERC20(erc20Mock),
-                        eigenLayerPauserReg
-                    )
-                )
-            )
-        );
-        IStrategy[] memory strats = new IStrategy[](1);
-        strats[0] = erc20MockStrategy;
-        bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
-        thirdPartyTransfersForbiddenValues[0] = false;
-        strategyManager.addStrategiesToDepositWhitelist(strats, thirdPartyTransfersForbiddenValues);
-    }
+    // function _deployErc20AndStrategyAndWhitelistStrategy(
+    //     ProxyAdmin eigenLayerProxyAdmin,
+    //     PauserRegistry eigenLayerPauserReg,
+    //     StrategyBaseTVLLimits baseStrategyImplementation,
+    //     IStrategyManager strategyManager
+    // ) internal {
+    //     erc20Mock = new ERC20Mock();
+    //     // TODO(samlaf): any reason why we are using the strategybase with tvl limits instead of just using strategybase?
+    //     // the maxPerDeposit and maxDeposits below are just arbitrary values.
+    //     erc20MockStrategy = StrategyBaseTVLLimits(
+    //         address(
+    //             new TransparentUpgradeableProxy(
+    //                 address(baseStrategyImplementation),
+    //                 address(eigenLayerProxyAdmin),
+    //                 abi.encodeWithSelector(
+    //                     StrategyBaseTVLLimits.initialize.selector,
+    //                     1 ether, // maxPerDeposit
+    //                     100 ether, // maxDeposits
+    //                     IERC20(erc20Mock),
+    //                     eigenLayerPauserReg
+    //                 )
+    //             )
+    //         )
+    //     );
+    //     IStrategy[] memory strats = new IStrategy[](1);
+    //     strats[0] = erc20MockStrategy;
+    //     bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
+    //     thirdPartyTransfersForbiddenValues[0] = false;
+    //     strategyManager.addStrategiesToDepositWhitelist(strats, thirdPartyTransfersForbiddenValues);
+    // }
 
     function _deployIncredibleSquaringContracts(
         IDelegationManager delegationManager,
