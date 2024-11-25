@@ -1,0 +1,217 @@
+# Local devnet config file for the incredible-squaring-avs example
+# This file can be used inside the incredible-squaring-avs repo to
+# start a devnet with any local changes
+# TODO: move this to the incredible-squaring-avs repo
+deployments:
+  - type: EigenLayer
+    # This commit corresponds to the incredible-squaring commit below
+    ref: "v0.3.3-mainnet-rewards"
+    # NOTE: operator registration is done at operator startup
+    strategies: [MockETH]
+    operators:
+      - name: operator1
+        keys: operator1_ecdsa_keys
+        strategies:
+          # strategy_name: number_of_tokens
+          MockETH: 100000000000000000
+      - name: operator2
+        keys: operator2_ecdsa_keys
+        strategies:
+          # strategy_name: number_of_tokens
+          MockETH: 100000000000000000
+      - name: operator3
+        keys: operator3_ecdsa_keys
+        strategies:
+          # strategy_name: number_of_tokens
+          MockETH: 100000000000000000
+
+  - name: incredible-squaring
+    repo: "."
+    contracts_path: "contracts"
+    script: script/IncredibleSquaringDeployer.s.sol
+    input:
+      script/output/3151908: eigenlayer_addresses
+    output:
+      avs_addresses: "script/output/3151908/credible_squaring_avs_deployment_output.json"
+
+services:
+  - name: operator1
+    image: "ko.local/operator/cmd/main.go:latest"
+    build_cmd: KO_DOCKER_REPO=ko.local ko build operator/cmd/main.go --preserve-import-paths --local
+    ports:
+      node:
+        number: 8080
+        transport_protocol: "TCP"
+        application_protocol: "http"
+        wait: "3m"
+    input:
+      /usr/src/app/config-files/:
+        - operator1-config
+        - operator1_bls_keys
+        - operator1_ecdsa_keys
+    env:
+      OPERATOR_ECDSA_KEY_PASSWORD: $keys.operator1_ecdsa_keys.password
+      OPERATOR_BLS_KEY_PASSWORD: $keys.operator1_bls_keys.password
+    cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
+
+  - name: operator2
+    image: "ko.local/operator/cmd/main.go:latest"
+    build_cmd: KO_DOCKER_REPO=ko.local ko build operator/cmd/main.go --preserve-import-paths --local
+    ports:
+      node:
+        number: 8080
+        transport_protocol: "TCP"
+        application_protocol: "http"
+        wait: "3m"
+    input:
+      /usr/src/app/config-files/:
+        - operator2-config
+        - operator2_bls_keys
+        - operator2_ecdsa_keys
+    env:
+      OPERATOR_ECDSA_KEY_PASSWORD: $keys.operator2_ecdsa_keys.password
+      OPERATOR_BLS_KEY_PASSWORD: $keys.operator2_bls_keys.password
+    cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
+
+  - name: operator3
+    image: "ko.local/operator/cmd/main.go:latest"
+    build_cmd: KO_DOCKER_REPO=ko.local ko build operator/cmd/main.go --preserve-import-paths --local
+    ports:
+      node:
+        number: 8080
+        transport_protocol: "TCP"
+        application_protocol: "http"
+        wait: "3m"
+    input:
+      /usr/src/app/config-files/:
+        - operator3-config
+        - operator3_bls_keys
+        - operator3_ecdsa_keys
+    env:
+      OPERATOR_ECDSA_KEY_PASSWORD: $keys.operator3_ecdsa_keys.password
+      OPERATOR_BLS_KEY_PASSWORD: $keys.operator3_bls_keys.password
+    cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
+
+  - name: aggregator
+    image: "ko.local/aggregator/cmd/main.go:latest"
+    build_cmd: KO_DOCKER_REPO=ko.local ko build aggregator/cmd/main.go --preserve-import-paths --local
+    ports:
+      rpc:
+        number: 8090
+        transport_protocol: "TCP"
+        application_protocol: "http"
+    input:
+      /usr/src/app/config-files/:
+        - aggregator-config
+        - avs_addresses
+    cmd:
+      - "--config"
+      - "/usr/src/app/config-files/aggregator-config.yaml"
+      - "--ecdsa-private-key"
+      # NOTE: aggregator key-pair is hardcoded in the deployment scripts
+      - "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+      - "--credible-squaring-deployment"
+      - "/usr/src/app/config-files/credible_squaring_avs_deployment_output.json"
+
+keys:
+  # This generates new keypairs for each operator
+  - name: operator1_bls_keys
+    type: bls
+  - name: operator1_ecdsa_keys
+    type: ecdsa
+  - name: operator2_bls_keys
+    type: bls
+  - name: operator2_ecdsa_keys
+    type: ecdsa
+  - name: operator3_bls_keys
+    type: bls
+  - name: operator3_ecdsa_keys
+    type: ecdsa
+  # This ensures the aggregator has funds
+  - address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
+    type: ecdsa
+    private_key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+
+artifacts:
+  aggregator-config:
+    files:
+      aggregator-config.yaml: |
+        # 'production' only prints info and above. 'development' also prints debug
+        environment: production
+        eth_rpc_url: {{.http_rpc_url}}
+        eth_ws_url: {{.ws_rpc_url}}
+        # address which the aggregator listens on for operator signed messages
+        aggregator_server_ip_port_address: 0.0.0.0:8090
+
+  operator1-config:
+    additional_data:
+      avs_addresses:
+        avs_registry_coordinator_address: ".addresses.registryCoordinator"
+        operator_state_retriever_address: ".addresses.operatorStateRetriever"
+    files:
+      operator-config.yaml: |
+        production: False
+        operator_address: {{.keys.operator1_ecdsa_keys.address}}
+        avs_registry_coordinator_address: {{.avs_registry_coordinator_address}}
+        operator_state_retriever_address: {{.operator_state_retriever_address}}
+        eth_rpc_url: {{.http_rpc_url}}
+        eth_ws_url: {{.ws_rpc_url}}
+        ecdsa_private_key_store_path: /usr/src/app/config-files/keys/1.ecdsa.key.json
+        bls_private_key_store_path: /usr/src/app/config-files/keys/1.bls.key.json
+        aggregator_server_ip_port_address: aggregator:8090
+        eigen_metrics_ip_port_address: "0.0.0.0:8081"
+        enable_metrics: False
+        node_api_ip_port_address: "0.0.0.0:8080"
+        enable_node_api: True
+        register_operator_on_startup: True
+        token_strategy_addr: {{.addresses.MockETH}}
+
+  operator2-config:
+    additional_data:
+      avs_addresses:
+        avs_registry_coordinator_address: ".addresses.registryCoordinator"
+        operator_state_retriever_address: ".addresses.operatorStateRetriever"
+    files:
+      operator-config.yaml: |
+        production: False
+        operator_address: {{.keys.operator2_ecdsa_keys.address}}
+        avs_registry_coordinator_address: {{.avs_registry_coordinator_address}}
+        operator_state_retriever_address: {{.operator_state_retriever_address}}
+        eth_rpc_url: {{.http_rpc_url}}
+        eth_ws_url: {{.ws_rpc_url}}
+        ecdsa_private_key_store_path: /usr/src/app/config-files/keys/1.ecdsa.key.json
+        bls_private_key_store_path: /usr/src/app/config-files/keys/1.bls.key.json
+        aggregator_server_ip_port_address: aggregator:8090
+        eigen_metrics_ip_port_address: "0.0.0.0:8081"
+        enable_metrics: False
+        node_api_ip_port_address: "0.0.0.0:8080"
+        enable_node_api: True
+        register_operator_on_startup: True
+        token_strategy_addr: {{.addresses.MockETH}}
+
+  operator3-config:
+    additional_data:
+      avs_addresses:
+        avs_registry_coordinator_address: ".addresses.registryCoordinator"
+        operator_state_retriever_address: ".addresses.operatorStateRetriever"
+    files:
+      operator-config.yaml: |
+        production: False
+        operator_address: {{.keys.operator3_ecdsa_keys.address}}
+        avs_registry_coordinator_address: {{.avs_registry_coordinator_address}}
+        operator_state_retriever_address: {{.operator_state_retriever_address}}
+        eth_rpc_url: {{.http_rpc_url}}
+        eth_ws_url: {{.ws_rpc_url}}
+        ecdsa_private_key_store_path: /usr/src/app/config-files/keys/1.ecdsa.key.json
+        bls_private_key_store_path: /usr/src/app/config-files/keys/1.bls.key.json
+        aggregator_server_ip_port_address: aggregator:8090
+        eigen_metrics_ip_port_address: "0.0.0.0:8081"
+        enable_metrics: False
+        node_api_ip_port_address: "0.0.0.0:8080"
+        enable_node_api: True
+        register_operator_on_startup: True
+        token_strategy_addr: {{.addresses.MockETH}}
+
+ethereum_package:
+  additional_services:
+    - blockscout
