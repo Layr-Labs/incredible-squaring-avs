@@ -155,7 +155,6 @@ func createMockAggregator(
 		avsWriter:             mockAvsWriter,
 		blsAggregationService: mockBlsAggregationService,
 		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse),
 	}
 	return aggregator, mockAvsWriter, mockBlsAggregationService, nil
 }
