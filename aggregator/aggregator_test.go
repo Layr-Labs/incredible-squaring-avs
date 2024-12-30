@@ -80,6 +80,20 @@ func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTask(arg0, arg1, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeNewTask", reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask), arg0, arg1, arg2, arg3, arg4)
 }
 
+// InitializeNewTask mocks base method.
+func (m *MockBlsAggregationService) InitializeNewTaskWithWindow(arg0, arg1 uint32, arg2 sdktypes.QuorumNums, arg3 sdktypes.QuorumThresholdPercentages, arg4 time.Duration, window_duration time.Duration) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitializeNewTask", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InitializeNewTask indicates an expected call of InitializeNewTask.
+func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTaskWithWindow(arg0, arg1, arg2, arg3, arg4 any, window_duration time.Duration) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeNewTask", reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask), arg0, arg1, arg2, arg3, arg4)
+}
+
 // ProcessNewSignature mocks base method.
 func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, arg1 uint32, arg2 interface{}, arg3 *bls.Signature, arg4 sdktypes.Bytes32) error {
 	m.ctrl.T.Helper()
