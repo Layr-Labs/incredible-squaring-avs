@@ -1,8 +1,8 @@
 module github.com/Layr-Labs/incredible-squaring-avs
 
-go 1.21.13
+go 1.21
 
-toolchain go1.23.4
+toolchain go1.21.0
 
 require (
 	github.com/Layr-Labs/eigensdk-go v0.1.14-0.20241230193544-1fc432361165
@@ -13,6 +13,7 @@ require (
 	github.com/urfave/cli v1.22.14
 	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.22.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -147,7 +148,6 @@ require (
 	google.golang.org/grpc v1.58.3 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
 
