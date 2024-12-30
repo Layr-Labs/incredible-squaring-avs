@@ -1,11 +1,11 @@
 module github.com/Layr-Labs/incredible-squaring-avs
 
-go 1.21
+go 1.21.13
 
-toolchain go1.21.0
+toolchain go1.23.4
 
 require (
-	github.com/Layr-Labs/eigensdk-go v0.1.12
+	github.com/Layr-Labs/eigensdk-go v0.1.14-0.20241230193544-1fc432361165
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/prometheus/client_golang v1.19.0
 	github.com/stretchr/testify v1.9.0
@@ -59,7 +59,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/distribution/reference v0.5.0 // indirect
-	github.com/docker/docker v25.0.5+incompatible // indirect
+	github.com/docker/docker v25.0.6+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
