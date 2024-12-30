@@ -15,6 +15,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
@@ -69,7 +70,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	var configRaw ConfigRaw
 	configFilePath := ctx.GlobalString(ConfigFileFlag.Name)
 	if configFilePath != "" {
-		sdkutils.ReadYamlConfig(configFilePath, &configRaw)
+		commonincredible.ReadYamlConfig(configFilePath, &configRaw)
 	}
 
 	var credibleSquaringDeploymentRaw IncredibleSquaringDeploymentRaw
