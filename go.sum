@@ -11,6 +11,8 @@ github.com/Layr-Labs/eigensdk-go v0.1.14-0.20241230193544-1fc432361165 h1:oiuPO5
 github.com/Layr-Labs/eigensdk-go v0.1.14-0.20241230193544-1fc432361165/go.mod h1:G4yqiK+5NfUuEMVGGncOEm7QskuGRPmKA7bKxpPzPT4=
 github.com/Layr-Labs/eigensdk-go v0.2.0-beta h1:pj3LaWvlKwrwbOsMBwV/G3kn+TRpUfYKvHyTM0HTP4g=
 github.com/Layr-Labs/eigensdk-go v0.2.0-beta/go.mod h1:G4yqiK+5NfUuEMVGGncOEm7QskuGRPmKA7bKxpPzPT4=
+github.com/Layr-Labs/eigensdk-go v0.2.0-beta.0.20250106204209-9fe3e7d28e01 h1:TRuR9IhJG0sCT+yk3IyUYbvDsR4fd7Etiwlkmwy6Q1k=
+github.com/Layr-Labs/eigensdk-go v0.2.0-beta.0.20250106204209-9fe3e7d28e01/go.mod h1:G4yqiK+5NfUuEMVGGncOEm7QskuGRPmKA7bKxpPzPT4=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/Microsoft/hcsshim v0.11.4 h1:68vKo2VN8DE9AdN4tnkWnmdhqdbpUFM8OF3Airm7fz8=
