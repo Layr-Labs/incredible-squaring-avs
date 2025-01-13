@@ -6,7 +6,6 @@ deployments:
   - type: EigenLayer
     # This commit corresponds to the incredible-squaring commit below
     ref: "v0.3.3-mainnet-rewards"
-    # NOTE: operator registration is done at operator startup
     strategies: [MockETH]
     operators:
       - name: operator1
