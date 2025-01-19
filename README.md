@@ -12,7 +12,7 @@ You will need [foundry](https://book.getfoundry.sh/getting-started/installation)
 ```
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
-go install github.com/maoueh/zap-pretty@latest
+go install github.com/maoueh/zap-pretty/cmd/zap-pretty@latest
 ```
 You will also need to [install docker](https://docs.docker.com/get-docker/), and build the contracts:
 ```
