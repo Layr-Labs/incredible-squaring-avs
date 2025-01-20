@@ -15,6 +15,9 @@ jobs:
           # Mainnet version isn't used because of compile errors
           - ref: v0.3.3-mainnet-rewards
             version: v0.3.3
+          # Rewards v2
+          - ref: v0.5.3
+            version: v0.5.3
           # Newest testnet release
           - ref: slashing-magnitudes
             version: v1.0.3
