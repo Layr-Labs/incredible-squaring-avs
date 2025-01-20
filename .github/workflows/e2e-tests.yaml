@@ -22,10 +22,7 @@ jobs:
     name: End-to-end test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
+      # Install foundry, go, ko, and kurtosis
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
@@ -37,7 +34,34 @@ jobs:
 
       - uses: ko-build/setup-ko@v0.7
 
+      - name: Install Kurtosis
+        shell: bash
+        run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+          kurtosis analytics disable
+          echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
+
+      # Install the devnet
+      # TODO: use action when available
+      - uses: actions/checkout@v4
+        with:
+          repository: Layr-Labs/avs-devnet
+          path: avs-devnet
+
+      - name: Install devnet
+        working-directory: avs-devnet
+        run: make install
+
+      # Checkout repo
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          path: ics
+
       - name: Run end-to-end test
+        working-directory: ics
         run: |
           export EL_REF=${{ matrix.el-contracts.ref }}
           export EL_VERSION=${{ matrix.el-contracts.version }}
