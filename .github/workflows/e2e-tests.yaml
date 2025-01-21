@@ -16,10 +16,15 @@ jobs:
           - ref: v0.3.3-mainnet-rewards
             version: v0.3.3
           # TODO: fix these
-          # Rewards v2
+          # # Rewards v1
+          # # Doesn't compile
+          # - ref: v0.4.3-mainnet-rewards-foundation-incentives
+          #   version: v0.4.3
+          # # Rewards v2
+          # # Devnet has problems running it
           # - ref: v0.5.3
           #   version: v0.5.3
-          # Newest testnet release
+          # # Isn't supported by ICS yet
           # - ref: slashing-magnitudes
           #   version: v1.0.3
 
