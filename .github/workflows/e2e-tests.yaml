@@ -21,7 +21,7 @@ jobs:
           # - ref: v0.4.3-mainnet-rewards-foundation-incentives
           #   version: v0.4.3
           # # Rewards v2
-          # # Devnet has problems running it
+          # # "delegation" was renamed to "delegationManager" in addresses JSON
           # - ref: v0.5.3
           #   version: v0.5.3
           # # Isn't supported by ICS yet
