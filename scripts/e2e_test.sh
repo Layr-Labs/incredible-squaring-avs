@@ -20,7 +20,7 @@ cd $parent_path/..
 
 
 # Stop the devnet in case it's already running
-devnet stop || true
+avs-devnet stop || true
 
 cp devnet.yaml devnet.yaml.bak
 
@@ -35,19 +35,19 @@ cleanup() {
     echo "Executing cleanup function..."
     set +e
     # Stop the devnet, and restore the old devnet configuration
-    devnet stop || true
+    avs-devnet stop || true
     mv devnet.yaml.bak devnet.yaml || true
 }
 trap 'cleanup' EXIT
 
 # Start the devnet and exit with a custom message if it fails
-devnet start || { echo "Failed to start the devnet" ; exit 42; }
+avs-devnet start || { echo "Failed to start the devnet" ; exit 42; }
 
 # Fetch RPC URL and TaskManager address
-RPC_URL=$(devnet get-ports | yq .el-1-besu-lighthouse.rpc)
+RPC_URL=$(avs-devnet get-ports | yq .el-1-besu-lighthouse.rpc)
 echo "Fetched RPC URL: $RPC_URL"
 
-TASK_MANAGER_ADDR=$(devnet get-address avs_addresses:credibleSquaringTaskManager)
+TASK_MANAGER_ADDR=$(avs-devnet get-address avs_addresses:credibleSquaringTaskManager)
 echo "Fetched TaskManager address: $TASK_MANAGER_ADDR"
 
 # Fetch the latest task number
