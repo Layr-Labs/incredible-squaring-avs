@@ -17,7 +17,7 @@ jobs:
             version: v0.3.3
           # TODO: fix these
           # # Rewards v1
-          # # Doesn't compile
+          # # "delegation" was renamed to "delegationManager" in addresses JSON
           # - ref: v0.4.3-mainnet-rewards-foundation-incentives
           #   version: v0.4.3
           # # Rewards v2
