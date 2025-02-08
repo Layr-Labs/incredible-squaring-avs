@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/ehsueh/trading-algo-avs/aggregator"
+	"github.com/ehsueh/trading-algo-avs/core/config"
 )
 
 var (

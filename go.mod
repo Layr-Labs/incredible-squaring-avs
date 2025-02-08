@@ -1,4 +1,4 @@
-module github.com/Layr-Labs/incredible-squaring-avs
+module github.com/ehsueh/trading-algo-avs
 
 go 1.21
 

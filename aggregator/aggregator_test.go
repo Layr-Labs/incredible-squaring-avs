@@ -1,5 +1,6 @@
 package aggregator
 
+// TODO - write test for TradingAlgoAVS aggregator (this test is from the old Incredible Squaring AVS example)
 import (
 	"context"
 	"math/big"

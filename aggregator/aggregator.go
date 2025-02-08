@@ -2,21 +2,38 @@ package aggregator
 
 import (
 	"context"
-	"math"
+	"errors"
 	"math/big"
 	"sync"
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"golang.org/x/crypto/sha3"
+
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	"github.com/Layr-Labs/eigensdk-go/services/avsregistry"
+	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
+	"github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
+	oprsinfoserv "github.com/Layr-Labs/eigensdk-go/services/operatorsinfo"
+	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/Layr-Labs/trading-algo-avs/aggregator/types"
-	"github.com/Layr-Labs/trading-algo-avs/core/chainio"
-	"github.com/Layr-Labs/trading-algo-avs/core/config"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+	
+	"github.com/ehsueh/trading-algo-avs/aggregator/types"
+	"github.com/ehsueh/trading-algo-avs/core/chainio"
+	"github.com/ehsueh/trading-algo-avs/core/config"
+	"github.com/ehsueh/trading-algo-avs/core/utils"
+
 	tradingTaskManager "github.com/kaohaohan/TradeAlgoAVS-frontend/blob/b7dd2c8fb10844d6c565ce7c06ddddea662a48f4/blockchain/contracts/TradingAlgoAVS"
 )
 
 const (
-	taskChallengeWindowBlock = 100 // Blocks before a task expires
+	taskChallengeWindowBlock = 100 // Blocks before a task expires // for future use
 	blockTimeSeconds         = 12 * time.Second
 	avsName                  = "trading-algo-avs"
 	quorumThreshold          = 66 // Percentage of quorum required for validation
@@ -216,7 +233,7 @@ func selectOperatorForTask(strategyId uint256) common.Address {
 	return common.HexToAddress("0xOperatorAddressPlaceholder")
 }
 
-// sendAggregatedResponseToContract sends the validated and aggregated task results on-chain
+// sendAggregatedResponseToContract sends the validated and aggregated task results on-chain with BLS signatures
 func (agg *Aggregator) sendAggregatedResponseToContract(taskId uint256) error {
 	agg.resultsMu.RLock()
 	results, exists := agg.results[taskId]
@@ -234,25 +251,69 @@ func (agg *Aggregator) sendAggregatedResponseToContract(taskId uint256) error {
 		return err
 	}
 
-	// Check quorum threshold
-	if len(validResults)*100/len(results) < quorumThreshold {
+	// Retrieve operator states to identify signers and non-signers
+	operatorState, err := chainio.GetOperatorState(taskId)
+	if err != nil {
+		agg.logger.Error("Failed to fetch operator state", "taskId", taskId, "error", err)
+		return err
+	}
+
+	// Aggregate BLS signatures for quorum validation
+	quorumApks := []BN254G1Point{}
+	nonSignerPubkeys := []BN254G1Point{}
+
+	for _, operator := range operatorState.Operators {
+		if operator.Signed {
+			quorumApks = append(quorumApks, operator.Pubkey)
+		} else {
+			nonSignerPubkeys = append(nonSignerPubkeys, operator.Pubkey)
+		}
+	}
+
+	// Check if quorum threshold is met
+	if len(quorumApks)*100/len(operatorState.Operators) < quorumThreshold {
 		agg.logger.Warn("Quorum not met, not submitting response", "taskId", taskId)
 		return errors.New("quorum not met")
 	}
 
-	// Send aggregated result on-chain
+	// Use the same BLSSignatureChecker.sol contract as in the EigenLayer example, which expects a
+	//
+	//	struct NonSignerStakesAndSignature {
+	//		uint32[] nonSignerQuorumBitmapIndices;
+	//		BN254.G1Point[] nonSignerPubkeys;
+	//		BN254.G1Point[] quorumApks;
+	//		BN254.G2Point apkG2;
+	//		BN254.G1Point sigma;
+	//		uint32[] quorumApkIndices;
+	//		uint32[] totalStakeIndices;
+	//		uint32[][] nonSignerStakeIndices; // nonSignerStakeIndices[quorumNumberIndex][nonSignerIndex]
+	//	}
+	// Construct BLS signature structure for contract verification
+	blsSignature := cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature{
+		NonSignerPubkeys:             nonSignerPubkeys,
+		QuorumApks:                   quorumApks,
+		ApkG2:                        core.ConvertToBN254G2Point(operatorState.SignersApkG2),
+		Sigma:                        core.ConvertToBN254G1Point(operatorState.SignersAggSigG1),
+		NonSignerQuorumBitmapIndices: operatorState.NonSignerQuorumBitmapIndices,
+		QuorumApkIndices:             operatorState.QuorumApkIndices,
+		TotalStakeIndices:            operatorState.TotalStakeIndices,
+		NonSignerStakeIndices:        operatorState.NonSignerStakeIndices,
+	}
+
+	// Send aggregated result with signature verification
 	agg.logger.Info("Quorum met, submitting result on-chain", "taskId", taskId,
 		"meanRoi", meanRoi, "meanProfitability", meanProfitability, "meanRisk", meanRisk)
 
-	err = chainio.SubmitAggregatedResult(taskId, meanRoi, meanProfitability, meanRisk)
+	err = chainio.SubmitAggregatedResultWithSignature(taskId, meanRoi, meanProfitability, meanRisk, blsSignature)
 	if err != nil {
-		agg.logger.Error("Failed to submit aggregated result", "taskId", taskId, "error", err)
+		agg.logger.Error("Failed to submit aggregated result with signature", "taskId", taskId, "error", err)
 		return err
 	}
 
-	agg.logger.Info("Aggregated response successfully submitted", "taskId", taskId)
+	agg.logger.Info("Aggregated response with signature successfully submitted", "taskId", taskId)
 	return nil
 }
+
 
 // ValidateResults checks consistency across operator results using standard deviation
 func (agg *Aggregator) ValidateResults(taskId uint256, results []OperatorResult) ([]OperatorResult, *big.Int, *big.Int, *big.Int, error) {
