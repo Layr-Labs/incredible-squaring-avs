@@ -1,4 +1,4 @@
-module github.com/ehsueh/trading-algo-avs
+module github.com/ehsueh/trade-algo-avs
 
 go 1.21
 

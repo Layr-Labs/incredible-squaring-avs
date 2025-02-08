@@ -23,11 +23,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	
-	"github.com/ehsueh/trading-algo-avs/aggregator/types"
-	"github.com/ehsueh/trading-algo-avs/core/chainio"
-	"github.com/ehsueh/trading-algo-avs/core/config"
-	"github.com/ehsueh/trading-algo-avs/core/utils"
+
+	"github.com/ehsueh/trade-algo-avs/aggregator/types"
+	"github.com/ehsueh/trade-algo-avs/core/chainio"
+	"github.com/ehsueh/trade-algo-avs/core/config"
+	"github.com/ehsueh/trade-algo-avs/core/utils"
 
 	tradingTaskManager "github.com/kaohaohan/TradeAlgoAVS-frontend/blob/b7dd2c8fb10844d6c565ce7c06ddddea662a48f4/blockchain/contracts/TradingAlgoAVS"
 )
@@ -35,7 +35,7 @@ import (
 const (
 	taskChallengeWindowBlock = 100 // Blocks before a task expires // for future use
 	blockTimeSeconds         = 12 * time.Second
-	avsName                  = "trading-algo-avs"
+	avsName                  = "trade-algo-avs"
 	quorumThreshold          = 66 // Percentage of quorum required for validation
 	smartContractAddress      = "0x1D3A33D45557bb72F05DBdeB6a50c6Ea9818183a"
 )

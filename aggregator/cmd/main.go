@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/ehsueh/trading-algo-avs/aggregator"
-	"github.com/ehsueh/trading-algo-avs/core/config"
+	"github.com/ehsueh/trade-algo-avs/aggregator"
+	"github.com/ehsueh/trade-algo-avs/core/config"
 )
 
 var (

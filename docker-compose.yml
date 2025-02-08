@@ -30,7 +30,7 @@ services:
       - trading-algo-network
 
   aggregator:
-    image: ghcr.io/ehsueh/trading-algo-avs/aggregator/cmd/main.go:latest
+    image: ghcr.io/ehsueh/trade-algo-avs/aggregator/cmd/main.go:latest
     container_name: trading-algo-aggregator
     depends_on:
       anvil:
@@ -51,7 +51,7 @@ services:
       - trading-algo-network
 
   operator1:
-    image: ghcr.io/ehsueh/trading-algo-avs/operator/cmd/main.go:latest
+    image: ghcr.io/ehsueh/trade-algo-avs/operator/cmd/main.go:latest
     container_name: trading-algo-operator1
     depends_on:
       anvil:
@@ -63,7 +63,7 @@ services:
     ports:
       - "9090:9090" # prometheus metrics port (defined in operator-docker-compose.anvil.yaml file)
     volumes:
-      - ./:/trading-algo-avs/
+      - ./:/trade-algo-avs/
     working_dir: /trading-algo
     command: --config config-files/operator-docker-compose.anvil.yaml
     networks:

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/rpc"
 
-	cstaskmanager "github.com/ehsueh/trading-algo-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	cstaskmanager "github.com/ehsueh/trade-algo-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/ehsueh/core"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"

@@ -4,9 +4,9 @@ services:
     build:
       context: .
       dockerfile: operator.Dockerfile
-    image: ghcr.io/ehsueh/trading-algo-avs/node:latest
+    image: ghcr.io/ehsueh/trade-algo-avs/node:latest
   nodeplugin:
     build:
       context: .
       dockerfile: plugin.Dockerfile
-    image: ghcr.io/ehsueh/trading-algo-avs/nodeplugin:latest
+    image: ghcr.io/ehsueh/trade-algo-avs/nodeplugin:latest
