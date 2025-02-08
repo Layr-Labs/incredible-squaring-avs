@@ -2,188 +2,312 @@ package aggregator
 
 import (
 	"context"
+	"math"
 	"math/big"
 	"sync"
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/event"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	"github.com/Layr-Labs/trading-algo-avs/aggregator/types"
-	"github.com/Layr-Labs/trading-algo-avs/core"
 	"github.com/Layr-Labs/trading-algo-avs/core/chainio"
 	"github.com/Layr-Labs/trading-algo-avs/core/config"
-
 	tradingTaskManager "github.com/kaohaohan/TradeAlgoAVS-frontend/blob/b7dd2c8fb10844d6c565ce7c06ddddea662a48f4/blockchain/contracts/TradingAlgoAVS"
 )
 
 const (
-	// Number of blocks after which a task is considered expired
-	taskChallengeWindowBlock = 100
+	taskChallengeWindowBlock = 100 // Blocks before a task expires
 	blockTimeSeconds         = 12 * time.Second
 	avsName                  = "trading-algo-avs"
+	quorumThreshold          = 66 // Percentage of quorum required for validation
+	smartContractAddress      = "0x1D3A33D45557bb72F05DBdeB6a50c6Ea9818183a"
 )
 
-// Aggregator listens to trading strategy events from the TradingAlgoAVS smart contract,
-// collects operator outputs for (strategy, user, market) tasks, aggregates statistics,
-// and sends the verified response on-chain if operator responses are consistent.
+// Aggregator is responsible for:
+// - Listening to smart contract events for subscriptions
+// - Generating daily tasks for active subscriptions
+// - Aggregating results and validating against the quorum
+// - Rewarding honest execution and penalizing incorrect execution
+
 type Aggregator struct {
-	logger                logging.Logger
-	serverIpPortAddr      string
-	avsWriter             chainio.AvsWriterer
-	blsAggregationService blsagg.BlsAggregationService
-	strategies            map[uint256]tradingTaskManager.Strategy
-	subscriptions         map[uint256]map[common.Address]bool
-	strategiesMu          sync.RWMutex
-	subscriptionsMu       sync.RWMutex
+	logger          logging.Logger
+	avsWriter       chainio.AvsWriterer
+	subscriptions   map[uint256]map[common.Address]bool // Tracks active subscriptions
+	results        map[uint256][]OperatorResult        // Tracks operator execution results
+
+	subscriptionsMu sync.RWMutex
+	resultsMu       sync.RWMutex
 }
 
-// NewAggregator creates a new Aggregator for TradingAlgoAVS.
-func NewAggregator(c *config.Config) (*Aggregator, error) {
-	avsReader, err := chainio.BuildAvsReaderFromConfig(c)
-	if err != nil {
-		c.Logger.Error("Cannot create avsReader", "err", err)
-		return nil, err
-	}
-
-	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
-	if err != nil {
-		c.Logger.Errorf("Cannot create avsWriter", "err", err)
-		return nil, err
-	}
-
-	clients, err := clients.BuildAll(clients.BuildAllConfig{
-		EthHttpUrl:                 c.EthHttpRpcUrl,
-		EthWsUrl:                   c.EthWsRpcUrl,
-		RegistryCoordinatorAddr:    c.TradingAlgoRegistryCoordinatorAddr.String(),
-		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
-		AvsName:                    avsName,
-	}, c.EcdsaPrivateKey, c.Logger)
-	if err != nil {
-		c.Logger.Errorf("Cannot create SDK clients", "err", err)
-		return nil, err
-	}
-
-	blsAggregationService := blsagg.NewBlsAggregatorService(nil, nil, c.Logger)
-
-	return &Aggregator{
-		logger:                c.Logger,
-		serverIpPortAddr:      c.AggregatorServerIpPortAddr,
-		avsWriter:             avsWriter,
-		blsAggregationService: blsAggregationService,
-		strategies:            make(map[uint256]tradingTaskManager.Strategy),
-		subscriptions:         make(map[uint256]map[common.Address]bool),
-	}, nil
+type OperatorResult struct {
+	Roi           *big.Int
+	Profitability *big.Int
+	Risk          *big.Int
 }
 
 // Start the aggregator to listen for new strategy and subscription events
 func (agg *Aggregator) Start(ctx context.Context) error {
-	agg.logger.Infof("Starting Trading Algo AVS Aggregator.")
-
-	contractAddress := common.HexToAddress("0xYourContractAddress")
-	tradingContract, err := tradingTaskManager.NewTradingAlgoAVS(contractAddress, nil) // Replace `nil` with actual blockchain client
-	if err != nil {
-		agg.logger.Error("Failed to load TradingAlgoAVS contract", "err", err)
-		return err
-	}
-
-	// Subscribe to StrategyCreated event
-	strategyCreatedChan := make(chan *tradingTaskManager.TradingAlgoAVSStrategyCreated)
-	strategySub, err := tradingContract.WatchStrategyCreated(nil, strategyCreatedChan, nil, nil)
-	if err != nil {
-		agg.logger.Error("Failed to subscribe to StrategyCreated event", "err", err)
-		return err
-	}
-
-	// Subscribe to SubscribedToStrategy event
-	subscribedChan := make(chan *tradingTaskManager.TradingAlgoAVSSubscribedToStrategy)
-	subscriptionSub, err := tradingContract.WatchSubscribedToStrategy(nil, subscribedChan, nil, nil)
-	if err != nil {
-		agg.logger.Error("Failed to subscribe to SubscribedToStrategy event", "err", err)
-		return err
-	}
-
-	// Process events in a goroutine
-	go func() {
-		for {
-			select {
-			case strategyEvent := <-strategyCreatedChan:
-				agg.processNewStrategy(strategyEvent)
-			case subscriptionEvent := <-subscribedChan:
-				agg.processNewSubscription(subscriptionEvent)
-			case <-ctx.Done():
-				strategySub.Unsubscribe()
-				subscriptionSub.Unsubscribe()
-				return
-			}
-		}
-	}()
-
+	agg.logger.Info("Starting aggregator...")
+	go agg.listenForSubscriptionEvents(ctx)
+	// go agg.listenForStrategyEvents(ctx) // Future: Listen for strategy update events
 	return nil
 }
 
-// Process new strategies when detected
-func (agg *Aggregator) processNewStrategy(event *tradingTaskManager.TradingAlgoAVSStrategyCreated) {
-	agg.logger.Info("New strategy detected", "strategyId", event.StrategyId, "provider", event.Provider)
-
-	agg.strategiesMu.Lock()
-	agg.strategies[event.StrategyId] = tradingTaskManager.Strategy{
-		Id:               event.StrategyId,
-		Provider:         event.Provider,
-		SubscriptionFee:  event.SubscriptionFee,
-		SubscriptionPeriod: event.SubscriptionPeriod,
-		StrategyUid:      event.StrategyUid,
-		Roi:              event.Roi,
-		Profitability:    event.Profitability,
-		Risk:             event.Risk,
+// Listen for subscription-related events from the blockchain
+func (agg *Aggregator) listenForSubscriptionEvents(ctx context.Context) {
+	logs := make(chan types.Log)
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			common.HexToAddress(smartContractAddress),
+		},
 	}
-	agg.strategiesMu.Unlock()
-}
 
-// Process new subscriptions when detected
-func (agg *Aggregator) processNewSubscription(event *tradingTaskManager.TradingAlgoAVSSubscribedToStrategy) {
-	agg.logger.Info("New subscription detected", "strategyId", event.StrategyId, "subscriber", event.Subscriber)
-
-	agg.subscriptionsMu.Lock()
-	if _, exists := agg.subscriptions[event.StrategyId]; !exists {
-		agg.subscriptions[event.StrategyId] = make(map[common.Address]bool)
-	}
-	agg.subscriptions[event.StrategyId][event.Subscriber] = true
-	agg.subscriptionsMu.Unlock()
-}
-
-// Aggregates operator statistics and sends them on-chain if consistent
-func (agg *Aggregator) aggregateResults(strategyId uint256) {
-	agg.strategiesMu.RLock()
-	strategy, exists := agg.strategies[strategyId]
-	agg.strategiesMu.RUnlock()
-
-	if !exists {
-		agg.logger.Error("Strategy not found", "strategyId", strategyId)
+	sub, err := agg.rpcClient.SubscribeFilterLogs(ctx, query, logs)
+	if err != nil {
+		agg.logger.Error("Failed to subscribe to contract logs", "error", err)
 		return
 	}
 
-	// Fetch operator results (Mocked for now)
-	operatorResults := []struct {
-		Roi          *big.Int
-		Profitability *big.Int
-		Risk         *big.Int
-	}{
-		{big.NewInt(5), big.NewInt(80), big.NewInt(10)},
-		{big.NewInt(5), big.NewInt(79), big.NewInt(11)},
-		{big.NewInt(5), big.NewInt(81), big.NewInt(9)},
+	for {
+		select {
+		case <-ctx.Done():
+			sub.Unsubscribe()
+			return
+		case log := <-logs:
+			agg.handleContractEvent(log)
+		}
+	}
+}
+// Listen for subscription-related events from the blockchain
+func (agg *Aggregator) listenForSubscriptionEvents(ctx context.Context) {
+	logs := make(chan types.Log)
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{
+			common.HexToAddress(smartContractAddress),
+		},
 	}
 
-	// Calculate mean and standard deviation
-	// (Add standard deviation check logic here)
-
-	// If within standard deviation, submit to blockchain
-	agg.logger.Info("Sending aggregated trading statistics on-chain.", "strategyId", strategyId)
-	_, err := agg.avsWriter.SendAggregatedTradingResults(context.Background(), strategy)
+	sub, err := agg.rpcClient.SubscribeFilterLogs(ctx, query, logs)
 	if err != nil {
-		agg.logger.Error("Failed to send aggregated results", "err", err)
+		agg.logger.Error("Failed to subscribe to contract logs", "error", err)
+		return
 	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			sub.Unsubscribe()
+			return
+		case log := <-logs:
+			agg.handleContractEvent(log)
+		}
+	}
+}
+
+// Handle contract events and route them to appropriate handlers
+func (agg *Aggregator) handleContractEvent(log types.Log) {
+	switch log.Topics[0].Hex() {
+	case "0xSubscription": // Subscription event
+		agg.handleNewSubscription(log)
+	case "0xSubscriptionCancelled": // Subscription cancelled event
+		agg.handleSubscriptionDeletion(log)
+	default:
+		agg.logger.Warn("Unhandled event", "event", log.Topics[0].Hex())
+	}
+}
+
+// Handle new subscription creation
+func (agg *Aggregator) handleNewSubscription(log types.Log) {
+	strategyId := new(big.Int).SetBytes(log.Topics[1].Bytes())
+	subscriber := common.BytesToAddress(log.Topics[2].Bytes())
+	
+	agg.subscriptionsMu.Lock()
+	if _, exists := agg.subscriptions[strategyId.Uint64()]; !exists {
+		agg.subscriptions[strategyId.Uint64()] = make(map[common.Address]bool)
+	}
+	agg.subscriptions[strategyId.Uint64()][subscriber] = true
+	agg.subscriptionsMu.Unlock()
+	agg.logger.Info("New subscription added", "strategyId", strategyId, "subscriber", subscriber)
+}
+
+// Handle subscription deletion
+func (agg *Aggregator) handleSubscriptionDeletion(log types.Log) {
+	subscriptionId := new(big.Int).SetBytes(log.Topics[1].Bytes())
+	
+	agg.subscriptionsMu.Lock()
+	for strategyId, subs := range agg.subscriptions {
+		delete(subs, subscriptionId)
+	}
+	agg.subscriptionsMu.Unlock()
+	agg.logger.Info("Subscription removed", "subscriptionId", subscriptionId)
+}
+
+// GenerateDailyTasks creates daily tasks for active subscriptions
+// Each active subscription corresponds to a task that will be executed by an operator
+func (agg *Aggregator) GenerateDailyTasks() {
+	agg.logger.Info("Generating daily tasks")
+	agg.subscriptionsMu.RLock()
+	for strategyId, subscribers := range agg.subscriptions {
+		for subscriber := range subscribers {
+			agg.logger.Info("Creating task for subscriber", "strategyId", strategyId, "subscriber", subscriber)
+			
+		}
+	}
+	agg.subscriptionsMu.RUnlock()
+}
+
+// ApplyRewardsAndPenalties rewards accurate operators and penalizes deviators based on deviation threshold
+// Any operator whose result deviates more than 1 standard deviation from the mean is penalized
+func (agg *Aggregator) ApplyRewardsAndPenalties() {
+	agg.logger.Info("Applying rewards and penalties")
+	agg.resultsMu.RLock()
+	// TODO: Implement reward and penalty application logic
+	agg.resultsMu.RUnlock()
+}
+
+// sendNewTask generates and submits a new task for an active subscription.
+func (agg *Aggregator) sendNewTask(strategyId uint256, investor common.Address) error {
+	agg.logger.Info("Generating new task", "strategyId", strategyId, "investor", investor)
+
+	// Define task parameters (strategy, investor)
+	task := types.Task{
+		StrategyId: strategyId,
+		Investor:   investor,
+		Timestamp:  time.Now().Unix(),
+	}
+
+	// Lock subscriptions before accessing
+	agg.subscriptionsMu.RLock()
+	_, exists := agg.subscriptions[strategyId][investor]
+	agg.subscriptionsMu.RUnlock()
+
+	if !exists {
+		agg.logger.Warn("Task generation failed - subscription not found", "strategyId", strategyId, "investor", investor)
+		return errors.New("subscription not found")
+	}
+
+	// Assign a single operator (in a real-world scenario, an operator selection mechanism would be used)
+	operator := selectOperatorForTask(strategyId)
+
+	agg.logger.Info("Assigned operator for task", "operator", operator, "task", task)
+
+	// Store the task details
+	agg.resultsMu.Lock()
+	if _, exists := agg.results[task.StrategyId]; !exists {
+		agg.results[task.StrategyId] = []OperatorResult{}
+	}
+	agg.resultsMu.Unlock()
+
+	// Send the task for execution (in practice, this could involve an RPC call or message queue)
+	err := chainio.SubmitTaskToOperator(operator, task)
+	if err != nil {
+		agg.logger.Error("Failed to send task to operator", "error", err)
+		return err
+	}
+
+	agg.logger.Info("Task successfully sent", "task", task)
+	return nil
+}
+
+// selectOperatorForTask selects an operator for a given strategy task.
+func selectOperatorForTask(strategyId uint256) common.Address {
+	// Placeholder logic: Select an operator (this can be enhanced with a selection mechanism)
+	// Here, a simple round-robin or load-balancing mechanism can be implemented.
+	return common.HexToAddress("0xOperatorAddressPlaceholder")
+}
+
+// sendAggregatedResponseToContract sends the validated and aggregated task results on-chain
+func (agg *Aggregator) sendAggregatedResponseToContract(taskId uint256) error {
+	agg.resultsMu.RLock()
+	results, exists := agg.results[taskId]
+	agg.resultsMu.RUnlock()
+
+	if !exists || len(results) == 0 {
+		agg.logger.Warn("No results available to aggregate", "taskId", taskId)
+		return errors.New("no results available")
+	}
+
+	// Validate and aggregate results using standard deviation check
+	validResults, meanRoi, meanProfitability, meanRisk, err := agg.ValidateResults(taskId, results)
+	if err != nil {
+		agg.logger.Warn("Failed to validate results", "taskId", taskId, "error", err)
+		return err
+	}
+
+	// Check quorum threshold
+	if len(validResults)*100/len(results) < quorumThreshold {
+		agg.logger.Warn("Quorum not met, not submitting response", "taskId", taskId)
+		return errors.New("quorum not met")
+	}
+
+	// Send aggregated result on-chain
+	agg.logger.Info("Quorum met, submitting result on-chain", "taskId", taskId,
+		"meanRoi", meanRoi, "meanProfitability", meanProfitability, "meanRisk", meanRisk)
+
+	err = chainio.SubmitAggregatedResult(taskId, meanRoi, meanProfitability, meanRisk)
+	if err != nil {
+		agg.logger.Error("Failed to submit aggregated result", "taskId", taskId, "error", err)
+		return err
+	}
+
+	agg.logger.Info("Aggregated response successfully submitted", "taskId", taskId)
+	return nil
+}
+
+// ValidateResults checks consistency across operator results using standard deviation
+func (agg *Aggregator) ValidateResults(taskId uint256, results []OperatorResult) ([]OperatorResult, *big.Int, *big.Int, *big.Int, error) {
+	agg.logger.Info("Validating operator results", "taskId", taskId)
+
+	var totalRoi, totalProfitability, totalRisk big.Int
+	count := big.NewInt(int64(len(results)))
+
+	// Compute sum for mean calculation
+	for _, result := range results {
+		totalRoi.Add(&totalRoi, result.Roi)
+		totalProfitability.Add(&totalProfitability, result.Profitability)
+		totalRisk.Add(&totalRisk, result.Risk)
+	}
+
+	meanRoi := new(big.Int).Div(&totalRoi, count)
+	meanProfitability := new(big.Int).Div(&totalProfitability, count)
+	meanRisk := new(big.Int).Div(&totalRisk, count)
+
+	// Compute variance for standard deviation
+	var varianceRoi, varianceProfitability, varianceRisk big.Int
+	for _, result := range results {
+		diffRoi := new(big.Int).Sub(result.Roi, meanRoi)
+		diffProfitability := new(big.Int).Sub(result.Profitability, meanProfitability)
+		diffRisk := new(big.Int).Sub(result.Risk, meanRisk)
+
+		varianceRoi.Add(&varianceRoi, new(big.Int).Mul(diffRoi, diffRoi))
+		varianceProfitability.Add(&varianceProfitability, new(big.Int).Mul(diffProfitability, diffProfitability))
+		varianceRisk.Add(&varianceRisk, new(big.Int).Mul(diffRisk, diffRisk))
+	}
+
+	stdDevRoi := new(big.Int).Sqrt(new(big.Int).Div(&varianceRoi, count))
+	stdDevProfitability := new(big.Int).Sqrt(new(big.Int).Div(&varianceProfitability, count))
+	stdDevRisk := new(big.Int).Sqrt(new(big.Int).Div(&varianceRisk, count))
+
+	// Filter valid results within one standard deviation
+	validResults := []OperatorResult{}
+	for _, result := range results {
+		if isWithinOneStdDev(result.Roi, meanRoi, stdDevRoi) &&
+			isWithinOneStdDev(result.Profitability, meanProfitability, stdDevProfitability) &&
+			isWithinOneStdDev(result.Risk, meanRisk, stdDevRisk) {
+			validResults = append(validResults, result)
+		}
+	}
+
+	if len(validResults) == 0 {
+		return nil, nil, nil, nil, errors.New("no valid results within standard deviation")
+	}
+
+	return validResults, meanRoi, meanProfitability, meanRisk, nil
+}
+
+// isWithinOneStdDev checks if a value is within one standard deviation of the mean
+func isWithinOneStdDev(value, mean, stdDev *big.Int) bool {
+	lowerBound := new(big.Int).Sub(mean, stdDev)
+	upperBound := new(big.Int).Add(mean, stdDev)
+	return value.Cmp(lowerBound) >= 0 && value.Cmp(upperBound) <= 0
 }
