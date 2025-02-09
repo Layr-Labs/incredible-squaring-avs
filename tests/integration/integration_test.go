@@ -16,11 +16,11 @@ import (
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/ehsueh/trade-algo-avs-avs/aggregator"
+	"github.com/ehsueh/trade-algo-avs-avs/core/chainio"
+	"github.com/ehsueh/trade-algo-avs-avs/core/config"
+	"github.com/ehsueh/trade-algo-avs-avs/operator"
+	"github.com/ehsueh/trade-algo-avs-avs/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -52,7 +52,7 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
-	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
+	var credibleSquaringDeploymentRaw config.TradeAlgoDeploymentRaw
 	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
 	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
@@ -98,18 +98,18 @@ func TestIntegration(t *testing.T) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &config.Config{
-		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
-		Logger:                     logger,
-		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
-		EthHttpClient:              *ethRpcClient,
-		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
-		EthWsClient:                *ethWsClient,
-		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
-		TxMgr:                                     txMgr,
-		AggregatorAddress:                         aggregatorAddr,
+		EcdsaPrivateKey:                  aggregatorEcdsaPrivateKey,
+		Logger:                           logger,
+		EthHttpRpcUrl:                    aggConfigRaw.EthRpcUrl,
+		EthHttpClient:                    *ethRpcClient,
+		EthWsRpcUrl:                      aggConfigRaw.EthWsUrl,
+		EthWsClient:                      *ethWsClient,
+		OperatorStateRetrieverAddr:       common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
+		TradeAlgoRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		AggregatorServerIpPortAddr:       aggConfigRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:        aggConfigRaw.RegisterOperatorOnStartup,
+		TxMgr:                            txMgr,
+		AggregatorAddress:                aggregatorAddr,
 	}
 
 	/* Prepare the config file for operator */

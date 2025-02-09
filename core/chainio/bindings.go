@@ -9,15 +9,15 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
-	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
-	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	sdkcommon "github.com/ehsueh/trade-algo-avs-avs/common"
+	erc20mock "github.com/ehsueh/trade-algo-avs-avs/contracts/bindings/ERC20Mock"
+	csservicemanager "github.com/ehsueh/trade-algo-avs-avs/contracts/bindings/TradeAlgoServiceManager"
+	cstaskmanager "github.com/ehsueh/trade-algo-avs-avs/contracts/bindings/TradeAlgoTaskManager"
 )
 
 type AvsManagersBindings struct {
-	TaskManager    *cstaskmanager.ContractIncredibleSquaringTaskManager
-	ServiceManager *csservicemanager.ContractIncredibleSquaringServiceManager
+	TaskManager    *cstaskmanager.ContractTradeAlgoTaskManager
+	ServiceManager *csservicemanager.ContractTradeAlgoServiceManager
 	ethClient      eth.HttpBackend
 	logger         logging.Logger
 }
@@ -31,20 +31,20 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	if err != nil {
 		return nil, err
 	}
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(serviceManagerAddr, ethclient)
+	contractServiceManager, err := csservicemanager.NewContractTradeAlgoServiceManager(serviceManagerAddr, ethclient)
 	if err != nil {
 		logger.Error("Failed to fetch IServiceManager contract", "err", err)
 		return nil, err
 	}
 
-	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	taskManagerAddr, err := contractServiceManager.TradeAlgoTaskManager(&bind.CallOpts{})
 	if err != nil {
 		logger.Error("Failed to fetch TaskManager address", "err", err)
 		return nil, err
 	}
-	contractTaskManager, err := cstaskmanager.NewContractIncredibleSquaringTaskManager(taskManagerAddr, ethclient)
+	contractTaskManager, err := cstaskmanager.NewContractTradeAlgoTaskManager(taskManagerAddr, ethclient)
 	if err != nil {
-		logger.Error("Failed to fetch IIncredibleSquaringTaskManager contract", "err", err)
+		logger.Error("Failed to fetch ITradeAlgoTaskManager contract", "err", err)
 		return nil, err
 	}
 

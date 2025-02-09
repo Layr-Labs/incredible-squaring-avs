@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/ehsueh/trade-algo-avs-avs/core/config"
+	"github.com/ehsueh/trade-algo-avs-avs/operator"
+	"github.com/ehsueh/trade-algo-avs-avs/types"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )

@@ -6,13 +6,13 @@ import (
 	opstateretriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	"github.com/ehsueh/trade-algo-avs/aggregator/types"
-	cstaskmanager "github.com/ehsueh/trade-algo-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	cstaskmanager "github.com/ehsueh/trade-algo-avs/contracts/bindings/TradeAlgoTaskManager"
 )
 
 // ====== TaskManager Mocks ======
 
-func MockSendNewTaskNumberToSquareCall(blockNum, taskNum, numberToSquare uint32) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
-	task := cstaskmanager.IIncredibleSquaringTaskManagerTask{
+func MockSendNewTaskNumberToSquareCall(blockNum, taskNum, numberToSquare uint32) (cstaskmanager.ITradeAlgoTaskManagerTask, uint32, error) {
+	task := cstaskmanager.ITradeAlgoTaskManagerTask{
 		NumberToBeSquared:         big.NewInt(int64(numberToSquare)),
 		TaskCreatedBlock:          blockNum,
 		QuorumNumbers:             types.QUORUM_NUMBERS.UnderlyingType(),

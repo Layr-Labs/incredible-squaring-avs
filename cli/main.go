@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/cli/actions"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/ehsueh/trade-algo-avs-avs/cli/actions"
+	"github.com/ehsueh/trade-algo-avs-avs/core/config"
 	"github.com/urfave/cli"
 )
 

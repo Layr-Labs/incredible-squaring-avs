@@ -56,7 +56,7 @@
           }
         ],
         "indexed": true,
-        "internalType": "struct IIncredibleSquaringTaskManager.Task",
+        "internalType": "struct ITradeAlgoTaskManager.Task",
         "name": "task",
         "type": "tuple"
       }
@@ -189,7 +189,7 @@
           }
         ],
         "indexed": true,
-        "internalType": "struct IIncredibleSquaringTaskManager.TaskResponse",
+        "internalType": "struct ITradeAlgoTaskManager.TaskResponse",
         "name": "taskResponse",
         "type": "tuple"
       },
@@ -207,7 +207,7 @@
           }
         ],
         "indexed": true,
-        "internalType": "struct IIncredibleSquaringTaskManager.TaskResponseMetadata",
+        "internalType": "struct ITradeAlgoTaskManager.TaskResponseMetadata",
         "name": "taskResponseMetadata",
         "type": "tuple"
       }
@@ -827,7 +827,7 @@
             "type": "uint32"
           }
         ],
-        "internalType": "struct IIncredibleSquaringTaskManager.Task",
+        "internalType": "struct ITradeAlgoTaskManager.Task",
         "name": "task",
         "type": "tuple"
       },
@@ -844,7 +844,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct IIncredibleSquaringTaskManager.TaskResponse",
+        "internalType": "struct ITradeAlgoTaskManager.TaskResponse",
         "name": "taskResponse",
         "type": "tuple"
       },
@@ -861,7 +861,7 @@
             "type": "bytes32"
           }
         ],
-        "internalType": "struct IIncredibleSquaringTaskManager.TaskResponseMetadata",
+        "internalType": "struct ITradeAlgoTaskManager.TaskResponseMetadata",
         "name": "taskResponseMetadata",
         "type": "tuple"
       },
@@ -933,7 +933,7 @@
             "type": "uint32"
           }
         ],
-        "internalType": "struct IIncredibleSquaringTaskManager.Task",
+        "internalType": "struct ITradeAlgoTaskManager.Task",
         "name": "task",
         "type": "tuple"
       },
@@ -950,7 +950,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct IIncredibleSquaringTaskManager.TaskResponse",
+        "internalType": "struct ITradeAlgoTaskManager.TaskResponse",
         "name": "taskResponse",
         "type": "tuple"
       },

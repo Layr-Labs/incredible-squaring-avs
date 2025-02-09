@@ -23,11 +23,11 @@ import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {
-    IncredibleSquaringServiceManager,
+    TradeAlgoServiceManager,
     IServiceManager
-} from "../src/IncredibleSquaringServiceManager.sol";
-import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
-import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
+} from "../src/TradeAlgoServiceManager.sol";
+import {TradeAlgoTaskManager} from "../src/TradeAlgoTaskManager.sol";
+import {ITradeAlgoTaskManager} from "../src/ITradeAlgoTaskManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
@@ -38,8 +38,8 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract IncredibleSquaringDeployer is Script, Utils {
+// forge script script/TradeAlgoDeployer.s.sol:TradeAlgoDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+contract TradeAlgoDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
     uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
@@ -53,9 +53,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Incredible Squaring contracts
-    ProxyAdmin public incredibleSquaringProxyAdmin;
-    PauserRegistry public incredibleSquaringPauserReg;
+    ProxyAdmin public tradeAlgoProxyAdmin;
+    PauserRegistry public tradeAlgoPauserReg;
 
     regcoord.RegistryCoordinator public registryCoordinator;
     regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
@@ -71,11 +70,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
     OperatorStateRetriever public operatorStateRetriever;
 
-    IncredibleSquaringServiceManager public incredibleSquaringServiceManager;
-    IServiceManager public incredibleSquaringServiceManagerImplementation;
+    TradeAlgoServiceManager public tradeAlgoServiceManager;
+    IServiceManager public tradeAlgoServiceManagerImplementation;
 
-    IncredibleSquaringTaskManager public incredibleSquaringTaskManager;
-    IIncredibleSquaringTaskManager public incredibleSquaringTaskManagerImplementation;
+    TradeAlgoTaskManager public tradeAlgoTaskManager;
+    ITradeAlgoTaskManager public tradeAlgoTaskManagerImplementation;
 
     function run() external {
         // Eigenlayer contracts
@@ -104,20 +103,20 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.rewardsCoordinator")
         );
 
-        address incredibleSquaringCommunityMultisig = msg.sender;
-        address incredibleSquaringPauser = msg.sender;
+        address tradeAlgoCommunityMultisig = msg.sender;
+        address tradeAlgoPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
             eigenLayerProxyAdmin, eigenLayerPauserReg, baseStrategyImplementation, strategyManager
         );
-        _deployIncredibleSquaringContracts(
+        _deployTradeAlgoContracts(
             delegationManager,
             avsDirectory,
             rewardsCoordinator,
             erc20MockStrategy,
-            incredibleSquaringCommunityMultisig,
-            incredibleSquaringPauser
+            tradeAlgoCommunityMultisig,
+            tradeAlgoPauser
         );
         vm.stopBroadcast();
     }
@@ -153,13 +152,13 @@ contract IncredibleSquaringDeployer is Script, Utils {
         strategyManager.addStrategiesToDepositWhitelist(strats, thirdPartyTransfersForbiddenValues);
     }
 
-    function _deployIncredibleSquaringContracts(
+    function _deployTradeAlgoContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IRewardsCoordinator rewardsCoordinator,
         IStrategy strat,
-        address incredibleSquaringCommunityMultisig,
-        address incredibleSquaringPauser
+        address tradeAlgoCommunityMultisig,
+        address tradeAlgoPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -167,15 +166,15 @@ contract IncredibleSquaringDeployer is Script, Utils {
         uint256 numStrategies = deployedStrategyArray.length;
 
         // deploy proxy admin for ability to upgrade proxy contracts
-        incredibleSquaringProxyAdmin = new ProxyAdmin();
+        tradeAlgoProxyAdmin = new ProxyAdmin();
 
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = incredibleSquaringPauser;
-            pausers[1] = incredibleSquaringCommunityMultisig;
-            incredibleSquaringPauserReg =
-                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
+            pausers[0] = tradeAlgoPauser;
+            pausers[1] = tradeAlgoCommunityMultisig;
+            tradeAlgoPauserReg =
+                new PauserRegistry(pausers, tradeAlgoCommunityMultisig);
         }
 
         EmptyContract emptyContract = new EmptyContract();
@@ -186,45 +185,45 @@ contract IncredibleSquaringDeployer is Script, Utils {
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
+        tradeAlgoServiceManager = TradeAlgoServiceManager(
             address(
                 new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                    address(emptyContract), address(tradeAlgoProxyAdmin), ""
                 )
             )
         );
-        incredibleSquaringTaskManager = IncredibleSquaringTaskManager(
+        tradeAlgoTaskManager = TradeAlgoTaskManager(
             address(
                 new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                    address(emptyContract), address(tradeAlgoProxyAdmin), ""
                 )
             )
         );
         registryCoordinator = regcoord.RegistryCoordinator(
             address(
                 new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                    address(emptyContract), address(tradeAlgoProxyAdmin), ""
                 )
             )
         );
         blsApkRegistry = IBLSApkRegistry(
             address(
                 new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                    address(emptyContract), address(tradeAlgoProxyAdmin), ""
                 )
             )
         );
         indexRegistry = IIndexRegistry(
             address(
                 new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                    address(emptyContract), address(tradeAlgoProxyAdmin), ""
                 )
             )
         );
         stakeRegistry = IStakeRegistry(
             address(
                 new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                    address(emptyContract), address(tradeAlgoProxyAdmin), ""
                 )
             )
         );
@@ -235,28 +234,28 @@ contract IncredibleSquaringDeployer is Script, Utils {
         {
             stakeRegistryImplementation = new StakeRegistry(registryCoordinator, delegationManager);
 
-            incredibleSquaringProxyAdmin.upgrade(
+            tradeAlgoProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
 
             blsApkRegistryImplementation = new BLSApkRegistry(registryCoordinator);
 
-            incredibleSquaringProxyAdmin.upgrade(
+            tradeAlgoProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
                 address(blsApkRegistryImplementation)
             );
 
             indexRegistryImplementation = new IndexRegistry(registryCoordinator);
 
-            incredibleSquaringProxyAdmin.upgrade(
+            tradeAlgoProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
             );
         }
 
         registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
-            incredibleSquaringServiceManager,
+            tradeAlgoServiceManager,
             regcoord.IStakeRegistry(address(stakeRegistry)),
             regcoord.IBLSApkRegistry(address(blsApkRegistry)),
             regcoord.IIndexRegistry(address(indexRegistry))
@@ -293,16 +292,16 @@ contract IncredibleSquaringDeployer is Script, Utils {
                     });
                 }
             }
-            incredibleSquaringProxyAdmin.upgradeAndCall(
+            tradeAlgoProxyAdmin.upgradeAndCall(
                 TransparentUpgradeableProxy(payable(address(registryCoordinator))),
                 address(registryCoordinatorImplementation),
                 abi.encodeWithSelector(
                     regcoord.RegistryCoordinator.initialize.selector,
                     // we set churnApprover and ejector to communityMultisig because we don't need them
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringPauserReg,
+                    tradeAlgoCommunityMultisig,
+                    tradeAlgoCommunityMultisig,
+                    tradeAlgoCommunityMultisig,
+                    tradeAlgoPauserReg,
                     0, // 0 initialPausedStatus means everything unpaused
                     quorumsOperatorSetParams,
                     quorumsMinimumStake,
@@ -311,30 +310,30 @@ contract IncredibleSquaringDeployer is Script, Utils {
             );
         }
 
-        incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
+        tradeAlgoServiceManagerImplementation = new TradeAlgoServiceManager(
             avsDirectory,
             rewardsCoordinator,
             registryCoordinator,
             stakeRegistry,
-            incredibleSquaringTaskManager
+            tradeAlgoTaskManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        incredibleSquaringProxyAdmin.upgrade(
-            TransparentUpgradeableProxy(payable(address(incredibleSquaringServiceManager))),
-            address(incredibleSquaringServiceManagerImplementation)
+        tradeAlgoProxyAdmin.upgrade(
+            TransparentUpgradeableProxy(payable(address(tradeAlgoServiceManager))),
+            address(tradeAlgoServiceManagerImplementation)
         );
 
-        incredibleSquaringTaskManagerImplementation =
-            new IncredibleSquaringTaskManager(registryCoordinator, TASK_RESPONSE_WINDOW_BLOCK);
+        tradeAlgoTaskManagerImplementation =
+            new TradeAlgoTaskManager(registryCoordinator, TASK_RESPONSE_WINDOW_BLOCK);
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        incredibleSquaringProxyAdmin.upgradeAndCall(
-            TransparentUpgradeableProxy(payable(address(incredibleSquaringTaskManager))),
-            address(incredibleSquaringTaskManagerImplementation),
+        tradeAlgoProxyAdmin.upgradeAndCall(
+            TransparentUpgradeableProxy(payable(address(tradeAlgoTaskManager))),
+            address(tradeAlgoTaskManagerImplementation),
             abi.encodeWithSelector(
-                incredibleSquaringTaskManager.initialize.selector,
-                incredibleSquaringPauserReg,
-                incredibleSquaringCommunityMultisig,
+                tradeAlgoTaskManager.initialize.selector,
+                tradeAlgoPauserReg,
+                tradeAlgoCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR
             )
@@ -348,23 +347,23 @@ contract IncredibleSquaringDeployer is Script, Utils {
         vm.serializeAddress(deployed_addresses, "erc20MockStrategy", address(erc20MockStrategy));
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringServiceManager",
-            address(incredibleSquaringServiceManager)
+            "tradeAlgoServiceManager",
+            address(tradeAlgoServiceManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringServiceManagerImplementation",
-            address(incredibleSquaringServiceManagerImplementation)
+            "tradeAlgoServiceManagerImplementation",
+            address(tradeAlgoServiceManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringTaskManager",
-            address(incredibleSquaringTaskManager)
+            "tradeAlgoTaskManager",
+            address(tradeAlgoTaskManager)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "credibleSquaringTaskManagerImplementation",
-            address(incredibleSquaringTaskManagerImplementation)
+            "tradeAlgoTaskManagerImplementation",
+            address(tradeAlgoTaskManagerImplementation)
         );
         vm.serializeAddress(deployed_addresses, "registryCoordinator", address(registryCoordinator));
         vm.serializeAddress(
@@ -380,6 +379,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
         string memory finalJson =
             vm.serializeString(parent_object, deployed_addresses, deployed_addresses_output);
 
-        writeOutput(finalJson, "credible_squaring_avs_deployment_output");
+        writeOutput(finalJson, "trade_algo_avs_deployment_output");
     }
 }

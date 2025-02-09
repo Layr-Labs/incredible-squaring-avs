@@ -11,8 +11,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-//go:embed abis/IncredibleSquaringTaskManager.json
-var IncredibleSquaringTaskManagerAbi []byte
+//go:embed abis/TradeAlgoTaskManager.json
+var TradeAlgoTaskManagerAbi []byte
 
 type EthClientInterface interface {
 	wallet.EthBackend
