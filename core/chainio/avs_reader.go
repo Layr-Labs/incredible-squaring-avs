@@ -5,7 +5,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
@@ -22,7 +21,7 @@ type AvsReaderer interface {
 	CheckSignatures(
 		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 	) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error)
-	GetErc20Mock(ctx context.Context, tokenAddr gethcommon.Address) (*erc20mock.ContractERC20Mock, error)
+	GetErc20Mock(ctx context.Context, tokenAddr common.Address) (*erc20mock.ContractERC20Mock, error)
 	GetOperatorId(
 		opts *bind.CallOpts,
 		operatorAddress common.Address,
@@ -44,12 +43,16 @@ type AvsReader struct {
 func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, &c.EthHttpClient, c.Logger)
 }
-func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
+func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr common.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
 	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		return nil, err
 	}
-	avsRegistryReader, err := sdkavsregistry.BuildAvsRegistryChainReader(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+	config := sdkavsregistry.Config{
+		RegistryCoordinatorAddress:    registryCoordinatorAddr,
+		OperatorStateRetrieverAddress: operatorStateRetrieverAddr,
+	}
+	avsRegistryReader, err := sdkavsregistry.NewReaderFromConfig(config, ethHttpClient, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +78,7 @@ func (r *AvsReader) CheckSignatures(
 	return stakeTotalsPerQuorum, nil
 }
 
-func (r *AvsReader) GetErc20Mock(ctx context.Context, tokenAddr gethcommon.Address) (*erc20mock.ContractERC20Mock, error) {
+func (r *AvsReader) GetErc20Mock(ctx context.Context, tokenAddr common.Address) (*erc20mock.ContractERC20Mock, error) {
 	erc20Mock, err := r.AvsServiceBindings.GetErc20Mock(tokenAddr)
 	if err != nil {
 		r.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
