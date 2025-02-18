@@ -61,6 +61,8 @@ func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStat
 		RegistryCoordinatorAddress:    registryCoordinatorAddr,
 		OperatorStateRetrieverAddress: operatorStateRetrieverAddr,
 		ServiceManagerAddress:         avsServiceBindings.ServiceManagerAddr,
+
+		DontUseAllocationManager: true,
 	}
 	avsRegistryWriter, err := avsregistry.NewWriterFromConfig(config, ethHttpClient, txMgr, logger)
 	if err != nil {

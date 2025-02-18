@@ -51,6 +51,8 @@ func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr common.A
 	config := sdkavsregistry.Config{
 		RegistryCoordinatorAddress:    registryCoordinatorAddr,
 		OperatorStateRetrieverAddress: operatorStateRetrieverAddr,
+
+		DontUseAllocationManager: true,
 	}
 	avsRegistryReader, err := sdkavsregistry.NewReaderFromConfig(config, ethHttpClient, logger)
 	if err != nil {
