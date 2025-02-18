@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"time"
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
@@ -180,13 +179,10 @@ func plugin(ctx *cli.Context) {
 		// Register with registry coordination
 		quorumNumbers := sdktypes.QuorumNums{0}
 		socket := "Not Needed"
-		sigValidForSeconds := int64(1_000_000)
-		operatorToAvsRegistrationSigSalt := [32]byte{123}
-		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
 		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
-		r, err := clients.AvsRegistryChainWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
+		r, err := clients.AvsRegistryChainWriter.RegisterOperator(
 			goCtx,
-			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
+			operatorEcdsaPrivateKey,
 			blsKeypair, quorumNumbers, socket, true,
 		)
 		if err != nil {
