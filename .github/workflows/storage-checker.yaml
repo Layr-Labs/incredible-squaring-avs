@@ -20,7 +20,7 @@ jobs:
           cd contracts && mkdir pr
           for file in $(find src -name '*.sol'); do
               contract_name=$(basename "$file" .sol)
-              forge inspect "$contract_name" storage --pretty > pr/"$contract_name".md
+              forge inspect --pretty "$contract_name" storage > pr/"$contract_name".md
           done
 
       - name: Checkout Base Branch
@@ -35,7 +35,7 @@ jobs:
           cd contracts && mkdir base
           for file in $(find src -name '*.sol'); do
               contract_name=$(basename "$file" .sol)
-              forge inspect "$contract_name" storage --pretty > base/"$contract_name".md
+              forge inspect --pretty "$contract_name" storage > base/"$contract_name".md
           done
       - name: Compare outputs
         run: |
