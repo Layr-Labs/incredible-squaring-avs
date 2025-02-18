@@ -63,7 +63,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
+	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(nil, strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
@@ -74,6 +74,10 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		return err
 	}
 	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		o.logger.Errorf("Error in GetNoSendTxOpts")
+		return err
+	}
 	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
 	if err != nil {
 		o.logger.Errorf("Error assembling Mint tx")
