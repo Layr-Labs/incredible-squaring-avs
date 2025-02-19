@@ -5,20 +5,25 @@ import (
 	"context"
 	"math/big"
 
-	ethclient "github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	commoneth "github.com/ethereum/go-ethereum/common"
+	typeseth "github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 )
 
+type ChallengerClient interface {
+	TransactionByHash(ctx context.Context, hash commoneth.Hash) (tx *typeseth.Transaction, isPending bool, err error)
+}
+
 type Challenger struct {
 	logger             logging.Logger
-	ethClient          ethclient.Client
+	ethClient          ChallengerClient
 	avsReader          chainio.AvsReaderer
 	avsWriter          chainio.AvsWriterer
 	avsSubscriber      chainio.AvsSubscriberer
@@ -47,10 +52,10 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 	}
 
 	challenger := &Challenger{
-		ethClient:          c.EthHttpClient,
 		logger:             c.Logger,
-		avsWriter:          avsWriter,
+		ethClient:          &c.EthHttpClient,
 		avsReader:          avsReader,
+		avsWriter:          avsWriter,
 		avsSubscriber:      avsSubscriber,
 		tasks:              make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
 		taskResponses:      make(map[uint32]types.TaskResponseData),

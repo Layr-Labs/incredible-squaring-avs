@@ -10,12 +10,13 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
@@ -31,8 +32,8 @@ type Config struct {
 	// only take an ethclient or an rpcUrl (and build the ethclient at each constructor site)
 	EthHttpRpcUrl                             string
 	EthWsRpcUrl                               string
-	EthHttpClient                             eth.Client
-	EthWsClient                               eth.Client
+	EthHttpClient                             ethclient.Client
+	EthWsClient                               ethclient.Client
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
 	AggregatorServerIpPortAddr                string
@@ -69,7 +70,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	var configRaw ConfigRaw
 	configFilePath := ctx.GlobalString(ConfigFileFlag.Name)
 	if configFilePath != "" {
-		sdkutils.ReadYamlConfig(configFilePath, &configRaw)
+		commonincredible.ReadYamlConfig(configFilePath, &configRaw)
 	}
 
 	var credibleSquaringDeploymentRaw IncredibleSquaringDeploymentRaw
@@ -77,20 +78,20 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	if _, err := os.Stat(credibleSquaringDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
 		panic("Path " + credibleSquaringDeploymentFilePath + " does not exist")
 	}
-	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
+	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
 	if err != nil {
 		return nil, err
 	}
 
-	ethRpcClient, err := eth.NewClient(configRaw.EthRpcUrl)
+	ethRpcClient, err := ethclient.Dial(configRaw.EthRpcUrl)
 	if err != nil {
 		logger.Errorf("Cannot create http ethclient", "err", err)
 		return nil, err
 	}
 
-	ethWsClient, err := eth.NewClient(configRaw.EthWsUrl)
+	ethWsClient, err := ethclient.Dial(configRaw.EthWsUrl)
 	if err != nil {
 		logger.Errorf("Cannot create ws ethclient", "err", err)
 		return nil, err
@@ -133,8 +134,8 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		Logger:                     logger,
 		EthWsRpcUrl:                configRaw.EthWsUrl,
 		EthHttpRpcUrl:              configRaw.EthRpcUrl,
-		EthHttpClient:              ethRpcClient,
-		EthWsClient:                ethWsClient,
+		EthHttpClient:              *ethRpcClient,
+		EthWsClient:                *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,

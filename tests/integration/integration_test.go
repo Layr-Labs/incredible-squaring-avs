@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
@@ -25,6 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -48,23 +49,23 @@ func TestIntegration(t *testing.T) {
 	/* Prepare the config file for aggregator */
 	var aggConfigRaw config.ConfigRaw
 	aggConfigFilePath := "../../config-files/aggregator.yaml"
-	sdkutils.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
+	commonincredible.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
 	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
 	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
-	sdkutils.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
+	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
-	ethRpcClient, err := eth.NewClient(aggConfigRaw.EthRpcUrl)
+	ethRpcClient, err := ethclient.Dial(aggConfigRaw.EthRpcUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
-	ethWsClient, err := eth.NewClient(aggConfigRaw.EthWsUrl)
+	ethWsClient, err := ethclient.Dial(aggConfigRaw.EthWsUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
@@ -101,9 +102,9 @@ func TestIntegration(t *testing.T) {
 		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
 		Logger:                     logger,
 		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
-		EthHttpClient:              ethRpcClient,
+		EthHttpClient:              *ethRpcClient,
 		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
-		EthWsClient:                ethWsClient,
+		EthWsClient:                *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
@@ -115,7 +116,7 @@ func TestIntegration(t *testing.T) {
 	/* Prepare the config file for operator */
 	nodeConfig := types.NodeConfig{}
 	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
-	err = sdkutils.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
+	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
@@ -175,16 +176,24 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Task hash is empty")
 	}
 
-	// check if the task response is recorded in the contract for task index 1
-	taskResponseHash, err := avsReader.AvsServiceBindings.TaskManager.AllTaskResponses(&bind.CallOpts{}, 1)
-	log.Printf("taskResponseHash: %v", taskResponseHash)
-	if err != nil {
-		t.Fatalf("Cannot get task response hash: %s", err.Error())
-	}
-	if taskResponseHash == [32]byte{} {
-		t.Fatalf("Task response hash is empty")
+	received := false
+	for i := 0; i < 3; i++ {
+		// check if the task response is recorded in the contract for task index 1
+		taskResponseHash, err := avsReader.AvsServiceBindings.TaskManager.AllTaskResponses(&bind.CallOpts{}, 1)
+		log.Printf("taskResponseHash: %v", taskResponseHash)
+		if err != nil {
+			t.Fatalf("Cannot get task response hash: %s", err.Error())
+		}
+
+		if taskResponseHash != [32]byte{} {
+			received = true
+			break
+		}
 	}
 
+	if !received {
+		t.Fatalf("Task response hash is empty")
+	}
 }
 
 // TODO(samlaf): have to advance chain to a block where the task is answered
@@ -196,7 +205,7 @@ func startAnvilTestContainer() testcontainers.Container {
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image: "ghcr.io/foundry-rs/foundry:latest",
+		Image: "ghcr.io/foundry-rs/foundry:nightly-3abac322efdb69e27b6fe8748b72754ae878f64d@sha256:871b66957335636a02c6c324c969db9adb1d6d64f148753c4a986cf32a40dc3c",
 		Mounts: testcontainers.ContainerMounts{
 			testcontainers.ContainerMount{
 				Source: testcontainers.GenericBindMountSource{

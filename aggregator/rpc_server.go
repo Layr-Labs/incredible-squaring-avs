@@ -7,11 +7,9 @@ import (
 	"net/rpc"
 
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-	"github.com/Layr-Labs/incredible-squaring-avs/core"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	"github.com/Layr-Labs/eigensdk-go/types"
-	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
 var (
@@ -50,22 +48,9 @@ type SignedTaskResponse struct {
 func (agg *Aggregator) ProcessSignedTaskResponse(signedTaskResponse *SignedTaskResponse, reply *bool) error {
 	agg.logger.Infof("Received signed task response: %#v", signedTaskResponse)
 	taskIndex := signedTaskResponse.TaskResponse.ReferenceTaskIndex
-	taskResponseDigest, err := core.GetTaskResponseDigest(&signedTaskResponse.TaskResponse)
-	if err != nil {
-		agg.logger.Error("Failed to get task response digest", "err", err)
-		return TaskResponseDigestNotFoundError500
-	}
-	agg.taskResponsesMu.Lock()
-	if _, ok := agg.taskResponses[taskIndex]; !ok {
-		agg.taskResponses[taskIndex] = make(map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
-	}
-	if _, ok := agg.taskResponses[taskIndex][taskResponseDigest]; !ok {
-		agg.taskResponses[taskIndex][taskResponseDigest] = signedTaskResponse.TaskResponse
-	}
-	agg.taskResponsesMu.Unlock()
 
-	err = agg.blsAggregationService.ProcessNewSignature(
-		context.Background(), taskIndex, taskResponseDigest,
+	err := agg.blsAggregationService.ProcessNewSignature(
+		context.Background(), taskIndex, signedTaskResponse.TaskResponse,
 		&signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId,
 	)
 	return err

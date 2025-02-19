@@ -51,10 +51,10 @@ func (o *Operator) registerOperatorOnStartup(
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
 	op := eigenSdkTypes.Operator{
-		Address:                 o.operatorAddr.String(),
-		EarningsReceiverAddress: o.operatorAddr.String(),
+		Address:                   o.operatorAddr.String(),
+		DelegationApproverAddress: o.operatorAddr.String(),
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op)
+	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
 	if err != nil {
 		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
@@ -63,7 +63,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
+	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(nil, strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
@@ -74,18 +74,22 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		return err
 	}
 	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
+	if err != nil {
+		o.logger.Errorf("Error in GetNoSendTxOpts")
+		return err
+	}
 	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
 	if err != nil {
 		o.logger.Errorf("Error assembling Mint tx")
 		return err
 	}
-	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx)
+	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx, true)
 	if err != nil {
 		o.logger.Errorf("Error submitting Mint tx")
 		return err
 	}
 
-	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
 	if err != nil {
 		o.logger.Errorf("Error depositing into strategy", "err", err)
 		return err
@@ -116,8 +120,9 @@ func (o *Operator) RegisterOperatorWithAvs(
 	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 		context.Background(),
 		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-		o.blsKeypair, quorumNumbers, socket,
+		o.blsKeypair, quorumNumbers, socket, true,
 	)
+
 	if err != nil {
 		o.logger.Errorf("Unable to register operator with avs registry coordinator")
 		return err

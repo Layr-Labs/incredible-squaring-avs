@@ -9,7 +9,6 @@ import (
 	"time"
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
@@ -18,11 +17,11 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/Layr-Labs/eigensdk-go/utils"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 )
 
@@ -86,7 +85,7 @@ func plugin(ctx *cli.Context) {
 	configPath := ctx.GlobalString(ConfigFileFlag.Name)
 
 	avsConfig := types.NodeConfig{}
-	err := utils.ReadYamlConfig(configPath, &avsConfig)
+	err := commonincredible.ReadYamlConfig(configPath, &avsConfig)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -104,7 +103,7 @@ func plugin(ctx *cli.Context) {
 		PromMetricsIpPortAddress:   avsConfig.EigenMetricsIpPortAddress,
 	}
 	logger, _ := logging.NewZapLogger(logging.Development)
-	ethHttpClient, err := eth.NewClient(avsConfig.EthRpcUrl)
+	ethHttpClient, err := ethclient.Dial(avsConfig.EthRpcUrl)
 	if err != nil {
 		fmt.Println("can't connect to eth client")
 		fmt.Println(err)
@@ -134,6 +133,10 @@ func plugin(ctx *cli.Context) {
 		return
 	}
 	clients, err := sdkclients.BuildAll(buildClientConfig, operatorEcdsaPrivateKey, logger)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
@@ -184,7 +187,7 @@ func plugin(ctx *cli.Context) {
 		r, err := clients.AvsRegistryChainWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
 			goCtx,
 			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-			blsKeypair, quorumNumbers, socket,
+			blsKeypair, quorumNumbers, socket, true,
 		)
 		if err != nil {
 			logger.Errorf("Error assembling CreateNewTask tx")
@@ -201,7 +204,7 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 		strategyAddr := common.HexToAddress(ctx.GlobalString(StrategyAddrFlag.Name))
-		_, tokenAddr, err := clients.ElChainReader.GetStrategyAndUnderlyingToken(&bind.CallOpts{}, strategyAddr)
+		_, tokenAddr, err := clients.ElChainReader.GetStrategyAndUnderlyingToken(nil, strategyAddr)
 		if err != nil {
 			logger.Error("Failed to fetch strategy contract", "err", err)
 			return
@@ -222,13 +225,13 @@ func plugin(ctx *cli.Context) {
 			logger.Errorf("Error assembling Mint tx")
 			return
 		}
-		_, err = avsWriter.TxMgr.Send(context.Background(), tx)
+		_, err = avsWriter.TxMgr.Send(context.Background(), tx, true)
 		if err != nil {
 			logger.Errorf("Error submitting Mint tx")
 			return
 		}
 
-		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount)
+		_, err = clients.ElChainWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
 		if err != nil {
 			logger.Errorf("Error depositing into strategy")
 			return

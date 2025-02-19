@@ -8,9 +8,11 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
@@ -40,7 +42,7 @@ const SEM_VER = "0.0.1"
 type Operator struct {
 	config    types.NodeConfig
 	logger    logging.Logger
-	ethClient eth.Client
+	ethClient sdkcommon.EthClientInterface
 	// TODO(samlaf): remove both avsWriter and eigenlayerWrite from operator
 	// they are only used for registration, so we should make a special registration package
 	// this way, auditing this operator code makes it obvious that operators don't need to
@@ -52,8 +54,8 @@ type Operator struct {
 	avsWriter        *chainio.AvsWriter
 	avsReader        chainio.AvsReaderer
 	avsSubscriber    chainio.AvsSubscriberer
-	eigenlayerReader sdkelcontracts.ELReader
-	eigenlayerWriter sdkelcontracts.ELWriter
+	eigenlayerReader sdkelcontracts.ChainReader
+	eigenlayerWriter sdkelcontracts.ChainWriter
 	blsKeypair       *bls.KeyPair
 	operatorId       sdktypes.OperatorId
 	operatorAddr     common.Address
@@ -88,7 +90,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	// Setup Node Api
 	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, c.NodeApiIpPortAddress, logger)
 
-	var ethRpcClient, ethWsClient eth.Client
+	var ethRpcClient, ethWsClient sdkcommon.EthClientInterface
 	if c.EnableMetrics {
 		rpcCallsCollector := rpccalls.NewCollector(AVS_NAME, reg)
 		ethRpcClient, err = eth.NewInstrumentedClient(c.EthRpcUrl, rpcCallsCollector)
@@ -102,12 +104,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 			return nil, err
 		}
 	} else {
-		ethRpcClient, err = eth.NewClient(c.EthRpcUrl)
+		ethRpcClient, err = ethclient.Dial(c.EthRpcUrl)
 		if err != nil {
 			logger.Errorf("Cannot create http ethclient", "err", err)
 			return nil, err
 		}
-		ethWsClient, err = eth.NewClient(c.EthWsUrl)
+		ethWsClient, err = ethclient.Dial(c.EthWsUrl)
 		if err != nil {
 			logger.Errorf("Cannot create ws ethclient", "err", err)
 			return nil, err
@@ -220,8 +222,8 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		avsWriter:                          avsWriter,
 		avsReader:                          avsReader,
 		avsSubscriber:                      avsSubscriber,
-		eigenlayerReader:                   sdkClients.ElChainReader,
-		eigenlayerWriter:                   sdkClients.ElChainWriter,
+		eigenlayerReader:                   *sdkClients.ElChainReader,
+		eigenlayerWriter:                   *sdkClients.ElChainWriter,
 		blsKeypair:                         blsKeyPair,
 		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
 		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
