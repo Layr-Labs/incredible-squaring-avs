@@ -6,7 +6,7 @@ import (
 	"log"
 	"math/big"
 
-	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -18,7 +18,7 @@ func DepositIntoStrategy(ctx *cli.Context) error {
 
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
 	nodeConfig := types.NodeConfig{}
-	err := sdkutils.ReadYamlConfig(configPath, &nodeConfig)
+	err := commonincredible.ReadYamlConfig(configPath, &nodeConfig)
 	if err != nil {
 		return err
 	}

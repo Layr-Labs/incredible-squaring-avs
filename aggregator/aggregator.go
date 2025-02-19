@@ -75,8 +75,6 @@ type Aggregator struct {
 	blsAggregationService blsagg.BlsAggregationService
 	tasks                 map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask
 	tasksMu               sync.RWMutex
-	taskResponses         map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-	taskResponsesMu       sync.RWMutex
 }
 
 // NewAggregator creates a new Aggregator with the provided config.
@@ -156,7 +154,6 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		avsWriter:             avsWriter,
 		blsAggregationService: blsAggregationService,
 		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-		taskResponses:         make(map[types.TaskIndex]map[sdktypes.TaskResponseDigest]cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse),
 	}, nil
 }
 
@@ -225,9 +222,7 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 	agg.tasksMu.RLock()
 	task := agg.tasks[blsAggServiceResp.TaskIndex]
 	agg.tasksMu.RUnlock()
-	agg.taskResponsesMu.RLock()
-	taskResponse := agg.taskResponses[blsAggServiceResp.TaskIndex][blsAggServiceResp.TaskResponseDigest]
-	agg.taskResponsesMu.RUnlock()
+	taskResponse, _ := blsAggServiceResp.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
 	_, err := agg.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to respond to task", "err", err)
