@@ -27,6 +27,9 @@ jobs:
           # - ref: slashing-magnitudes
           #   version: v1.0.3
 
+    permissions:
+      contents: read
+
     name: End-to-end test
     runs-on: ubuntu-latest
     steps:
@@ -52,15 +55,10 @@ jobs:
           echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
 
       # Install the devnet
-      # TODO: use action when available
-      - uses: actions/checkout@v4
-        with:
-          repository: Layr-Labs/avs-devnet
-          path: avs-devnet
-
       - name: Install devnet
-        working-directory: avs-devnet
-        run: make install
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/Layr-Labs/avs-devnet/main/install.sh | sh -s -- "v0.1.0-rc.3"
+          echo "$HOME/bin" >> "$GITHUB_PATH"
 
       # Checkout repo
       - uses: actions/checkout@v4
