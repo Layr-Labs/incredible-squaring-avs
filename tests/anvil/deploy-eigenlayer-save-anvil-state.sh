@@ -45,7 +45,7 @@ cd lib/eigenlayer-middleware/lib/eigenlayer-contracts
 mv script/output/devnet/M2_from_scratch_deployment_data.json script/output/devnet/M2_from_scratch_deployment_data.json.bak
 
 # Add a strategy using the deployed token to the config file
-strategy_info="{\"max_deposits\":115792089237316195423570985008687907853269984665640564039457584007913129639935,\"max_per_deposit\":115792089237316195423570985008687907853269984665640564039457584007913129639935,\"token_address\":\"$token_address\",\"token_symbol\":\"MockETH\"}"
+strategy_info="{\"token_address\":\"$token_address\",\"token_symbol\":\"MockETH\",\"max_deposits\":115792089237316195423570985008687907853269984665640564039457584007913129639935,\"max_per_deposit\":115792089237316195423570985008687907853269984665640564039457584007913129639935}"
 cp script/configs/devnet/M2_deploy_from_scratch.anvil.config.json script/configs/devnet/M2_deploy_from_scratch.anvil.config.json.bak
 sed -i '' "s#\"strategies\": \[\],#\"strategies\": \[$strategy_info\],#g" script/configs/devnet/M2_deploy_from_scratch.anvil.config.json
 
