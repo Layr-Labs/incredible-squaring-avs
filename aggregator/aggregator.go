@@ -99,6 +99,8 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
 		AvsName:                    avsName,
 		PromMetricsIpPortAddress:   ":9090",
+
+		DontUseAllocationManager: true,
 	}
 	clients, err := clients.BuildAll(chainioConfig, c.EcdsaPrivateKey, c.Logger)
 	if err != nil {
