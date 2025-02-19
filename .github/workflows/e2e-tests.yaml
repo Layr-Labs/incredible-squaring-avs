@@ -6,6 +6,10 @@ on:
       - master
   pull_request:
 
+env:
+  KURTOSIS_VERSION: "1.4.4"
+  DEVNET_VERSION: "v0.1.0-rc.3"
+
 jobs:  
   e2e:
     strategy:
@@ -50,14 +54,14 @@ jobs:
         run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
           sudo apt update
-          sudo apt install kurtosis-cli
+          sudo apt install -y kurtosis-cli=${{env.KURTOSIS_VERSION}}
           kurtosis analytics disable
           echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
 
       # Install the devnet
       - name: Install devnet
         run: |
-          curl -sSfL https://raw.githubusercontent.com/Layr-Labs/avs-devnet/main/install.sh | sh -s -- "v0.1.0-rc.3"
+          curl -sSfL https://raw.githubusercontent.com/Layr-Labs/avs-devnet/main/install.sh | sh -s -- ${{env.DEVNET_VERSION}}
           echo "$HOME/bin" >> "$GITHUB_PATH"
 
       # Checkout repo
