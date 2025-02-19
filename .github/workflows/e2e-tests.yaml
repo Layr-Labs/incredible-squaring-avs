@@ -1,0 +1,78 @@
+name: End-to-end tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+env:
+  KURTOSIS_VERSION: "1.4.4"
+  DEVNET_VERSION: "v0.1.0-rc.3"
+
+jobs:  
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        el-contracts:
+          # Mainnet version isn't used because of compile errors
+          - ref: v0.3.3-mainnet-rewards
+            version: v0.3.3
+          # All of them fail because "delegation" was renamed to "delegationManager" in the addresses JSON
+          # TODO: fix these
+          # # Rewards v1
+          # - ref: v0.4.3-mainnet-rewards-foundation-incentives
+          #   version: v0.4.3
+          # # Rewards v2
+          # - ref: v0.5.3
+          #   version: v0.5.3
+          # # Slashing
+          # - ref: slashing-magnitudes
+          #   version: v1.0.3
+
+    permissions:
+      contents: read
+
+    name: End-to-end test
+    runs-on: ubuntu-latest
+    steps:
+      # Install foundry, go, ko, and kurtosis
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - uses: ko-build/setup-ko@v0.7
+
+      - name: Install Kurtosis
+        shell: bash
+        run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install -y kurtosis-cli=${{env.KURTOSIS_VERSION}}
+          kurtosis analytics disable
+          echo "$(dirname $(which kurtosis))" >> $GITHUB_PATH
+
+      # Install the devnet
+      - name: Install devnet
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/Layr-Labs/avs-devnet/main/install.sh | sh -s -- ${{env.DEVNET_VERSION}}
+          echo "$HOME/bin" >> "$GITHUB_PATH"
+
+      # Checkout repo
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          path: ics
+
+      - name: Run end-to-end test
+        working-directory: ics
+        run: |
+          export EL_REF=${{ matrix.el-contracts.ref }}
+          export EL_VERSION=${{ matrix.el-contracts.version }}
+          ./scripts/e2e_test.sh
