@@ -153,6 +153,8 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
 		AvsName:                    AVS_NAME,
 		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
+
+		DontUseAllocationManager: true,
 	}
 	operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
 		c.EcdsaPrivateKeyStorePath,
