@@ -9,7 +9,8 @@ import (
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	"github.com/Layr-Labs/eigensdk-go/types"
+	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
+	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
 var (
@@ -39,7 +40,7 @@ func (agg *Aggregator) startServer(ctx context.Context) error {
 type SignedTaskResponse struct {
 	TaskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
 	BlsSignature bls.Signature
-	OperatorId   types.OperatorId
+	OperatorId   sdktypes.OperatorId
 }
 
 // rpc endpoint which is called by operator
@@ -49,9 +50,9 @@ func (agg *Aggregator) ProcessSignedTaskResponse(signedTaskResponse *SignedTaskR
 	agg.logger.Infof("Received signed task response: %#v", signedTaskResponse)
 	taskIndex := signedTaskResponse.TaskResponse.ReferenceTaskIndex
 
-	err := agg.blsAggregationService.ProcessNewSignature(
-		context.Background(), taskIndex, signedTaskResponse.TaskResponse,
-		&signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId,
-	)
+	taskSignature := blsagg.NewTaskSignature(taskIndex, signedTaskResponse.TaskResponse, &signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId)
+
+	err := agg.blsAggregationService.ProcessNewSignature(context.Background(), taskSignature)
+
 	return err
 }

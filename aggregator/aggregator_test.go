@@ -67,31 +67,31 @@ func (mr *MockBlsAggregationServiceMockRecorder) GetResponseChannel() *gomock.Ca
 }
 
 // InitializeNewTask mocks base method.
-func (m *MockBlsAggregationService) InitializeNewTask(arg0, arg1 uint32, arg2 sdktypes.QuorumNums, arg3 sdktypes.QuorumThresholdPercentages, arg4 time.Duration) error {
+func (m *MockBlsAggregationService) InitializeNewTask(arg0 blsagg.TaskMetadata) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitializeNewTask", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "InitializeNewTask", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // InitializeNewTask indicates an expected call of InitializeNewTask.
-func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTask(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTask(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeNewTask", reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeNewTask", reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask), arg0)
 }
 
 // ProcessNewSignature mocks base method.
-func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, arg1 uint32, arg2 interface{}, arg3 *bls.Signature, arg4 sdktypes.Bytes32) error {
+func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, arg1 blsagg.TaskSignature) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessNewSignature", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "ProcessNewSignature", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessNewSignature indicates an expected call of ProcessNewSignature.
-func (mr *MockBlsAggregationServiceMockRecorder) ProcessNewSignature(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockBlsAggregationServiceMockRecorder) ProcessNewSignature(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNewSignature", reflect.TypeOf((*MockBlsAggregationService)(nil).ProcessNewSignature), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNewSignature", reflect.TypeOf((*MockBlsAggregationService)(nil).ProcessNewSignature), arg0, arg1)
 }
 
 type MockTask struct {
@@ -137,7 +137,14 @@ func TestSendNewTask(t *testing.T) {
 	// make sure that initializeNewTask was called on the blsAggService
 	// maybe there's a better way to do this? There's a saying "don't mock 3rd party code"
 	// see https://hynek.me/articles/what-to-mock-in-5-mins/
-	mockBlsAggService.EXPECT().InitializeNewTask(TASK_INDEX, BLOCK_NUMBER, types.QUORUM_NUMBERS, sdktypes.QuorumThresholdPercentages{types.QUORUM_THRESHOLD_NUMERATOR}, taskTimeToExpiry)
+	taskMetadata := blsagg.NewTaskMetadata(
+		TASK_INDEX,
+		BLOCK_NUMBER,
+		types.QUORUM_NUMBERS,
+		sdktypes.QuorumThresholdPercentages{types.QUORUM_THRESHOLD_NUMERATOR},
+		taskTimeToExpiry,
+	)
+	mockBlsAggService.EXPECT().InitializeNewTask(taskMetadata)
 
 	err = aggregator.sendNewTask(NUMBER_TO_SQUARE_BIG_INT)
 	assert.Nil(t, err)

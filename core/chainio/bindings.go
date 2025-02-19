@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -16,13 +15,14 @@ import (
 )
 
 type AvsManagersBindings struct {
-	TaskManager    *cstaskmanager.ContractIncredibleSquaringTaskManager
-	ServiceManager *csservicemanager.ContractIncredibleSquaringServiceManager
-	ethClient      eth.HttpBackend
-	logger         logging.Logger
+	ServiceManagerAddr common.Address
+	TaskManager        *cstaskmanager.ContractIncredibleSquaringTaskManager
+	ServiceManager     *csservicemanager.ContractIncredibleSquaringServiceManager
+	ethClient          eth.HttpBackend
+	logger             logging.Logger
 }
 
-func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethclient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsManagersBindings, error) {
+func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr common.Address, ethclient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsManagersBindings, error) {
 	contractRegistryCoordinator, err := regcoord.NewContractRegistryCoordinator(registryCoordinatorAddr, ethclient)
 	if err != nil {
 		return nil, err
@@ -49,10 +49,11 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	}
 
 	return &AvsManagersBindings{
-		ServiceManager: contractServiceManager,
-		TaskManager:    contractTaskManager,
-		ethClient:      ethclient,
-		logger:         logger,
+		ServiceManagerAddr: serviceManagerAddr,
+		ServiceManager:     contractServiceManager,
+		TaskManager:        contractTaskManager,
+		ethClient:          ethclient,
+		logger:             logger,
 	}, nil
 }
 
