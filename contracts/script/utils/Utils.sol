@@ -46,7 +46,7 @@ contract Utils is Script {
         }
     }
 
-    // Forge scripts best practice: https://book.getfoundry.sh/tutorials/best-practices#scripts
+    // Forge scripts best practice: https://book.getfoundry.sh/guides/best-practices#scripts
     function readInput(
         string memory inputFileName
     ) internal view returns (string memory) {
