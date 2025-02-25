@@ -67,12 +67,12 @@ contract IncredibleSquaringTaskManager is
     }
 
     function initialize(
-        IPauserRegistry _pauserRegistry,
+        //IPauserRegistry _pauserRegistry,
         address initialOwner,
         address _aggregator,
         address _generator
     ) public initializer {
-        _initializePauser(_pauserRegistry, UNPAUSE_ALL);
+        //_initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
         _setAggregator(_aggregator);
         _setGenerator(_generator);

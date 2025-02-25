@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.12;
 
-import "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
+import {ISlashingRegistryCoordinatorTypes} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import "@eigenlayer/contracts/strategies/StrategyBase.sol";
 import "../../src/ERC20Mock.sol";
 
@@ -33,13 +33,13 @@ contract Utils is Script {
     }
 
     function convertOperatorStatusToString(
-        IRegistryCoordinator.OperatorStatus operatorStatus
+        ISlashingRegistryCoordinatorTypes.OperatorStatus operatorStatus
     ) public pure returns (string memory) {
-        if (operatorStatus == IRegistryCoordinator.OperatorStatus.NEVER_REGISTERED) {
+        if (operatorStatus == ISlashingRegistryCoordinatorTypes.OperatorStatus.NEVER_REGISTERED) {
             return "NEVER_REGISTERED";
-        } else if (operatorStatus == IRegistryCoordinator.OperatorStatus.REGISTERED) {
+        } else if (operatorStatus == ISlashingRegistryCoordinatorTypes.OperatorStatus.REGISTERED) {
             return "REGISTERED";
-        } else if (operatorStatus == IRegistryCoordinator.OperatorStatus.DEREGISTERED) {
+        } else if (operatorStatus == ISlashingRegistryCoordinatorTypes.OperatorStatus.DEREGISTERED) {
             return "DEREGISTERED";
         } else {
             return "UNKNOWN";

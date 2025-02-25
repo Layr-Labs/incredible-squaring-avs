@@ -10,7 +10,14 @@ import {IStrategyManager, IStrategy} from "@eigenlayer/contracts/interfaces/IStr
 import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBaseTVLLimits.sol";
 import "@eigenlayer/test/mocks/EmptyContract.sol";
 
-import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
+import "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
+
+import "@eigenlayer-middleware/test/utils/MiddlewareDeployLib.sol";
+
+import {ISlashingRegistryCoordinator, ISlashingRegistryCoordinatorTypes} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
+
+import {IStakeRegistry, IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
+
 import {
     IBLSApkRegistry,
     IIndexRegistry,
@@ -56,8 +63,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
     ProxyAdmin public incredibleSquaringProxyAdmin;
     PauserRegistry public incredibleSquaringPauserReg;
 
-    regcoord.RegistryCoordinator public registryCoordinator;
-    regcoord.IRegistryCoordinator public registryCoordinatorImplementation;
+    SlashingRegistryCoordinator public registryCoordinator;
+    ISlashingRegistryCoordinator public registryCoordinatorImplementation;
 
     IBLSApkRegistry public blsApkRegistry;
     IBLSApkRegistry public blsApkRegistryImplementation;
@@ -156,7 +163,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        registryCoordinator = regcoord.RegistryCoordinator(
+        registryCoordinator = SlashingRegistryCoordinator(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract), address(incredibleSquaringProxyAdmin), ""
@@ -211,22 +218,22 @@ contract IncredibleSquaringDeployer is Script, Utils {
             );
         }
 
-        registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
+        registryCoordinatorImplementation = new SlashingRegistryCoordinator(
             incredibleSquaringServiceManager,
-            regcoord.IStakeRegistry(address(stakeRegistry)),
-            regcoord.IBLSApkRegistry(address(blsApkRegistry)),
-            regcoord.IIndexRegistry(address(indexRegistry))
+            IStakeRegistry(address(stakeRegistry)),
+            IBLSApkRegistry(address(blsApkRegistry)),
+            IIndexRegistry(address(indexRegistry))
         );
 
         {
             uint256 numQuorums = 1;
             // for each quorum to set up, we need to define
             // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
-            regcoord.IRegistryCoordinator.OperatorSetParam[] memory quorumsOperatorSetParams =
-                new regcoord.IRegistryCoordinator.OperatorSetParam[](numQuorums);
+            ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
+                new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
             for (uint256 i = 0; i < numQuorums; i++) {
                 // hard code these for now
-                quorumsOperatorSetParams[i] = regcoord.IRegistryCoordinator.OperatorSetParam({
+                quorumsOperatorSetParams[i] = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
                     maxOperatorCount: 10_000,
                     kickBIPsOfOperatorStake: 15_000,
                     kickBIPsOfTotalStake: 100
@@ -234,12 +241,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
             }
             // set to 0 for every quorum
             uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            IStakeRegistry.StrategyParams[][] memory quorumsStrategyParams =
-                new IStakeRegistry.StrategyParams[][](numQuorums);
+            IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
+                new IStakeRegistryTypes.StrategyParams[][](numQuorums);
             for (uint256 i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new IStakeRegistry.StrategyParams[](numStrategies);
+                quorumsStrategyParams[i] = new IStakeRegistryTypes.StrategyParams[](numStrategies);
                 for (uint256 j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = IStakeRegistry.StrategyParams({
+                    quorumsStrategyParams[i][j] = IStakeRegistryTypes.StrategyParams({
                         strategy: deployedStrategyArray[j],
                         // setting this to 1 ether since the divisor is also 1 ether
                         // therefore this allows an operator to register with even just 1 token
@@ -253,7 +260,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 TransparentUpgradeableProxy(payable(address(registryCoordinator))),
                 address(registryCoordinatorImplementation),
                 abi.encodeWithSelector(
-                    regcoord.RegistryCoordinator.initialize.selector,
+                    SlashingRegistryCoordinator.initialize.selector,
                     // we set churnApprover and ejector to communityMultisig because we don't need them
                     incredibleSquaringCommunityMultisig,
                     incredibleSquaringCommunityMultisig,
