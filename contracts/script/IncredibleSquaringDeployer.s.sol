@@ -124,6 +124,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
         address incredibleSquaringCommunityMultisig,
         address incredibleSquaringPauser
     ) internal {
+        EmptyContract emptyContract = new EmptyContract();
+
+        // We should set a real config here
+        MiddlewareDeployLib.MiddlewareDeployConfig memory config;
+        MiddlewareDeployLib.MiddlewareDeployData memory result = MiddlewareDeployLib.deployMiddleware(address(0), address(0), address(0), config);
+
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
         IStrategy[1] memory deployedStrategyArray = [strat];
@@ -140,8 +146,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             incredibleSquaringPauserReg =
                 new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
         }
-
-        EmptyContract emptyContract = new EmptyContract();
 
         // hard-coded inputs
 
