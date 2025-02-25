@@ -4,6 +4,7 @@ pragma solidity ^0.8.9;
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
 import "./IIncredibleSquaringTaskManager.sol";
 import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
+import "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
 
 /**
  * @title Primary entry point for procuring services from IncredibleSquaring.
