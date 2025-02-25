@@ -2,22 +2,38 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
+import "@eigenlayer-middleware/src/interfaces/IBLSSignatureChecker.sol";
 
 interface IIncredibleSquaringTaskManager {
     // EVENTS
     event NewTaskCreated(uint32 indexed taskIndex, Task task);
 
-    event TaskResponded(TaskResponse taskResponse, TaskResponseMetadata taskResponseMetadata);
+    event TaskResponded(
+        TaskResponse taskResponse,
+        TaskResponseMetadata taskResponseMetadata
+    );
 
     event TaskCompleted(uint32 indexed taskIndex);
 
-    event TaskChallengedSuccessfully(uint32 indexed taskIndex, address indexed challenger);
+    event TaskChallengedSuccessfully(
+        uint32 indexed taskIndex,
+        address indexed challenger
+    );
 
-    event TaskChallengedUnsuccessfully(uint32 indexed taskIndex, address indexed challenger);
+    event TaskChallengedUnsuccessfully(
+        uint32 indexed taskIndex,
+        address indexed challenger
+    );
 
-    event AggregatorUpdated(address indexed oldAggregator, address indexed newAggregator);
+    event AggregatorUpdated(
+        address indexed oldAggregator,
+        address indexed newAggregator
+    );
 
-    event GeneratorUpdated(address indexed oldGenerator, address indexed newGenerator);
+    event GeneratorUpdated(
+        address indexed oldGenerator,
+        address indexed newGenerator
+    );
 
     // STRUCTS
     struct Task {
@@ -56,6 +72,14 @@ interface IIncredibleSquaringTaskManager {
         uint256 numberToBeSquared,
         uint32 quorumThresholdPercentage,
         bytes calldata quorumNumbers
+    ) external;
+
+    // NOTE: this function responds to a created task.
+    function respondToTask(
+        Task calldata task,
+        TaskResponse calldata taskResponse,
+        IBLSSignatureChecker.NonSignerStakesAndSignature
+            memory nonSignerStakesAndSignature
     ) external;
 
     /// @notice Returns the current 'taskNumber' for the middleware
