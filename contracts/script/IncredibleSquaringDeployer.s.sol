@@ -173,12 +173,51 @@ contract IncredibleSquaringDeployer is Script, Utils {
             });
 
         MiddlewareDeployLib.SlashingRegistryCoordinatorConfig memory slashingRegConfig = MiddlewareDeployLib.SlashingRegistryCoordinatorConfig({ 
-            initialOwner: address(0),
-            churnApprover: address(0),
-            ejector: address(0),
-            initPausedStatus: uint256(0),
+            // we set churnApprover and ejector to communityMultisig because we don't need them
+            initialOwner: incredibleSquaringCommunityMultisig,
+            churnApprover: incredibleSquaringCommunityMultisig,
+            ejector: incredibleSquaringCommunityMultisig,
+            initPausedStatus: 0, // 0 initialPausedStatus means everything unpaused
             serviceManager: address(incredibleSquaringServiceManager)
             });
+
+        /*
+            This parameters should be used with some slashing method:
+
+            uint256 numQuorums = 1;
+            // for each quorum to set up, we need to define
+            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
+            ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
+                new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
+            for (uint256 i = 0; i < numQuorums; i++) {
+                // hard code these for now
+                quorumsOperatorSetParams[i] = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
+                    maxOperatorCount: 10_000,
+                    kickBIPsOfOperatorStake: 15_000,
+                    kickBIPsOfTotalStake: 100
+                });
+            }
+            // set to 0 for every quorum
+            uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
+            IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
+                new IStakeRegistryTypes.StrategyParams[][](numQuorums);
+            for (uint256 i = 0; i < numQuorums; i++) {
+                quorumsStrategyParams[i] = new IStakeRegistryTypes.StrategyParams[](numStrategies);
+                for (uint256 j = 0; j < numStrategies; j++) {
+                    quorumsStrategyParams[i][j] = IStakeRegistryTypes.StrategyParams({
+                        strategy: deployedStrategyArray[j],
+                        // setting this to 1 ether since the divisor is also 1 ether
+                        // therefore this allows an operator to register with even just 1 token
+                        // see https://github.com/Layr-Labs/eigenlayer-middleware/blob/m2-mainnet/src/StakeRegistry.sol#L484
+                        //    weight += uint96(sharesAmount * strategyAndMultiplier.multiplier / WEIGHTING_DIVISOR);
+                        multiplier: 1 ether
+                    });
+                }
+            }
+                    quorumsOperatorSetParams,
+                    quorumsMinimumStake,
+                    quorumsStrategyParams
+         */
 
         MiddlewareDeployLib.SocketRegistryConfig memory socketRegConfig = MiddlewareDeployLib.SocketRegistryConfig({ 
             initialOwner: address(0)
@@ -214,6 +253,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
         });
         MiddlewareDeployLib.MiddlewareDeployData memory deployData = MiddlewareDeployLib.deployMiddleware(address(incredibleSquaringProxyAdmin), address(allocationManager), address(incredibleSquaringPauserReg), midDeployConfig);
 
+        registryCoordinator = SlashingRegistryCoordinator(deployData.slashingRegistryCoordinator);
+
         // hard-coded inputs
 
         /**
@@ -221,13 +262,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
         incredibleSquaringTaskManager = IncredibleSquaringTaskManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
-                )
-            )
-        );
-        registryCoordinator = SlashingRegistryCoordinator(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract), address(incredibleSquaringProxyAdmin), ""
@@ -279,64 +313,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             incredibleSquaringProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
-            );
-        }
-
-        registryCoordinatorImplementation = new SlashingRegistryCoordinator(
-            IStakeRegistry(address(stakeRegistry)),
-            IBLSApkRegistry(address(blsApkRegistry)),
-            IIndexRegistry(address(indexRegistry)),
-            ISocketRegistry(deployData.socketRegistry),
-            allocationManager,
-            IPauserRegistry(incredibleSquaringPauser)
-        );
-
-        {
-            uint256 numQuorums = 1;
-            // for each quorum to set up, we need to define
-            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
-            ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
-                new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
-            for (uint256 i = 0; i < numQuorums; i++) {
-                // hard code these for now
-                quorumsOperatorSetParams[i] = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
-                    maxOperatorCount: 10_000,
-                    kickBIPsOfOperatorStake: 15_000,
-                    kickBIPsOfTotalStake: 100
-                });
-            }
-            // set to 0 for every quorum
-            uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
-                new IStakeRegistryTypes.StrategyParams[][](numQuorums);
-            for (uint256 i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new IStakeRegistryTypes.StrategyParams[](numStrategies);
-                for (uint256 j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = IStakeRegistryTypes.StrategyParams({
-                        strategy: deployedStrategyArray[j],
-                        // setting this to 1 ether since the divisor is also 1 ether
-                        // therefore this allows an operator to register with even just 1 token
-                        // see https://github.com/Layr-Labs/eigenlayer-middleware/blob/m2-mainnet/src/StakeRegistry.sol#L484
-                        //    weight += uint96(sharesAmount * strategyAndMultiplier.multiplier / WEIGHTING_DIVISOR);
-                        multiplier: 1 ether
-                    });
-                }
-            }
-            incredibleSquaringProxyAdmin.upgradeAndCall(
-                TransparentUpgradeableProxy(payable(address(registryCoordinator))),
-                address(registryCoordinatorImplementation),
-                abi.encodeWithSelector(
-                    SlashingRegistryCoordinator.initialize.selector,
-                    // we set churnApprover and ejector to communityMultisig because we don't need them
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringCommunityMultisig,
-                    incredibleSquaringPauserReg,
-                    0, // 0 initialPausedStatus means everything unpaused
-                    quorumsOperatorSetParams,
-                    quorumsMinimumStake,
-                    quorumsStrategyParams
-                )
             );
         }
 
