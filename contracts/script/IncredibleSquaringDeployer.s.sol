@@ -143,10 +143,21 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
         }
 
+        EmptyContract emptyContract = new EmptyContract();
+
+        // This is a proxy contract that will point to the implementation, but SM contract is not deployed yet
+        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
+        );
+
         // Maybe we should receive this as parameter
         PermissionController incredibleSquaringPermissionController = new PermissionController();
 
-        AllocationManager incredibleSquaringAllocationManager = new AllocationManager( 
+        AllocationManager allocationManager = new AllocationManager( 
             delegationManager,
             incredibleSquaringPauserReg,
             incredibleSquaringPermissionController,
@@ -156,7 +167,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
             initialOwner: address(0),
-            slasher: address(0)
+            slasher: address(0) // The address authorized to send slashing requests. Can be the same as initialOwner.
             });
 
         MiddlewareDeployLib.SlashingRegistryCoordinatorConfig memory slashingRegConfig = MiddlewareDeployLib.SlashingRegistryCoordinatorConfig({ 
@@ -164,7 +175,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             churnApprover: address(0),
             ejector: address(0),
             initPausedStatus: uint256(0),
-            serviceManager: address(0)
+            serviceManager: address(incredibleSquaringServiceManager)
             });
 
         MiddlewareDeployLib.SocketRegistryConfig memory socketRegConfig = MiddlewareDeployLib.SocketRegistryConfig({ 
@@ -199,22 +210,14 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stakeRegistry: stakeRegConfig,
             blsApkRegistry: blsConfig
         });
-        MiddlewareDeployLib.MiddlewareDeployData memory deployData = MiddlewareDeployLib.deployMiddleware(address(incredibleSquaringProxyAdmin), address(incredibleSquaringAllocationManager), address(incredibleSquaringPauserReg), midDeployConfig);
+        MiddlewareDeployLib.MiddlewareDeployData memory deployData = MiddlewareDeployLib.deployMiddleware(address(incredibleSquaringProxyAdmin), address(allocationManager), address(incredibleSquaringPauserReg), midDeployConfig);
 
         // hard-coded inputs
-        EmptyContract emptyContract = new EmptyContract();
 
         /**
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
-                )
-            )
-        );
         incredibleSquaringTaskManager = IncredibleSquaringTaskManager(
             address(
                 new TransparentUpgradeableProxy(
