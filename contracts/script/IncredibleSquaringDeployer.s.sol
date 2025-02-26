@@ -113,7 +113,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             delegationManager,
             avsDirectory,
             rewardsCoordinator,
-            erc20MockStrategy,
+            //erc20MockStrategy,
             incredibleSquaringCommunityMultisig,
             incredibleSquaringPauser
         );
@@ -124,15 +124,10 @@ contract IncredibleSquaringDeployer is Script, Utils {
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IRewardsCoordinator rewardsCoordinator,
-        IStrategy strat,
+//        IStrategy strat,      //Uncomment when use to set quorum params
         address incredibleSquaringCommunityMultisig,
         address incredibleSquaringPauser
     ) internal {
-        // Adding this as a temporary fix to make the rest of the script work with a single strategy
-        // since it was originally written to work with an array of strategies
-        IStrategy[1] memory deployedStrategyArray = [strat];
-        uint256 numStrategies = deployedStrategyArray.length;
-
         // deploy proxy admin for ability to upgrade proxy contracts
         incredibleSquaringProxyAdmin = new ProxyAdmin();
 
@@ -224,6 +219,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         /*
             This parameters should be used with some slashing registry coordinator method:
+
+            // Adding this as a temporary fix to make the rest of the script work with a single strategy
+            // since it was originally written to work with an array of strategies
+            IStrategy[1] memory deployedStrategyArray = [strat];
+            uint256 numStrategies = deployedStrategyArray.length;
 
             uint256 numQuorums = 1;
             // for each quorum to set up, we need to define
