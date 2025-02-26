@@ -1,0 +1,6 @@
+{
+    "communityMultisig": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "pauser": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "churner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "ejector": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+}
