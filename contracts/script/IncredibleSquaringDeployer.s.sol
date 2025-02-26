@@ -9,6 +9,7 @@ import "@eigenlayer/contracts/permissions/PermissionController.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IStrategyManager, IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
+import "@eigenlayer/contracts/interfaces/IPauserRegistry.sol";
 import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBaseTVLLimits.sol";
 import "@eigenlayer/test/mocks/EmptyContract.sol";
 
@@ -19,6 +20,7 @@ import "@eigenlayer-middleware/test/utils/MiddlewareDeployLib.sol";
 import {ISlashingRegistryCoordinator, ISlashingRegistryCoordinatorTypes} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 
 import {IStakeRegistry, IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
+import "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
 
 import {
     IBLSApkRegistry,
@@ -258,7 +260,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         // Second, deploy the *implementation* contracts, using the *proxy contracts* as inputs
         {
-            stakeRegistryImplementation = new StakeRegistry(registryCoordinator, delegationManager);
+            stakeRegistryImplementation = new StakeRegistry(registryCoordinator, delegationManager, avsDirectory, allocationManager);
 
             incredibleSquaringProxyAdmin.upgrade(
                 TransparentUpgradeableProxy(payable(address(stakeRegistry))),
@@ -281,10 +283,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
         }
 
         registryCoordinatorImplementation = new SlashingRegistryCoordinator(
-            incredibleSquaringServiceManager,
             IStakeRegistry(address(stakeRegistry)),
             IBLSApkRegistry(address(blsApkRegistry)),
-            IIndexRegistry(address(indexRegistry))
+            IIndexRegistry(address(indexRegistry)),
+            ISocketRegistry(deployData.socketRegistry),
+            allocationManager,
+            IPauserRegistry(incredibleSquaringPauser)
         );
 
         {
@@ -341,7 +345,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
             rewardsCoordinator,
             registryCoordinator,
             stakeRegistry,
-            incredibleSquaringTaskManager
+            incredibleSquaringTaskManager,
+            incredibleSquaringPermissionController,
+            allocationManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgrade(
@@ -350,7 +356,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
 
         incredibleSquaringTaskManagerImplementation =
-            new IncredibleSquaringTaskManager(registryCoordinator, TASK_RESPONSE_WINDOW_BLOCK);
+            new IncredibleSquaringTaskManager(registryCoordinator, incredibleSquaringPauserReg, TASK_RESPONSE_WINDOW_BLOCK);
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgradeAndCall(
@@ -358,7 +364,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(incredibleSquaringTaskManagerImplementation),
             abi.encodeWithSelector(
                 incredibleSquaringTaskManager.initialize.selector,
-                incredibleSquaringPauserReg,
                 incredibleSquaringCommunityMultisig,
                 AGGREGATOR_ADDR,
                 TASK_GENERATOR_ADDR
