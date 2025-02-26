@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.23.5
 
 require (
-	github.com/Layr-Labs/eigensdk-go v0.2.1-0.20250219203749-924e205b1d06
+	github.com/Layr-Labs/eigensdk-go v0.3.0-rc.1
 	github.com/ethereum/go-ethereum v1.15.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
