@@ -334,13 +334,30 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(incredibleSquaringTaskManagerImplementation)
         );
         vm.serializeAddress(deployed_addresses, "registryCoordinator", address(registryCoordinator));
+        // vm.serializeAddress(
+        //     deployed_addresses,
+        //     "registryCoordinatorImplementation",
+        //     address(registryCoordinatorImplementation)
+        // );
+        // string memory deployed_addresses_output = vm.serializeAddress(
+        //     deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever)
+        // );
+
+        // New release contracts
         vm.serializeAddress(
             deployed_addresses,
-            "registryCoordinatorImplementation",
-            address(registryCoordinatorImplementation)
+            "indexRegistry",
+            address(indexRegistry)
         );
-        string memory deployed_addresses_output = vm.serializeAddress(
-            deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever)
+        vm.serializeAddress(
+            deployed_addresses,
+            "stakeRegistry",
+            address(stakeRegistry)
+        );
+        vm.serializeAddress(
+            deployed_addresses,
+            "blsApkRegistry",
+            address(blsApkRegistry)
         );
 
         // serialize all the data
@@ -350,25 +367,3 @@ contract IncredibleSquaringDeployer is Script, Utils {
         writeOutput(finalJson, "credible_squaring_avs_deployment_output");
     }
 }
-
-/* 
-        Contracts currently being deployed
-            "erc20Mock"
-            "erc20MockStrategy"
-            "credibleSquaringServiceManager",
-            "credibleSquaringServiceManagerImplementation",
-            "credibleSquaringTaskManager",
-            "credibleSquaringTaskManagerImplementation",
-            "registryCoordinator"
-            "registryCoordinatorImplementation",
-            "operatorStateRetriever" 
-
-
-        Contracts deployed by middlewareDeployLib:
-            "instantSlasher"
-            "slashingRegistryCoordinator"
-            "socketRegistry"
-            "indexRegistry"
-            "stakeRegistry"
-            "blsApkRegistry"
-            */
