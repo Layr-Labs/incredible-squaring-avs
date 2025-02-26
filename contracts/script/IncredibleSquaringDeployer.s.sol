@@ -113,7 +113,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             delegationManager,
             avsDirectory,
             rewardsCoordinator,
-            //erc20MockStrategy,
+            erc20MockStrategy,
             incredibleSquaringCommunityMultisig,
             incredibleSquaringPauser
         );
@@ -124,7 +124,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IRewardsCoordinator rewardsCoordinator,
-//        IStrategy strat,      //Uncomment when use to set quorum params
+        IStrategy strat,
         address incredibleSquaringCommunityMultisig,
         address incredibleSquaringPauser
     ) internal {
@@ -184,15 +184,26 @@ contract IncredibleSquaringDeployer is Script, Utils {
             initialOwner: incredibleSquaringCommunityMultisig
             });
         
-        // Maybe we could add some strategy params
-        IStakeRegistryTypes.StrategyParams[] memory strategyParams;
+        // Adding this as a temporary fix to make the rest of the script work with a single strategy
+        // since it was originally written to work with an array of strategies
+        IStrategy[1] memory deployedStrategyArray = [strat];
+        uint256 numStrategies = deployedStrategyArray.length;
+
+        IStakeRegistryTypes.StrategyParams[] memory quorumStrategyParams =
+            new IStakeRegistryTypes.StrategyParams[](numStrategies);
+        for (uint256 i = 0; i < numStrategies; i++) {
+            quorumStrategyParams[i] = IStakeRegistryTypes.StrategyParams({
+                strategy: deployedStrategyArray[i],
+                multiplier: 1 ether
+            });
+        }
         MiddlewareDeployLib.StakeRegistryConfig memory stakeRegConfig = MiddlewareDeployLib.StakeRegistryConfig({ 
             initialOwner: incredibleSquaringCommunityMultisig,
             minimumStake: uint256(10),
-            strategyParams: uint32(0),
+            strategyParams: uint32(1),
             delegationManager: address(delegationManager),
             avsDirectory: address(avsDirectory),
-            strategyParamsArray: strategyParams, 
+            strategyParamsArray: quorumStrategyParams, 
             lookAheadPeriod: uint32(0),
             stakeType: IStakeRegistryTypes.StakeType.TOTAL_SLASHABLE
             });
