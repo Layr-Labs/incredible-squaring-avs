@@ -39,7 +39,7 @@ TMP_FILE="token_address.txt"
 
 # Deploy the token and save the address
 forge create --rpc-url $RPC_URL --private-key $PRIVATE_KEY \
-    --broadcast src/MockERC20.sol:MockERC20 > $TMP_FILE
+    --broadcast src/ERC20Mock.sol:ERC20Mock > $TMP_FILE
 
 token_address=$(cat $TMP_FILE | awk '/Deployed to: .*/{{ print $3 }}' | tr -d '\"\n')
 
