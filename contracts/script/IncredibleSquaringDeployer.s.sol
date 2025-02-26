@@ -124,11 +124,52 @@ contract IncredibleSquaringDeployer is Script, Utils {
         address incredibleSquaringCommunityMultisig,
         address incredibleSquaringPauser
     ) internal {
-        EmptyContract emptyContract = new EmptyContract();
+        MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
+            initialOwner: address(0),
+            slasher: address(0)
+            });
 
-        // We should set a real config here
-        MiddlewareDeployLib.MiddlewareDeployConfig memory config;
-        MiddlewareDeployLib.MiddlewareDeployData memory result = MiddlewareDeployLib.deployMiddleware(address(0), address(0), address(0), config);
+        MiddlewareDeployLib.SlashingRegistryCoordinatorConfig memory slashingRegConfig = MiddlewareDeployLib.SlashingRegistryCoordinatorConfig({ 
+            initialOwner: address(0),
+            churnApprover: address(0),
+            ejector: address(0),
+            initPausedStatus: uint256(0),
+            serviceManager: address(0)
+            });
+
+        MiddlewareDeployLib.SocketRegistryConfig memory socketRegConfig = MiddlewareDeployLib.SocketRegistryConfig({ 
+            initialOwner: address(0)
+            });
+
+        MiddlewareDeployLib.IndexRegistryConfig memory indexRegConfig = MiddlewareDeployLib.IndexRegistryConfig({ 
+            initialOwner: address(0)
+            });
+        
+        IStakeRegistryTypes.StrategyParams[] memory strategyParams;
+        MiddlewareDeployLib.StakeRegistryConfig memory stakeRegConfig = MiddlewareDeployLib.StakeRegistryConfig({ 
+            initialOwner: address(0),
+            minimumStake: uint256(10),
+            strategyParams: uint32(0),
+            delegationManager: delegationManager,
+            avsDirectory: avsDirectory,
+            strategyParamsArray: strategyParams, 
+            lookAheadPeriod: uint32(0),
+            stakeType: IStakeRegistryTypes.StakeType.TOTAL_SLASHABLE
+            });
+
+        MiddlewareDeployLib.BLSApkRegistryConfig memory blsConfig = MiddlewareDeployLib.BLSApkRegistryConfig({ 
+            initialOwner: address(0)
+            });
+
+        MiddlewareDeployLib.MiddlewareDeployConfig memory midDeployConfig = MiddlewareDeployLib.MiddlewareDeployConfig({
+            instantSlasher: instantSlasherConfig,
+            slashingRegistryCoordinator: slashingRegConfig,
+            socketRegistry: socketRegConfig,
+            indexRegistry: indexRegConfig,
+            stakeRegistry: stakeRegConfig,
+            blsApkRegistry: blsConfig
+        });
+        MiddlewareDeployLib.MiddlewareDeployData memory result = MiddlewareDeployLib.deployMiddleware(address(0), address(0), address(0), midDeployConfig);
 
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -148,6 +189,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         }
 
         // hard-coded inputs
+        EmptyContract emptyContract = new EmptyContract();
 
         /**
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
