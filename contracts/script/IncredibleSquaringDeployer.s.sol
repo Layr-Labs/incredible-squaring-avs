@@ -181,44 +181,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             serviceManager: address(incredibleSquaringServiceManager)
             });
 
-        /*
-            This parameters should be used with some slashing method:
-
-            uint256 numQuorums = 1;
-            // for each quorum to set up, we need to define
-            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
-            ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
-                new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
-            for (uint256 i = 0; i < numQuorums; i++) {
-                // hard code these for now
-                quorumsOperatorSetParams[i] = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
-                    maxOperatorCount: 10_000,
-                    kickBIPsOfOperatorStake: 15_000,
-                    kickBIPsOfTotalStake: 100
-                });
-            }
-            // set to 0 for every quorum
-            uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
-                new IStakeRegistryTypes.StrategyParams[][](numQuorums);
-            for (uint256 i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new IStakeRegistryTypes.StrategyParams[](numStrategies);
-                for (uint256 j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = IStakeRegistryTypes.StrategyParams({
-                        strategy: deployedStrategyArray[j],
-                        // setting this to 1 ether since the divisor is also 1 ether
-                        // therefore this allows an operator to register with even just 1 token
-                        // see https://github.com/Layr-Labs/eigenlayer-middleware/blob/m2-mainnet/src/StakeRegistry.sol#L484
-                        //    weight += uint96(sharesAmount * strategyAndMultiplier.multiplier / WEIGHTING_DIVISOR);
-                        multiplier: 1 ether
-                    });
-                }
-            }
-                    quorumsOperatorSetParams,
-                    quorumsMinimumStake,
-                    quorumsStrategyParams
-         */
-
         MiddlewareDeployLib.SocketRegistryConfig memory socketRegConfig = MiddlewareDeployLib.SocketRegistryConfig({ 
             initialOwner: address(0)
             });
@@ -254,6 +216,45 @@ contract IncredibleSquaringDeployer is Script, Utils {
         MiddlewareDeployLib.MiddlewareDeployData memory deployData = MiddlewareDeployLib.deployMiddleware(address(incredibleSquaringProxyAdmin), address(allocationManager), address(incredibleSquaringPauserReg), midDeployConfig);
 
         registryCoordinator = SlashingRegistryCoordinator(deployData.slashingRegistryCoordinator);
+
+
+        /*
+            This parameters should be used with some slashing registry coordinator method:
+
+            uint256 numQuorums = 1;
+            // for each quorum to set up, we need to define
+            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
+            ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
+                new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
+            for (uint256 i = 0; i < numQuorums; i++) {
+                // hard code these for now
+                quorumsOperatorSetParams[i] = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
+                    maxOperatorCount: 10_000,
+                    kickBIPsOfOperatorStake: 15_000,
+                    kickBIPsOfTotalStake: 100
+                });
+            }
+            // set to 0 for every quorum
+            uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
+            IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
+                new IStakeRegistryTypes.StrategyParams[][](numQuorums);
+            for (uint256 i = 0; i < numQuorums; i++) {
+                quorumsStrategyParams[i] = new IStakeRegistryTypes.StrategyParams[](numStrategies);
+                for (uint256 j = 0; j < numStrategies; j++) {
+                    quorumsStrategyParams[i][j] = IStakeRegistryTypes.StrategyParams({
+                        strategy: deployedStrategyArray[j],
+                        // setting this to 1 ether since the divisor is also 1 ether
+                        // therefore this allows an operator to register with even just 1 token
+                        // see https://github.com/Layr-Labs/eigenlayer-middleware/blob/m2-mainnet/src/StakeRegistry.sol#L484
+                        //    weight += uint96(sharesAmount * strategyAndMultiplier.multiplier / WEIGHTING_DIVISOR);
+                        multiplier: 1 ether
+                    });
+                }
+            }
+                    quorumsOperatorSetParams,
+                    quorumsMinimumStake,
+                    quorumsStrategyParams
+         */
 
         // hard-coded inputs
 
