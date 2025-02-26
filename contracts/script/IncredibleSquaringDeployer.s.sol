@@ -152,12 +152,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
 
         // Maybe we should receive this as parameter
-        PermissionController incredibleSquaringPermissionController = new PermissionController();
+        PermissionController permissionController = new PermissionController();
 
         AllocationManager allocationManager = new AllocationManager( 
             delegationManager,
             incredibleSquaringPauserReg,
-            incredibleSquaringPermissionController,
+            permissionController,
             uint32(0),
             uint32(0)
             );
@@ -275,7 +275,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
 
         // See if it's being deployed in another place
-        // operatorStateRetriever = new OperatorStateRetriever();
+        operatorStateRetriever = new OperatorStateRetriever();
 
         incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
             avsDirectory,
@@ -283,7 +283,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             registryCoordinator,
             stakeRegistry,
             incredibleSquaringTaskManager,
-            incredibleSquaringPermissionController,
+            permissionController,
             allocationManager
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
@@ -339,9 +339,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
         //     "registryCoordinatorImplementation",
         //     address(registryCoordinatorImplementation)
         // );
-        // string memory deployed_addresses_output = vm.serializeAddress(
-        //     deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever)
-        // );
+        string memory deployed_addresses_output = vm.serializeAddress(
+            deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever)
+        );
 
         // New release contracts
         vm.serializeAddress(
@@ -358,6 +358,16 @@ contract IncredibleSquaringDeployer is Script, Utils {
             deployed_addresses,
             "blsApkRegistry",
             address(blsApkRegistry)
+        );
+        vm.serializeAddress(
+            deployed_addresses,
+            "allocationManager",
+            address(allocationManager)
+        );
+        vm.serializeAddress(
+            deployed_addresses,
+            "permissionController",
+            address(permissionController)
         );
 
         // serialize all the data
