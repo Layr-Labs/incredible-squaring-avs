@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 
 import "@eigenlayer/contracts/permissions/PauserRegistry.sol";
+import "@eigenlayer/contracts/core/AllocationManager.sol";
+import "@eigenlayer/contracts/permissions/PermissionController.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
 import {IAVSDirectory} from "@eigenlayer/contracts/interfaces/IAVSDirectory.sol";
 import {IStrategyManager, IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
@@ -124,6 +126,34 @@ contract IncredibleSquaringDeployer is Script, Utils {
         address incredibleSquaringCommunityMultisig,
         address incredibleSquaringPauser
     ) internal {
+        // Adding this as a temporary fix to make the rest of the script work with a single strategy
+        // since it was originally written to work with an array of strategies
+        IStrategy[1] memory deployedStrategyArray = [strat];
+        uint256 numStrategies = deployedStrategyArray.length;
+
+        // deploy proxy admin for ability to upgrade proxy contracts
+        incredibleSquaringProxyAdmin = new ProxyAdmin();
+
+        // deploy pauser registry
+        {
+            address[] memory pausers = new address[](2);
+            pausers[0] = incredibleSquaringPauser;
+            pausers[1] = incredibleSquaringCommunityMultisig;
+            incredibleSquaringPauserReg =
+                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
+        }
+
+        // Maybe we should receive this as parameter
+        PermissionController incredibleSquaringPermissionController = new PermissionController();
+
+        AllocationManager incredibleSquaringAllocationManager = new AllocationManager( 
+            address(delegationManager),
+            address(incredibleSquaringPauserReg),
+            address(incredibleSquaringPermissionController),
+            uint32(0),
+            uint32(0)
+            );
+
         MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
             initialOwner: address(0),
             slasher: address(0)
@@ -150,8 +180,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
             initialOwner: address(0),
             minimumStake: uint256(10),
             strategyParams: uint32(0),
-            delegationManager: delegationManager,
-            avsDirectory: avsDirectory,
+            delegationManager: address(delegationManager),
+            avsDirectory: address(avsDirectory),
             strategyParamsArray: strategyParams, 
             lookAheadPeriod: uint32(0),
             stakeType: IStakeRegistryTypes.StakeType.TOTAL_SLASHABLE
@@ -169,24 +199,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stakeRegistry: stakeRegConfig,
             blsApkRegistry: blsConfig
         });
-        MiddlewareDeployLib.MiddlewareDeployData memory result = MiddlewareDeployLib.deployMiddleware(address(0), address(0), address(0), midDeployConfig);
-
-        // Adding this as a temporary fix to make the rest of the script work with a single strategy
-        // since it was originally written to work with an array of strategies
-        IStrategy[1] memory deployedStrategyArray = [strat];
-        uint256 numStrategies = deployedStrategyArray.length;
-
-        // deploy proxy admin for ability to upgrade proxy contracts
-        incredibleSquaringProxyAdmin = new ProxyAdmin();
-
-        // deploy pauser registry
-        {
-            address[] memory pausers = new address[](2);
-            pausers[0] = incredibleSquaringPauser;
-            pausers[1] = incredibleSquaringCommunityMultisig;
-            incredibleSquaringPauserReg =
-                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
-        }
+        MiddlewareDeployLib.MiddlewareDeployData memory deployData = MiddlewareDeployLib.deployMiddleware(address(incredibleSquaringProxyAdmin), address(incredibleSquaringAllocationManager), address(incredibleSquaringPauserReg), midDeployConfig);
 
         // hard-coded inputs
         EmptyContract emptyContract = new EmptyContract();
@@ -392,3 +405,25 @@ contract IncredibleSquaringDeployer is Script, Utils {
         writeOutput(finalJson, "credible_squaring_avs_deployment_output");
     }
 }
+
+/* 
+        Contracts currently being deployed
+            "erc20Mock"
+            "erc20MockStrategy"
+            "credibleSquaringServiceManager",
+            "credibleSquaringServiceManagerImplementation",
+            "credibleSquaringTaskManager",
+            "credibleSquaringTaskManagerImplementation",
+            "registryCoordinator"
+            "registryCoordinatorImplementation",
+            "operatorStateRetriever" 
+
+
+        Contracts deployed by middlewareDeployLib:
+            "instantSlasher"
+            "slashingRegistryCoordinator"
+            "socketRegistry"
+            "indexRegistry"
+            "stakeRegistry"
+            "blsApkRegistry"
+            */
