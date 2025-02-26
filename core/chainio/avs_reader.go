@@ -19,8 +19,8 @@ type AvsReaderer interface {
 	//sdkavsregistry.ChainReader
 
 	CheckSignatures(
-		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-	) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error)
+		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
+	) (cstaskmanager.IBLSSignatureCheckerTypesQuorumStakeTotals, error)
 	GetErc20Mock(ctx context.Context, tokenAddr common.Address) (*erc20mock.ContractERC20Mock, error)
 	GetOperatorId(
 		opts *bind.CallOpts,
@@ -69,13 +69,13 @@ func NewAvsReader(avsRegistryReader sdkavsregistry.ChainReader, avsServiceBindin
 }
 
 func (r *AvsReader) CheckSignatures(
-	ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error) {
+	ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
+) (cstaskmanager.IBLSSignatureCheckerTypesQuorumStakeTotals, error) {
 	stakeTotalsPerQuorum, _, err := r.AvsServiceBindings.TaskManager.CheckSignatures(
 		&bind.CallOpts{}, msgHash, quorumNumbers, referenceBlockNumber, nonSignerStakesAndSignature,
 	)
 	if err != nil {
-		return cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals{}, err
+		return cstaskmanager.IBLSSignatureCheckerTypesQuorumStakeTotals{}, err
 	}
 	return stakeTotalsPerQuorum, nil
 }
