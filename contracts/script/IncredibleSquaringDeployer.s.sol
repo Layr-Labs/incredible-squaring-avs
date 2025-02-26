@@ -215,8 +215,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
         });
         MiddlewareDeployLib.MiddlewareDeployData memory deployData = MiddlewareDeployLib.deployMiddleware(address(incredibleSquaringProxyAdmin), address(allocationManager), address(incredibleSquaringPauserReg), midDeployConfig);
 
+        indexRegistry = IndexRegistry(deployData.indexRegistry);
+        stakeRegistry = StakeRegistry(deployData.stakeRegistry);
+        blsApkRegistry = BLSApkRegistry(deployData.blsApkRegistry);
         registryCoordinator = SlashingRegistryCoordinator(deployData.slashingRegistryCoordinator);
-
+        // instantSlasher;
+        // socketRegistry;
 
         /*
             This parameters should be used with some slashing registry coordinator method:
@@ -269,53 +273,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-        blsApkRegistry = IBLSApkRegistry(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
-                )
-            )
-        );
-        indexRegistry = IIndexRegistry(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
-                )
-            )
-        );
-        stakeRegistry = IStakeRegistry(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
-                )
-            )
-        );
 
-        operatorStateRetriever = new OperatorStateRetriever();
-
-        // Second, deploy the *implementation* contracts, using the *proxy contracts* as inputs
-        {
-            stakeRegistryImplementation = new StakeRegistry(registryCoordinator, delegationManager, avsDirectory, allocationManager);
-
-            incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(stakeRegistry))),
-                address(stakeRegistryImplementation)
-            );
-
-            blsApkRegistryImplementation = new BLSApkRegistry(registryCoordinator);
-
-            incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
-                address(blsApkRegistryImplementation)
-            );
-
-            indexRegistryImplementation = new IndexRegistry(registryCoordinator);
-
-            incredibleSquaringProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(indexRegistry))),
-                address(indexRegistryImplementation)
-            );
-        }
+        // See if it's being deployed in another place
+        // operatorStateRetriever = new OperatorStateRetriever();
 
         incredibleSquaringServiceManagerImplementation = new IncredibleSquaringServiceManager(
             avsDirectory,
