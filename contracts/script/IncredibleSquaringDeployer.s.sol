@@ -91,7 +91,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         // Eigenlayer contracts
         string memory eigenlayerDeployedContracts = readOutput("eigenlayer_deployment_output");
         IDelegationManager delegationManager = IDelegationManager(
-            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.delegation")
+            stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.delegationManager")
         );
         IAVSDirectory avsDirectory = IAVSDirectory(
             stdJson.readAddress(eigenlayerDeployedContracts, ".addresses.avsDirectory")
