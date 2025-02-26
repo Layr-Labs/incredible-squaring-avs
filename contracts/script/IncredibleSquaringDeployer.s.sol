@@ -147,9 +147,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
         PermissionController incredibleSquaringPermissionController = new PermissionController();
 
         AllocationManager incredibleSquaringAllocationManager = new AllocationManager( 
-            address(delegationManager),
-            address(incredibleSquaringPauserReg),
-            address(incredibleSquaringPermissionController),
+            delegationManager,
+            incredibleSquaringPauserReg,
+            incredibleSquaringPermissionController,
             uint32(0),
             uint32(0)
             );
