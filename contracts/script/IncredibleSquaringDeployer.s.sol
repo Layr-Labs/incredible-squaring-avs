@@ -163,8 +163,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
             );
 
         MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
-            initialOwner: address(0),
-            slasher: address(0) // The address authorized to send slashing requests. Can be the same as initialOwner.
+            initialOwner: incredibleSquaringCommunityMultisig,
+            slasher: incredibleSquaringCommunityMultisig // The address authorized to send slashing requests.
             });
 
         MiddlewareDeployLib.SlashingRegistryCoordinatorConfig memory slashingRegConfig = MiddlewareDeployLib.SlashingRegistryCoordinatorConfig({ 
@@ -177,16 +177,17 @@ contract IncredibleSquaringDeployer is Script, Utils {
             });
 
         MiddlewareDeployLib.SocketRegistryConfig memory socketRegConfig = MiddlewareDeployLib.SocketRegistryConfig({ 
-            initialOwner: address(0)
+            initialOwner: incredibleSquaringCommunityMultisig
             });
 
         MiddlewareDeployLib.IndexRegistryConfig memory indexRegConfig = MiddlewareDeployLib.IndexRegistryConfig({ 
-            initialOwner: address(0)
+            initialOwner: incredibleSquaringCommunityMultisig
             });
         
+        // Maybe we could add some strategy params
         IStakeRegistryTypes.StrategyParams[] memory strategyParams;
         MiddlewareDeployLib.StakeRegistryConfig memory stakeRegConfig = MiddlewareDeployLib.StakeRegistryConfig({ 
-            initialOwner: address(0),
+            initialOwner: incredibleSquaringCommunityMultisig,
             minimumStake: uint256(10),
             strategyParams: uint32(0),
             delegationManager: address(delegationManager),
@@ -197,7 +198,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
             });
 
         MiddlewareDeployLib.BLSApkRegistryConfig memory blsConfig = MiddlewareDeployLib.BLSApkRegistryConfig({ 
-            initialOwner: address(0)
+            initialOwner: incredibleSquaringCommunityMultisig
             });
 
         MiddlewareDeployLib.MiddlewareDeployConfig memory midDeployConfig = MiddlewareDeployLib.MiddlewareDeployConfig({
