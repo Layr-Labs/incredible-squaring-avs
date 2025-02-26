@@ -10,7 +10,7 @@ import (
 
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
-	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
+	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 )
@@ -56,8 +56,8 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	}, nil
 }
 
-func (b *AvsManagersBindings) GetErc20Mock(tokenAddr common.Address) (*erc20mock.ContractERC20Mock, error) {
-	contractErc20Mock, err := erc20mock.NewContractERC20Mock(tokenAddr, b.ethClient)
+func (b *AvsManagersBindings) GetErc20Mock(tokenAddr common.Address) (*erc20mock.ContractMockERC20, error) {
+	contractErc20Mock, err := erc20mock.NewContractMockERC20(tokenAddr, b.ethClient)
 	if err != nil {
 		b.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
 		return nil, err
