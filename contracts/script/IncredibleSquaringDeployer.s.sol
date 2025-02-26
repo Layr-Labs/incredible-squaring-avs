@@ -297,21 +297,21 @@ contract IncredibleSquaringDeployer is Script, Utils {
             stakeRegistryImplementation = new StakeRegistry(registryCoordinator, delegationManager, avsDirectory, allocationManager);
 
             incredibleSquaringProxyAdmin.upgrade(
-                ITransparentUpgradeableProxy(payable(address(stakeRegistry))),
+                TransparentUpgradeableProxy(payable(address(stakeRegistry))),
                 address(stakeRegistryImplementation)
             );
 
             blsApkRegistryImplementation = new BLSApkRegistry(registryCoordinator);
 
             incredibleSquaringProxyAdmin.upgrade(
-                ITransparentUpgradeableProxy(payable(address(blsApkRegistry))),
+                TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
                 address(blsApkRegistryImplementation)
             );
 
             indexRegistryImplementation = new IndexRegistry(registryCoordinator);
 
             incredibleSquaringProxyAdmin.upgrade(
-                ITransparentUpgradeableProxy(payable(address(indexRegistry))),
+                TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
             );
         }
@@ -327,7 +327,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgrade(
-            ITransparentUpgradeableProxy(payable(address(incredibleSquaringServiceManager))),
+            TransparentUpgradeableProxy(payable(address(incredibleSquaringServiceManager))),
             address(incredibleSquaringServiceManagerImplementation)
         );
 
@@ -336,7 +336,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
         incredibleSquaringProxyAdmin.upgradeAndCall(
-            ITransparentUpgradeableProxy(payable(address(incredibleSquaringTaskManager))),
+            TransparentUpgradeableProxy(payable(address(incredibleSquaringTaskManager))),
             address(incredibleSquaringTaskManagerImplementation),
             abi.encodeWithSelector(
                 incredibleSquaringTaskManager.initialize.selector,
