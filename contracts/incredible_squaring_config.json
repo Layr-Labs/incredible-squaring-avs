@@ -1,0 +1,9 @@
+{
+    "num_quorums": 1,
+    "operator_params": [10000,15000,100],
+    "operator_addr": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "operator_2_addr":"0x0b065a0423f076a340f37e16e1ce22e23d66caf2",
+    "contracts_registry_addr": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "task_generator_addr": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "aggregator_addr":"0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
+}
