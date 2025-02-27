@@ -229,6 +229,13 @@ contract IncredibleSquaringDeployer is Script, Utils {
         // instantSlasher;
         // socketRegistry;
 
+        ISlashingRegistryCoordinatorTypes.OperatorSetParam memory quorumOperatorSetParam = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
+            maxOperatorCount: 10_000,
+            kickBIPsOfOperatorStake: 15_000,
+            kickBIPsOfTotalStake: 100
+        });
+        registryCoordinator.createSlashableStakeQuorum(quorumOperatorSetParam, 100, quorumStrategyParams, 0);
+
         /*
             This parameters should be used with some slashing registry coordinator method:
 
