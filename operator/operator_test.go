@@ -27,7 +27,7 @@ func TestOperator(t *testing.T) {
 	const taskIndex = 1
 
 	t.Run("ProcessNewTaskCreatedLog", func(t *testing.T) {
-		var numberToBeSquared = big.NewInt(3)
+		numberToBeSquared := big.NewInt(3)
 		newTaskCreatedLog := &cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated{
 			TaskIndex: taskIndex,
 			Task: cstaskmanager.IIncredibleSquaringTaskManagerTask{
@@ -48,7 +48,7 @@ func TestOperator(t *testing.T) {
 	})
 
 	t.Run("Start", func(t *testing.T) {
-		var numberToBeSquared = big.NewInt(3)
+		numberToBeSquared := big.NewInt(3)
 
 		// new task event
 		newTaskCreatedEvent := &cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated{
@@ -106,5 +106,4 @@ func TestOperator(t *testing.T) {
 
 		cancel()
 	})
-
 }

@@ -36,8 +36,10 @@ import (
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
-const AVS_NAME = "incredible-squaring"
-const SEM_VER = "0.0.1"
+const (
+	AVS_NAME = "incredible-squaring"
+	SEM_VER  = "0.0.1"
+)
 
 type Operator struct {
 	config    types.NodeConfig
@@ -253,7 +255,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	)
 
 	return operator, nil
-
 }
 
 func (o *Operator) Start(ctx context.Context) error {
@@ -313,16 +314,16 @@ func (o *Operator) Start(ctx context.Context) error {
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("Received new task",
-		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
+		"fileHash", newTaskCreatedLog.Task.FileHash,
 		"taskIndex", newTaskCreatedLog.TaskIndex,
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		NumberSquared:      numberSquared,
+		Providers:          make([]common.Address, 0),
+		Scores:             make([]*big.Int, 0),
 	}
 	return taskResponse
 }

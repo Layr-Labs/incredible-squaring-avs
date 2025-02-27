@@ -7,10 +7,7 @@ import "@eigenlayer/contracts/permissions/Pausable.sol";
 import "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {
-    BLSSignatureChecker,
-    IRegistryCoordinator
-} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
+import {BLSSignatureChecker, IRegistryCoordinator} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IIncredibleSquaringTaskManager.sol";
@@ -61,47 +58,39 @@ contract IncredibleSquaringTaskManager is
         _;
     }
 
-    constructor(
-        IRegistryCoordinator _registryCoordinator,
-        uint32 _taskResponseWindowBlock
-    ) BLSSignatureChecker(_registryCoordinator) {
+    constructor(IRegistryCoordinator _registryCoordinator, uint32 _taskResponseWindowBlock)
+        BLSSignatureChecker(_registryCoordinator)
+    {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
     }
 
-    function initialize(
-        IPauserRegistry _pauserRegistry,
-        address initialOwner,
-        address _aggregator,
-        address _generator
-    ) public initializer {
+    function initialize(IPauserRegistry _pauserRegistry, address initialOwner, address _aggregator, address _generator)
+        public
+        initializer
+    {
         _initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
         _setAggregator(_aggregator);
         _setGenerator(_generator);
     }
 
-    function setGenerator(
-        address newGenerator
-    ) external onlyOwner {
+    function setGenerator(address newGenerator) external onlyOwner {
         _setGenerator(newGenerator);
     }
 
-    function setAggregator(
-        address newAggregator
-    ) external onlyOwner {
+    function setAggregator(address newAggregator) external onlyOwner {
         _setAggregator(newAggregator);
     }
 
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
-    function createNewTask(
-        uint256 numberToBeSquared,
-        uint32 quorumThresholdPercentage,
-        bytes calldata quorumNumbers
-    ) external onlyTaskGenerator {
+    function createNewTask(bytes32 fileHash, uint32 quorumThresholdPercentage, bytes calldata quorumNumbers)
+        external
+        onlyTaskGenerator
+    {
         // create a new task struct
         Task memory newTask;
-        newTask.numberToBeSquared = numberToBeSquared;
+        newTask.fileHash = fileHash;
         newTask.taskCreatedBlock = uint32(block.number);
         newTask.quorumThresholdPercentage = quorumThresholdPercentage;
         newTask.quorumNumbers = quorumNumbers;
@@ -156,11 +145,9 @@ contract IncredibleSquaringTaskManager is
             );
         }
 
-        TaskResponseMetadata memory taskResponseMetadata =
-            TaskResponseMetadata(uint32(block.number), hashOfNonSigners);
+        TaskResponseMetadata memory taskResponseMetadata = TaskResponseMetadata(uint32(block.number), hashOfNonSigners);
         // updating the storage with task response
-        allTaskResponses[taskResponse.referenceTaskIndex] =
-            keccak256(abi.encode(taskResponse, taskResponseMetadata));
+        allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(abi.encode(taskResponse, taskResponseMetadata));
 
         // emitting event
         emit TaskResponded(taskResponse, taskResponseMetadata);
@@ -180,14 +167,11 @@ contract IncredibleSquaringTaskManager is
         BN254.G1Point[] memory pubkeysOfNonSigningOperators
     ) external {
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
-        uint256 numberToBeSquared = task.numberToBeSquared;
+        bytes32 fileHash = task.fileHash;
         // some logical checks
+        require(allTaskResponses[referenceTaskIndex] != bytes32(0), "Task hasn't been responded to yet");
         require(
-            allTaskResponses[referenceTaskIndex] != bytes32(0), "Task hasn't been responded to yet"
-        );
-        require(
-            allTaskResponses[referenceTaskIndex]
-                == keccak256(abi.encode(taskResponse, taskResponseMetadata)),
+            allTaskResponses[referenceTaskIndex] == keccak256(abi.encode(taskResponse, taskResponseMetadata)),
             "Task response does not match the one recorded in the contract"
         );
         require(
@@ -196,14 +180,15 @@ contract IncredibleSquaringTaskManager is
         );
 
         require(
-            uint32(block.number)
-                <= taskResponseMetadata.taskRespondedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
+            uint32(block.number) <= taskResponseMetadata.taskRespondedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
             "The challenge period for this task has already expired."
         );
 
         // logic for checking whether challenge is valid or not
-        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
-        bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
+        // uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
+        // bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
+        // TODO: validate scores
+        bool isResponseCorrect = true;
 
         // if response was correct, no slashing happens so we return
         if (isResponseCorrect == true) {
@@ -212,8 +197,7 @@ contract IncredibleSquaringTaskManager is
         }
 
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
-        bytes32[] memory hashesOfPubkeysOfNonSigningOperators =
-            new bytes32[](pubkeysOfNonSigningOperators.length);
+        bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](pubkeysOfNonSigningOperators.length);
         for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
             hashesOfPubkeysOfNonSigningOperators[i] = pubkeysOfNonSigningOperators[i].hashG1Point();
         }
@@ -231,11 +215,10 @@ contract IncredibleSquaringTaskManager is
         );
 
         // get the address of operators who didn't sign
-        address[] memory addressesOfNonSigningOperators =
-            new address[](pubkeysOfNonSigningOperators.length);
+        address[] memory addressesOfNonSigningOperators = new address[](pubkeysOfNonSigningOperators.length);
         for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addressesOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
-                .pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
+            addressesOfNonSigningOperators[i] =
+                BLSApkRegistry(address(blsApkRegistry)).pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
 
         // @dev the below code is commented out for the upcoming M2 release
@@ -306,17 +289,13 @@ contract IncredibleSquaringTaskManager is
         return TASK_RESPONSE_WINDOW_BLOCK;
     }
 
-    function _setGenerator(
-        address newGenerator
-    ) internal {
+    function _setGenerator(address newGenerator) internal {
         address oldGenerator = generator;
         generator = newGenerator;
         emit GeneratorUpdated(oldGenerator, newGenerator);
     }
 
-    function _setAggregator(
-        address newAggregator
-    ) internal {
+    function _setAggregator(address newAggregator) internal {
         address oldAggregator = aggregator;
         aggregator = newAggregator;
         emit AggregatorUpdated(oldAggregator, newAggregator);
