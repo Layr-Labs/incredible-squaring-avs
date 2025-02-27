@@ -32,13 +32,14 @@ func BuildAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error)
 	return BuildAvsSubscriber(
 		config.IncredibleSquaringRegistryCoordinatorAddr,
 		config.OperatorStateRetrieverAddr,
+		config.ServiceManagerAddr,
 		&config.EthWsClient,
 		config.Logger,
 	)
 }
 
-func BuildAvsSubscriber(registryCoordinatorAddr, blsOperatorStateRetrieverAddr gethcommon.Address, ethclient sdkcommon.EthClientInterface, logger sdklogging.Logger) (*AvsSubscriber, error) {
-	avsContractBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, blsOperatorStateRetrieverAddr, ethclient, logger)
+func BuildAvsSubscriber(registryCoordinatorAddr, blsOperatorStateRetrieverAddr, serviceManagerAddr gethcommon.Address, ethclient sdkcommon.EthClientInterface, logger sdklogging.Logger) (*AvsSubscriber, error) {
+	avsContractBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, blsOperatorStateRetrieverAddr, serviceManagerAddr, ethclient, logger)
 	if err != nil {
 		logger.Errorf("Failed to create contract bindings", "err", err)
 		return nil, err

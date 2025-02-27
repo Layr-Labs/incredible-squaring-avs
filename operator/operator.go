@@ -175,7 +175,8 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRpcClient, logger,
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress), ethRpcClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
@@ -185,13 +186,15 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		ethRpcClient, logger)
 	if err != nil {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
 	}
 	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, logger,
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress), ethWsClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsSubscriber", "err", err)

@@ -36,6 +36,7 @@ type Config struct {
 	EthWsClient                               ethclient.Client
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
+	ServiceManagerAddr                        common.Address
 	AggregatorServerIpPortAddr                string
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
@@ -60,6 +61,7 @@ type IncredibleSquaringDeploymentRaw struct {
 type IncredibleSquaringContractsRaw struct {
 	RegistryCoordinatorAddr    string `json:"registryCoordinator"`
 	OperatorStateRetrieverAddr string `json:"operatorStateRetriever"`
+	ServiceManagerAddr         string `json:"credibleSquaringServiceManager"`
 }
 
 // NewConfig parses config file to read from from flags or environment variables
@@ -138,6 +140,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		EthWsClient:                *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
+		ServiceManagerAddr:                        common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.ServiceManagerAddr),
 		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
 		SignerFn:                                  signerV2,
