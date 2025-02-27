@@ -102,12 +102,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
         erc20Mock = ERC20Mock(address(erc20MockStrategy.underlyingToken()));
 
         vm.startBroadcast();
-        _deployMiddlewareDeployLibContracts(incredibleSquaringCommunityMultisig, delegationManager, avsDirectory);
+        _deployMiddlewareDeployLibContracts(incredibleSquaringCommunityMultisig, delegationManager, avsDirectory, incredibleSquaringPauser);
         _deployIncredibleSquaringContracts(
             avsDirectory,
             rewardsCoordinator,
-            incredibleSquaringCommunityMultisig,
-            incredibleSquaringPauser
+            incredibleSquaringCommunityMultisig
         );
         vm.stopBroadcast();
     }
@@ -116,16 +115,57 @@ contract IncredibleSquaringDeployer is Script, Utils {
     function _deployMiddlewareDeployLibContracts(
         address incredibleSquaringCommunityMultisig,
         IDelegationManager delegationManager,
-        IAVSDirectory avsDirectory
+        IAVSDirectory avsDirectory,
+        address incredibleSquaringPauser
     ) internal {
+        // deploy proxy admin for ability to upgrade proxy contracts
+        incredibleSquaringProxyAdmin = new ProxyAdmin();
+
+        // deploy pauser registry
+        {
+            address[] memory pausers = new address[](2);
+            pausers[0] = incredibleSquaringPauser;
+            pausers[1] = incredibleSquaringCommunityMultisig;
+            incredibleSquaringPauserReg =
+                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
+        }
+
+        EmptyContract emptyContract = new EmptyContract();
+
+        // This is a proxy contract that will point to the implementation, but SM contract is not deployed yet
+        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
+        );
+
         permissionController = new PermissionController();
 
-        allocationManager = new AllocationManager( 
+        AllocationManager allocationManagerImpl = new AllocationManager( 
             delegationManager,
             incredibleSquaringPauserReg,
             permissionController,
             uint32(0),
             uint32(0)
+        );
+        allocationManager = AllocationManager(
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
+        );
+        bytes memory upgradeCall = abi.encodeCall(
+            AllocationManager.initialize,
+            (
+                address(this),
+                0
+            )
+        );
+        incredibleSquaringProxyAdmin.upgradeAndCall(
+            TransparentUpgradeableProxy(payable(address(allocationManager))), address(allocationManagerImpl), upgradeCall
         );
 
         MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
@@ -206,21 +246,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
     function _deployIncredibleSquaringContracts(
         IAVSDirectory avsDirectory,
         IRewardsCoordinator rewardsCoordinator,
-        address incredibleSquaringCommunityMultisig,
-        address incredibleSquaringPauser
+        address incredibleSquaringCommunityMultisig
     ) internal {
-        // deploy proxy admin for ability to upgrade proxy contracts
-        incredibleSquaringProxyAdmin = new ProxyAdmin();
-
-        // deploy pauser registry
-        {
-            address[] memory pausers = new address[](2);
-            pausers[0] = incredibleSquaringPauser;
-            pausers[1] = incredibleSquaringCommunityMultisig;
-            incredibleSquaringPauserReg =
-                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
-        }
-
         EmptyContract emptyContract = new EmptyContract();
 
         // This is a proxy contract that will point to the implementation, but SM contract is not deployed yet
