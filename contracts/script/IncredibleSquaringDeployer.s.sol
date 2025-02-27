@@ -120,48 +120,14 @@ contract IncredibleSquaringDeployer is Script, Utils {
         vm.stopBroadcast();
     }
 
-    function _deployIncredibleSquaringContracts(
+    // Deploys indexRegistry, stakeRegistry, blsApkRegistry and registryCoordinator and sets them as their attribute equivalents
+    function deployMiddlewareDeployLibContracts(
+        address incredibleSquaringCommunityMultisig,
+        IStrategy strat,
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
-        IRewardsCoordinator rewardsCoordinator,
-        IStrategy strat,
-        address incredibleSquaringCommunityMultisig,
-        address incredibleSquaringPauser
+        AllocationManager allocationManager
     ) internal {
-        // deploy proxy admin for ability to upgrade proxy contracts
-        incredibleSquaringProxyAdmin = new ProxyAdmin();
-
-        // deploy pauser registry
-        {
-            address[] memory pausers = new address[](2);
-            pausers[0] = incredibleSquaringPauser;
-            pausers[1] = incredibleSquaringCommunityMultisig;
-            incredibleSquaringPauserReg =
-                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
-        }
-
-        EmptyContract emptyContract = new EmptyContract();
-
-        // This is a proxy contract that will point to the implementation, but SM contract is not deployed yet
-        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
-                )
-            )
-        );
-
-        // Maybe we should receive this as parameter
-        PermissionController permissionController = new PermissionController();
-
-        AllocationManager allocationManager = new AllocationManager( 
-            delegationManager,
-            incredibleSquaringPauserReg,
-            permissionController,
-            uint32(0),
-            uint32(0)
-            );
-
         MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
             initialOwner: incredibleSquaringCommunityMultisig,
             slasher: incredibleSquaringCommunityMultisig // The address authorized to send slashing requests.
@@ -235,6 +201,51 @@ contract IncredibleSquaringDeployer is Script, Utils {
             kickBIPsOfTotalStake: 100
         });
         registryCoordinator.createSlashableStakeQuorum(quorumOperatorSetParam, 100, quorumStrategyParams, 0);
+    }
+
+    function _deployIncredibleSquaringContracts(
+        IDelegationManager delegationManager,
+        IAVSDirectory avsDirectory,
+        IRewardsCoordinator rewardsCoordinator,
+        IStrategy strat,
+        address incredibleSquaringCommunityMultisig,
+        address incredibleSquaringPauser
+    ) internal {
+        // deploy proxy admin for ability to upgrade proxy contracts
+        incredibleSquaringProxyAdmin = new ProxyAdmin();
+
+        // deploy pauser registry
+        {
+            address[] memory pausers = new address[](2);
+            pausers[0] = incredibleSquaringPauser;
+            pausers[1] = incredibleSquaringCommunityMultisig;
+            incredibleSquaringPauserReg =
+                new PauserRegistry(pausers, incredibleSquaringCommunityMultisig);
+        }
+
+        EmptyContract emptyContract = new EmptyContract();
+
+        // This is a proxy contract that will point to the implementation, but SM contract is not deployed yet
+        incredibleSquaringServiceManager = IncredibleSquaringServiceManager(
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
+        );
+
+        // Maybe we should receive this as parameter
+        PermissionController permissionController = new PermissionController();
+
+        AllocationManager allocationManager = new AllocationManager( 
+            delegationManager,
+            incredibleSquaringPauserReg,
+            permissionController,
+            uint32(0),
+            uint32(0)
+            );
+
+        deployMiddlewareDeployLibContracts(incredibleSquaringCommunityMultisig, strat, delegationManager, avsDirectory, allocationManager);
 
         /*
             This parameters should be used with some slashing registry coordinator method:
