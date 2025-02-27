@@ -51,15 +51,12 @@ import "forge-std/console.sol";
 // forge script script/IncredibleSquaringDeployer.s.sol:IncredibleSquaringDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
 contract IncredibleSquaringDeployer is Script, Utils {
     // DEPLOYMENT CONSTANTS
-    uint256 public constant QUORUM_THRESHOLD_PERCENTAGE = 100;
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
-    uint32 public constant TASK_DURATION_BLOCKS = 0;
     // TODO: right now hardcoding these (this address is anvil's default address 9)
     address public constant AGGREGATOR_ADDR = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
     address public constant TASK_GENERATOR_ADDR = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
 
     // ERC20 and Strategy: we need to deploy this ERC20, create a strategy for it, and whitelist this strategy in the strategymanager
-
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
@@ -68,16 +65,12 @@ contract IncredibleSquaringDeployer is Script, Utils {
     PauserRegistry public incredibleSquaringPauserReg;
 
     SlashingRegistryCoordinator public registryCoordinator;
-    ISlashingRegistryCoordinator public registryCoordinatorImplementation;
-
     IBLSApkRegistry public blsApkRegistry;
-    IBLSApkRegistry public blsApkRegistryImplementation;
-
     IIndexRegistry public indexRegistry;
-    IIndexRegistry public indexRegistryImplementation;
-
     IStakeRegistry public stakeRegistry;
-    IStakeRegistry public stakeRegistryImplementation;
+
+    PermissionController public permissionController;
+    AllocationManager public allocationManager;
 
     OperatorStateRetriever public operatorStateRetriever;
 
@@ -109,11 +102,10 @@ contract IncredibleSquaringDeployer is Script, Utils {
         erc20Mock = ERC20Mock(address(erc20MockStrategy.underlyingToken()));
 
         vm.startBroadcast();
+        _deployMiddlewareDeployLibContracts(incredibleSquaringCommunityMultisig, delegationManager, avsDirectory);
         _deployIncredibleSquaringContracts(
-            delegationManager,
             avsDirectory,
             rewardsCoordinator,
-            erc20MockStrategy,
             incredibleSquaringCommunityMultisig,
             incredibleSquaringPauser
         );
@@ -121,13 +113,21 @@ contract IncredibleSquaringDeployer is Script, Utils {
     }
 
     // Deploys indexRegistry, stakeRegistry, blsApkRegistry and registryCoordinator and sets them as their attribute equivalents
-    function deployMiddlewareDeployLibContracts(
+    function _deployMiddlewareDeployLibContracts(
         address incredibleSquaringCommunityMultisig,
-        IStrategy strat,
         IDelegationManager delegationManager,
-        IAVSDirectory avsDirectory,
-        AllocationManager allocationManager
+        IAVSDirectory avsDirectory
     ) internal {
+        permissionController = new PermissionController();
+
+        allocationManager = new AllocationManager( 
+            delegationManager,
+            incredibleSquaringPauserReg,
+            permissionController,
+            uint32(0),
+            uint32(0)
+        );
+
         MiddlewareDeployLib.InstantSlasherConfig memory instantSlasherConfig = MiddlewareDeployLib.InstantSlasherConfig({ 
             initialOwner: incredibleSquaringCommunityMultisig,
             slasher: incredibleSquaringCommunityMultisig // The address authorized to send slashing requests.
@@ -152,7 +152,7 @@ contract IncredibleSquaringDeployer is Script, Utils {
         
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
-        IStrategy[1] memory deployedStrategyArray = [strat];
+        IStrategy[1] memory deployedStrategyArray = [IStrategy(erc20MockStrategy)];
         uint256 numStrategies = deployedStrategyArray.length;
 
         IStakeRegistryTypes.StrategyParams[] memory quorumStrategyParams =
@@ -204,10 +204,8 @@ contract IncredibleSquaringDeployer is Script, Utils {
     }
 
     function _deployIncredibleSquaringContracts(
-        IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IRewardsCoordinator rewardsCoordinator,
-        IStrategy strat,
         address incredibleSquaringCommunityMultisig,
         address incredibleSquaringPauser
     ) internal {
@@ -233,62 +231,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
-
-        // Maybe we should receive this as parameter
-        PermissionController permissionController = new PermissionController();
-
-        AllocationManager allocationManager = new AllocationManager( 
-            delegationManager,
-            incredibleSquaringPauserReg,
-            permissionController,
-            uint32(0),
-            uint32(0)
-            );
-
-        deployMiddlewareDeployLibContracts(incredibleSquaringCommunityMultisig, strat, delegationManager, avsDirectory, allocationManager);
-
-        /*
-            This parameters should be used with some slashing registry coordinator method:
-
-            // Adding this as a temporary fix to make the rest of the script work with a single strategy
-            // since it was originally written to work with an array of strategies
-            IStrategy[1] memory deployedStrategyArray = [strat];
-            uint256 numStrategies = deployedStrategyArray.length;
-
-            uint256 numQuorums = 1;
-            // for each quorum to set up, we need to define
-            // QuorumOperatorSetParam, minimumStakeForQuorum, and strategyParams
-            ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
-                new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
-            for (uint256 i = 0; i < numQuorums; i++) {
-                // hard code these for now
-                quorumsOperatorSetParams[i] = ISlashingRegistryCoordinatorTypes.OperatorSetParam({
-                    maxOperatorCount: 10_000,
-                    kickBIPsOfOperatorStake: 15_000,
-                    kickBIPsOfTotalStake: 100
-                });
-            }
-            // set to 0 for every quorum
-            uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
-            IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
-                new IStakeRegistryTypes.StrategyParams[][](numQuorums);
-            for (uint256 i = 0; i < numQuorums; i++) {
-                quorumsStrategyParams[i] = new IStakeRegistryTypes.StrategyParams[](numStrategies);
-                for (uint256 j = 0; j < numStrategies; j++) {
-                    quorumsStrategyParams[i][j] = IStakeRegistryTypes.StrategyParams({
-                        strategy: deployedStrategyArray[j],
-                        // setting this to 1 ether since the divisor is also 1 ether
-                        // therefore this allows an operator to register with even just 1 token
-                        // see https://github.com/Layr-Labs/eigenlayer-middleware/blob/m2-mainnet/src/StakeRegistry.sol#L484
-                        //    weight += uint96(sharesAmount * strategyAndMultiplier.multiplier / WEIGHTING_DIVISOR);
-                        multiplier: 1 ether
-                    });
-                }
-            }
-                    quorumsOperatorSetParams,
-                    quorumsMinimumStake,
-                    quorumsStrategyParams
-         */
 
         // hard-coded inputs
 
@@ -336,7 +278,11 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 TASK_GENERATOR_ADDR
             )
         );
+    }
 
+
+    function _serializeDataIntoJSON(
+    ) internal {
         // WRITE JSON DATA
         string memory parent_object = "parent object";
 
@@ -364,11 +310,6 @@ contract IncredibleSquaringDeployer is Script, Utils {
             address(incredibleSquaringTaskManagerImplementation)
         );
         vm.serializeAddress(deployed_addresses, "registryCoordinator", address(registryCoordinator));
-        // vm.serializeAddress(
-        //     deployed_addresses,
-        //     "registryCoordinatorImplementation",
-        //     address(registryCoordinatorImplementation)
-        // );
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses, "operatorStateRetriever", address(operatorStateRetriever)
         );
