@@ -2,8 +2,7 @@
 
 set -e -o nounset
 
-# pinning at old foundry commit because of https://github.com/foundry-rs/foundry/issues/7502
-FOUNDRY_IMAGE=ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+FOUNDRY_IMAGE=ghcr.io/foundry-rs/foundry:stable
 
 parent_path=$(
     cd "$(dirname "${BASH_SOURCE[0]}")"

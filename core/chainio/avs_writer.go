@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
@@ -19,8 +18,6 @@ import (
 )
 
 type AvsWriterer interface {
-	//avsregistry.ChainWriter
-
 	SendNewTaskNumberToSquare(
 		ctx context.Context,
 		numToSquare *big.Int,
@@ -37,7 +34,7 @@ type AvsWriterer interface {
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
 	) (*types.Receipt, error)
 }
 
@@ -46,22 +43,28 @@ type AvsWriter struct {
 	AvsContractBindings *AvsManagersBindings
 	logger              logging.Logger
 	TxMgr               txmgr.TxManager
-	client              eth.HttpBackend
 }
 
 var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
-	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, &c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.ServiceManagerAddr, &c.EthHttpClient, c.Logger)
 }
 
-func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
-	avsServiceBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr, serviceManagerAddr gethcommon.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
+	avsServiceBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, serviceManagerAddr, ethHttpClient, logger)
 	if err != nil {
 		logger.Error("Failed to create contract bindings", "err", err)
 		return nil, err
 	}
-	avsRegistryWriter, err := avsregistry.BuildAvsRegistryChainWriter(registryCoordinatorAddr, operatorStateRetrieverAddr, logger, ethHttpClient, txMgr)
+	config := avsregistry.Config{
+		RegistryCoordinatorAddress:    registryCoordinatorAddr,
+		OperatorStateRetrieverAddress: operatorStateRetrieverAddr,
+		ServiceManagerAddress:         avsServiceBindings.ServiceManagerAddr,
+
+		DontUseAllocationManager: true,
+	}
+	avsRegistryWriter, err := avsregistry.NewWriterFromConfig(config, ethHttpClient, txMgr, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +107,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 func (w *AvsWriter) SendAggregatedResponse(
 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {

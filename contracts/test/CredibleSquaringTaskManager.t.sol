@@ -21,7 +21,9 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
         _setUpBLSMockAVSDeployer();
 
         tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)), TASK_RESPONSE_WINDOW_BLOCK
+            incsqsm.ISlashingRegistryCoordinator(address(registryCoordinator)), 
+            incsqsm.IPauserRegistry(address(pauserRegistry)),
+            TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.

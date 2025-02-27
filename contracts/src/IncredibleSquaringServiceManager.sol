@@ -4,6 +4,10 @@ pragma solidity ^0.8.9;
 import "@eigenlayer/contracts/libraries/BytesLib.sol";
 import "./IIncredibleSquaringTaskManager.sol";
 import "@eigenlayer-middleware/src/ServiceManagerBase.sol";
+import "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
+import "@eigenlayer/contracts/interfaces/IPermissionController.sol";
+import "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
+
 
 /**
  * @title Primary entry point for procuring services from IncredibleSquaring.
@@ -26,11 +30,13 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     constructor(
         IAVSDirectory _avsDirectory,
         IRewardsCoordinator _rewardsCoordinator,
-        IRegistryCoordinator _registryCoordinator,
+        ISlashingRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
-        IIncredibleSquaringTaskManager _incredibleSquaringTaskManager
+        IIncredibleSquaringTaskManager _incredibleSquaringTaskManager,
+        IPermissionController _permissionController,
+        IAllocationManager _allocationManager
     )
-        ServiceManagerBase(_avsDirectory, _rewardsCoordinator, _registryCoordinator, _stakeRegistry)
+        ServiceManagerBase(_avsDirectory, _rewardsCoordinator, _registryCoordinator, _stakeRegistry, _permissionController, _allocationManager)
     {
         incredibleSquaringTaskManager = _incredibleSquaringTaskManager;
     }

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -52,8 +53,9 @@ func TestProcessSignedTaskResponse(t *testing.T) {
 	// TODO(samlaf): is this the right way to test writing to external service?
 	// or is there some wisdom to "don't mock 3rd party code"?
 	// see https://hynek.me/articles/what-to-mock-in-5-mins/
-	mockBlsAggServ.EXPECT().ProcessNewSignature(context.Background(), TASK_INDEX, signedTaskResponse.TaskResponse,
+	taskSignature := blsagg.NewTaskSignature(TASK_INDEX, signedTaskResponse.TaskResponse,
 		&signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId)
+	mockBlsAggServ.EXPECT().ProcessNewSignature(context.Background(), taskSignature)
 	err = aggregator.ProcessSignedTaskResponse(signedTaskResponse, nil)
 	assert.Nil(t, err)
 }

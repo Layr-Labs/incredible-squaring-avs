@@ -6,11 +6,9 @@ import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/permissions/Pausable.sol";
 import "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {
-    BLSSignatureChecker,
-    IRegistryCoordinator
-} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
+import {SlashingRegistryCoordinator} from "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
+import "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
+import "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
 import "./IIncredibleSquaringTaskManager.sol";
@@ -62,19 +60,18 @@ contract IncredibleSquaringTaskManager is
     }
 
     constructor(
-        IRegistryCoordinator _registryCoordinator,
+        ISlashingRegistryCoordinator _registryCoordinator,
+        IPauserRegistry _pauserRegistry,
         uint32 _taskResponseWindowBlock
-    ) BLSSignatureChecker(_registryCoordinator) {
+    ) BLSSignatureChecker(_registryCoordinator) Pausable(_pauserRegistry)  {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
     }
 
     function initialize(
-        IPauserRegistry _pauserRegistry,
         address initialOwner,
         address _aggregator,
         address _generator
     ) public initializer {
-        _initializePauser(_pauserRegistry, UNPAUSE_ALL);
         _transferOwnership(initialOwner);
         _setAggregator(_aggregator);
         _setGenerator(_generator);
