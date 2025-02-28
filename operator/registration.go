@@ -50,7 +50,7 @@ func (o *Operator) registerOperatorOnStartup(
 	}
 	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterForOperatorSets(registryAddr,avsAddress,operatorSetsIds,waitForReceipt,blsKeyPair,socket,operatorEcdsaPrivateKey)
+	err = o.RegisterForOperatorSets(registryAddr, avsAddress, operatorSetsIds, waitForReceipt, blsKeyPair, socket, operatorEcdsaPrivateKey)
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}
@@ -71,8 +71,8 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	o.logger.Info("strategy");
-	o.logger.Info(strategyAddr.String());
+	o.logger.Info("strategy")
+	o.logger.Info(strategyAddr.String())
 	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(nil, strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
@@ -121,11 +121,11 @@ func (o *Operator) RegisterForOperatorSets(
 
 	registrationRequest := elcontracts.RegistrationRequest{
 		OperatorAddress: operatorAddress,
-		AVSAddress: avsAddress,
-		OperatorSetIds: operatorSetIds,
-		WaitForReceipt: waitForReceipt,
-		BlsKeyPair: &blsKeyPair,
-		Socket: socket,
+		AVSAddress:      avsAddress,
+		OperatorSetIds:  operatorSetIds,
+		WaitForReceipt:  waitForReceipt,
+		BlsKeyPair:      &blsKeyPair,
+		Socket:          socket,
 	}
 	// hardcode these things for now
 	// quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}

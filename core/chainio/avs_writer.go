@@ -31,7 +31,7 @@ type AvsWriterer interface {
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
-	RaiseChallenge(
+		RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
@@ -137,6 +137,8 @@ func (w *AvsWriter) SendAggregatedResponse(
 		w.logger.Errorf("Error submitting respondToTask tx")
 		return nil, err
 	}
+	w.logger.Info("tx hash :respond to task")
+	w.logger.Info(receipt.TxHash.String())
 	return receipt, nil
 }
 

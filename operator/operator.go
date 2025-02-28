@@ -150,15 +150,15 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	chainioConfig := clients.BuildAllConfig{
-		EthHttpUrl:                 c.EthRpcUrl,
-		EthWsUrl:                   c.EthWsUrl,
-		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
-		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
-		ServiceManagerAddress:      c.ServiceManagerAddress,
-		RewardsCoordinatorAddress: 	c.RewardsCoordinatorAddress,
+		EthHttpUrl:                  c.EthRpcUrl,
+		EthWsUrl:                    c.EthWsUrl,
+		RegistryCoordinatorAddr:     c.AVSRegistryCoordinatorAddress,
+		OperatorStateRetrieverAddr:  c.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:       c.ServiceManagerAddress,
+		RewardsCoordinatorAddress:   c.RewardsCoordinatorAddress,
 		PermissionControllerAddress: c.PermissionControllerAddress,
-		AvsName:                    AVS_NAME,
-		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
+		AvsName:                     AVS_NAME,
+		PromMetricsIpPortAddress:    c.EigenMetricsIpPortAddress,
 	}
 	operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
 		c.EcdsaPrivateKeyStorePath,
@@ -167,7 +167,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.Info(c.AVSRegistryCoordinatorAddress);
+	logger.Info(c.AVSRegistryCoordinatorAddress)
 	sdkClients, err := clients.BuildAll(chainioConfig, operatorEcdsaPrivateKey, logger)
 	if err != nil {
 		panic(err)
@@ -177,17 +177,17 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		panic(err)
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, common.HexToAddress(c.OperatorAddress))
-	
+
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress),ethWsClient, ethRpcClient, logger,
+		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, ethRpcClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
 		return nil, err
 	}
-	
-	logger.Info("check");
+
+	logger.Info("check")
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(c.OperatorStateRetrieverAddress),
@@ -242,14 +242,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		operatorId:                         [32]byte{0}, // this is set below
 
 	}
-	operatorSetsIds:= []uint32{0}
-	waitForReceipt:= true
-	socket:= "socket"
+	operatorSetsIds := []uint32{0}
+	waitForReceipt := true
+	socket := "socket"
 	operator.SetAppointee()
 	operator.CreateTotalDelegatedStakeQuorum()
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr),common.HexToAddress(c.AVSRegistryCoordinatorAddress),common.HexToAddress(c.ServiceManagerAddress),operatorSetsIds,waitForReceipt,*operator.blsKeypair,socket)
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.ServiceManagerAddress), operatorSetsIds, waitForReceipt, *operator.blsKeypair, socket)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
@@ -333,7 +333,8 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+	// numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+	numberSquared := big.NewInt(24)
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		NumberSquared:      numberSquared,
