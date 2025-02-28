@@ -255,6 +255,7 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 	for _, quorumNum := range newTask.QuorumNumbers {
 		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
 	}
-	agg.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
+	taskMetadata := blsagg.NewTaskMetadata(taskIndex,newTask.TaskCreatedBlock,quorumNums,quorumThresholdPercentages,taskTimeToExpiry)
+	agg.blsAggregationService.InitializeNewTask(taskMetadata)
 	return nil
 }

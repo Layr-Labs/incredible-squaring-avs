@@ -12,10 +12,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	eigenSdkTypes "github.com/Layr-Labs/eigensdk-go/types"
 
@@ -25,6 +26,12 @@ import (
 func (o *Operator) registerOperatorOnStartup(
 	operatorEcdsaPrivateKey *ecdsa.PrivateKey,
 	mockTokenStrategyAddr common.Address,
+	registryAddr common.Address,
+	avsAddress common.Address,
+	operatorSetsIds []uint32,
+	waitForReceipt bool,
+	blsKeyPair bls.KeyPair,
+	socket string,
 ) {
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
@@ -42,7 +49,7 @@ func (o *Operator) registerOperatorOnStartup(
 	}
 	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterOperatorWithAvs(operatorEcdsaPrivateKey)
+	err = o.RegisterForOperatorSets(registryAddr,avsAddress,operatorSetsIds,waitForReceipt,blsKeyPair,socket,operatorEcdsaPrivateKey)
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}
@@ -98,36 +105,52 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 }
 
 // Registration specific functions
-func (o *Operator) RegisterOperatorWithAvs(
+func (o *Operator) RegisterForOperatorSets(
+	registryAddr common.Address,
+	avsAddress common.Address,
+	operatorSetIds []uint32,
+	waitForReceipt bool,
+	blsKeyPair bls.KeyPair,
+	socket string,
 	operatorEcdsaKeyPair *ecdsa.PrivateKey,
 ) error {
+	operatorAddress := crypto.PubkeyToAddress(operatorEcdsaKeyPair.PublicKey)
+
+	registrationRequest := elcontracts.RegistrationRequest{
+		OperatorAddress: operatorAddress,
+		AVSAddress: avsAddress,
+		OperatorSetIds: operatorSetIds,
+		WaitForReceipt: waitForReceipt,
+		BlsKeyPair: &blsKeyPair,
+		Socket: socket,
+	}
 	// hardcode these things for now
-	quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}
-	socket := "Not Needed"
-	operatorToAvsRegistrationSigSalt := [32]byte{123}
-	curBlockNum, err := o.ethClient.BlockNumber(context.Background())
-	if err != nil {
-		o.logger.Errorf("Unable to get current block number")
-		return err
-	}
-	curBlock, err := o.ethClient.HeaderByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
-	if err != nil {
-		o.logger.Errorf("Unable to get current block")
-		return err
-	}
-	sigValidForSeconds := int64(1_000_000)
-	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time) + sigValidForSeconds)
-	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
+	// quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}
+	// socket := "Not Needed"
+	// operatorToAvsRegistrationSigSalt := [32]byte{123}
+	// curBlockNum, err := o.ethClient.BlockNumber(context.Background())
+	// if err != nil {
+	// 	o.logger.Errorf("Unable to get current block number")
+	// 	return err
+	// }
+	// curBlock, err := o.ethClient.HeaderByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
+	// if err != nil {
+	// 	o.logger.Errorf("Unable to get current block")
+	// 	return err
+	// }
+	// sigValidForSeconds := int64(1_000_000)
+	// operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time) + sigValidForSeconds)
+	_, err := o.eigenlayerWriter.RegisterForOperatorSets(
 		context.Background(),
-		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-		o.blsKeypair, quorumNumbers, socket, true,
+		registryAddr,
+		registrationRequest,
 	)
 
 	if err != nil {
-		o.logger.Errorf("Unable to register operator with avs registry coordinator")
+		o.logger.Errorf("Unable to register operator with the operator set")
 		return err
 	}
-	o.logger.Infof("Registered operator with avs registry coordinator.")
+	o.logger.Infof("Registered operator with operator set")
 
 	return nil
 }

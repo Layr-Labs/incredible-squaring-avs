@@ -109,6 +109,11 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
+	ethWsClient, err := ethclient.Dial(avsConfig.EthWsUrl)
+		if err != nil {
+			logger.Errorf("Cannot create ws ethclient", "err", err)
+			return 
+		}
 	chainID, err := ethHttpClient.ChainID(goCtx)
 	if err != nil {
 		fmt.Println("can't get chain id")
@@ -140,6 +145,7 @@ func plugin(ctx *cli.Context) {
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
+		ethWsClient,
 		ethHttpClient,
 		logger,
 	)
@@ -184,7 +190,7 @@ func plugin(ctx *cli.Context) {
 		operatorToAvsRegistrationSigSalt := [32]byte{123}
 		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
 		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
-		r, err := clients.AvsRegistryChainWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
+		r, err := clients.ElChainWriter.RegisterForOperatorSets(
 			goCtx,
 			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
 			blsKeypair, quorumNumbers, socket, true,

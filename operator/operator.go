@@ -139,18 +139,24 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger.Warnf("OPERATOR_ECDSA_KEY_PASSWORD env var not set. using empty string")
 	}
 
+	logger.Info("11")
 	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{
 		KeystorePath: c.EcdsaPrivateKeyStorePath,
 		Password:     ecdsaKeyPassword,
 	}, chainId)
 	if err != nil {
+		logger.Info("55")
 		panic(err)
 	}
+
 	chainioConfig := clients.BuildAllConfig{
 		EthHttpUrl:                 c.EthRpcUrl,
 		EthWsUrl:                   c.EthWsUrl,
 		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:      c.ServiceManagerAddress,
+		RewardsCoordinatorAddress: 	c.RewardsCoordinatorAddress,
+		PermissionControllerAddress: c.PermissionControllerAddress,
 		AvsName:                    AVS_NAME,
 		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
 	}
@@ -161,6 +167,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	if err != nil {
 		return nil, err
 	}
+	logger.Info(c.AVSRegistryCoordinatorAddress);
 	sdkClients, err := clients.BuildAll(chainioConfig, operatorEcdsaPrivateKey, logger)
 	if err != nil {
 		panic(err)
@@ -170,19 +177,21 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		panic(err)
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, common.HexToAddress(c.OperatorAddress))
-
+	
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRpcClient, logger,
+		common.HexToAddress(c.OperatorStateRetrieverAddress),ethWsClient, ethRpcClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
 		return nil, err
 	}
-
+	
+	logger.Info("check");
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		sdkClients.EthWsClient,
 		ethRpcClient, logger)
 	if err != nil {
 		logger.Error("Cannot create AvsReader", "err", err)
@@ -233,9 +242,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		operatorId:                         [32]byte{0}, // this is set below
 
 	}
+	operatorSetsIds:= []uint32{0}
+	waitForReceipt:= true
+	socket:= "socket"
+	operator.SetAppointee()
+	operator.CreateTotalDelegatedStakeQuorum()
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr),common.HexToAddress(c.AVSRegistryCoordinatorAddress),common.HexToAddress(c.ServiceManagerAddress),operatorSetsIds,waitForReceipt,*operator.blsKeypair,socket)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.

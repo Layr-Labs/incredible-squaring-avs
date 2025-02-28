@@ -1,15 +1,18 @@
 # this sets the logger level (true = info, false = debug)
 production: true
 
-operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
+operator_address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 # EigenLayer Slasher contract address
 
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
-operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
+avs_registry_coordinator_address: 0xc351628eb244ec633d5f21fbd6621e1a683b1181
+operator_state_retriever_address: 0xdbc43ba45381e02825b14322cddd15ec4b3164e6
+rewards_coordinator_address: 0x0dcd1bf9a1b36ce34237eeafef220932846bcd82
+permission_controller_address: 0x4ed7c70f96b99c776995fb64377f0d4ab3b0e1c1
+service_manager_address: 0xb7278a61aa25c888815afc32ad3cc52ff24fe575
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545

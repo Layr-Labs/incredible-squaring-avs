@@ -6,13 +6,16 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	sdkavsregistry "github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/Layr-Labs/eigensdk-go/utils"
 
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
-	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
 
@@ -42,18 +45,26 @@ type AvsReader struct {
 //var _ AvsReaderer = (*AvsReader)(nil)
 
 func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
-	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, &c.EthHttpClient, c.Logger)
+	ethWsClient, err := ethclient.Dial(c.EthWsRpcUrl)
+	if err != nil {
+		return nil, utils.WrapError("Failed to create Eth WS client", err)
+	}
+	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
 }
-func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
-	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend,ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
+	serviceManagerAddr := common.HexToAddress("0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575")
+	logger.Info("22")
+	avsManagersBindings, err := NewAvsManagersBindings(serviceManagerAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		return nil, err
 	}
-	avsRegistryReader, err := sdkavsregistry.BuildAvsRegistryChainReader(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+	config:= sdkavsregistry.Config{RegistryCoordinatorAddress: registryCoordinatorAddr,OperatorStateRetrieverAddress:operatorStateRetrieverAddr,DontUseAllocationManager: false,ServiceManagerAddress:serviceManagerAddr }
+
+	chainReader, _, _, err := sdkavsregistry.BuildReadClients(config, ethHttpClient, wsClient, logger)
 	if err != nil {
 		return nil, err
 	}
-	return NewAvsReader(*avsRegistryReader, avsManagersBindings, logger)
+	return NewAvsReader(*chainReader, avsManagersBindings, logger)
 }
 func NewAvsReader(avsRegistryReader sdkavsregistry.ChainReader, avsServiceBindings *AvsManagersBindings, logger logging.Logger) (*AvsReader, error) {
 	return &AvsReader{
