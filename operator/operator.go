@@ -2,9 +2,13 @@ package operator
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"math/big"
+	"net/http"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -310,6 +314,86 @@ func (o *Operator) Start(ctx context.Context) error {
 	}
 }
 
+// QueryLocationsResponse represents the JSON response from the Rust API.
+type QueryLocationsResponse struct {
+	Local   bool             `json:"local"`
+	Nodes   [][2]interface{} `json:"nodes"` // each element is a tuple: [nodeId (hex string), score (float64)]
+	Message string           `json:"message"`
+}
+
+// fetchAndTransformScores calls the /api/v0/query/<fileHash> endpoint,
+// decodes the response, and transforms it into the desired task response type.
+// In case of any network error or processing failure, it returns an empty taskResponse.
+func fetchAndTransformScores(fileHash [32]byte, taskIndex uint32) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
+	// Prepare an empty task response.
+	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		ReferenceTaskIndex: taskIndex,
+		Providers:          make([]common.Address, 0),
+		Scores:             make([]*big.Int, 0),
+	}
+
+	// Convert fileHash ([32]byte) to its hex string representation.
+	hexFileHash := hex.EncodeToString(fileHash[:])
+
+	// Construct the API URL (adjust the base URL as needed)
+	url := fmt.Sprintf("http://localhost:8080/api/v0/query/%s", hexFileHash)
+
+	// Make the HTTP GET request.
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Printf("failed to fetch API: %v", err)
+		return taskResponse
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("unexpected status code: %s", resp.Status)
+		return taskResponse
+	}
+
+	// Read and decode the response body.
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("failed to read response: %v", err)
+		return taskResponse
+	}
+
+	var queryResp QueryLocationsResponse
+	if err := json.Unmarshal(body, &queryResp); err != nil {
+		log.Printf("failed to decode JSON: %v", err)
+		return taskResponse
+	}
+
+	// Iterate over each node tuple and convert the data.
+	for _, node := range queryResp.Nodes {
+		// Extract the nodeId, expected to be a 32-byte hex string.
+		nodeId, ok := node[0].(string)
+		if !ok {
+			log.Printf("unexpected nodeId type: %v", node[0])
+			continue
+		}
+
+		// Extract the score, expected to be a float64.
+		scoreFloat, ok := node[1].(float64)
+		if !ok {
+			log.Printf("unexpected score type: %v", node[1])
+			continue
+		}
+
+		// Convert the nodeId to a common.Address.
+		provider := common.HexToAddress(nodeId)
+
+		// Convert the float64 score to a *big.Int using basis points.
+		scoreInt := big.NewInt(int64(scoreFloat * 10000))
+
+		// Append the converted values.
+		taskResponse.Providers = append(taskResponse.Providers, provider)
+		taskResponse.Scores = append(taskResponse.Scores, scoreInt)
+	}
+
+	return taskResponse
+}
+
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
@@ -322,80 +406,10 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
 
-	// Call the API endpoint to get providers and scores
-	// apiURL := "http://example.com/api/taskproviders" // update with the actual URL
-	// resp, err := http.Get(apiURL)
-	// if err != nil {
-	// 	o.logger.Error("Failed to call API", "error", err)
-	// 	return nil // or handle the error as appropriate
-	// }
-	// defer resp.Body.Close()
-	//
-	// body, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	o.logger.Error("Failed to read API response", "error", err)
-	// 	return nil // or handle the error as appropriate
-	// }
+	taskResponse := fetchAndTransformScores(newTaskCreatedLog.Task.FileHash, newTaskCreatedLog.TaskIndex)
 
-	// TaskProvidersResponse represents the expected JSON response from the API.
-	type TaskProvidersResponse struct {
-		Providers []string `json:"providers"`
-		Scores    []string `json:"scores"`
-	}
-
-	// var apiResponse TaskProvidersResponse
-	// err = json.Unmarshal(body, &apiResponse)
-	// if err != nil {
-	// 	o.logger.Error("Failed to unmarshal API response", "error", err)
-	// 	return nil // or handle the error as appropriate
-	// }
-
-	// Use raw JSON data to simulate an API response.
-	rawData := []byte(`{
-		"providers": [
-			"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-			"0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
-		],
-		"scores": [
-			"0.1",
-			"0.9"
-		]
-	}`)
-
-	var apiResponse TaskProvidersResponse
-	if err := json.Unmarshal(rawData, &apiResponse); err != nil {
-		o.logger.Error("Failed to unmarshal raw JSON data", "error", err)
-		return nil
-	}
-
-	// Create and populate the task response
-	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		Providers:          make([]common.Address, 0, len(apiResponse.Providers)),
-		Scores:             make([]*big.Int, 0, len(apiResponse.Scores)),
-	}
-
-	// Convert provider strings to common.Address
-	for _, providerStr := range apiResponse.Providers {
-		taskResponse.Providers = append(taskResponse.Providers, common.HexToAddress(providerStr))
-	}
-
-	// Convert score strings (in decimals) to basis points.
-	// Multiply each decimal value by 1e4 to convert it to an integer representation in basis points.
-	scale := new(big.Float).SetFloat64(1e4)
-	for _, scoreStr := range apiResponse.Scores {
-		// Parse the decimal string.
-		scoreFloat, _, err := big.ParseFloat(scoreStr, 10, 256, big.ToNearestEven)
-		if err != nil {
-			o.logger.Error("Invalid score value", "score", scoreStr, "error", err)
-			continue
-		}
-		// Multiply by the scale.
-		scoreFloat.Mul(scoreFloat, scale)
-		scoreInt := new(big.Int)
-		scoreFloat.Int(scoreInt) // Convert to integer by truncation.
-		taskResponse.Scores = append(taskResponse.Scores, scoreInt)
-	}
+	// Use taskResp as needed.
+	fmt.Printf("Transformed Task Response: %+v\n", taskResponse)
 
 	return taskResponse
 }
