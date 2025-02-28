@@ -14,19 +14,19 @@ set -a
 source ./utils.sh
 set +a
 
-cleanup() {
-    echo "Executing cleanup function..."
-    set +e
-    docker rm -f anvil
-    exit_status=$?
-    if [ $exit_status -ne 0 ]; then
-        echo "Script exited due to set -e on line $1 with command '$2'. Exit status: $exit_status"
-    fi
-}
-trap 'cleanup $LINENO "$BASH_COMMAND"' EXIT
+# cleanup() {
+#     echo "Executing cleanup function..."
+#     set +e
+#     docker rm -f anvil
+#     exit_status=$?
+#     if [ $exit_status -ne 0 ]; then
+#         echo "Script exited due to set -e on line $1 with command '$2'. Exit status: $exit_status"
+#     fi
+# }
+# trap 'cleanup $LINENO "$BASH_COMMAND"' EXIT
 
 # start an anvil instance in the background that has eigenlayer contracts deployed
-start_anvil_docker $parent_path/eigenlayer-deployed-anvil-state.json $parent_path/avs-and-eigenlayer-deployed-anvil-state.json
+# start_anvil_docker $parent_path/eigenlayer-deployed-anvil-state.json $parent_path/avs-and-eigenlayer-deployed-anvil-state.json
 
 cd ../../contracts
 forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --legacy --broadcast -v
@@ -42,3 +42,10 @@ mv $TMP_GENESIS_FILE $GENESIS_FILE
 
 # we also do this here to make sure the operator has funds to register with the eigenlayer contracts
 cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+
+token_address=$(jq -r '.addresses.erc20MockStrategy' "script/output/31337/credible_squaring_avs_deployment_output.json")
+echo "Extracted token: $token_address"
+strategy_manager=$(jq -r '.addresses.strategyManager' "script/output/31337/eigenlayer_deployment_output.json")
+echo "Extracted strategy_manager: $strategy_manager"
+
+cast send "$strategy_manager" "addStrategiesToDepositWhitelist(address[],bool[])" "[$token_address]" "[true]" --private-key "$PRIVATE_KEY"
