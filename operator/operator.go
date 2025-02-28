@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -320,11 +321,82 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
+
+	// Call the API endpoint to get providers and scores
+	// apiURL := "http://example.com/api/taskproviders" // update with the actual URL
+	// resp, err := http.Get(apiURL)
+	// if err != nil {
+	// 	o.logger.Error("Failed to call API", "error", err)
+	// 	return nil // or handle the error as appropriate
+	// }
+	// defer resp.Body.Close()
+	//
+	// body, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	o.logger.Error("Failed to read API response", "error", err)
+	// 	return nil // or handle the error as appropriate
+	// }
+
+	// TaskProvidersResponse represents the expected JSON response from the API.
+	type TaskProvidersResponse struct {
+		Providers []string `json:"providers"`
+		Scores    []string `json:"scores"`
+	}
+
+	// var apiResponse TaskProvidersResponse
+	// err = json.Unmarshal(body, &apiResponse)
+	// if err != nil {
+	// 	o.logger.Error("Failed to unmarshal API response", "error", err)
+	// 	return nil // or handle the error as appropriate
+	// }
+
+	// Use raw JSON data to simulate an API response.
+	rawData := []byte(`{
+		"providers": [
+			"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+			"0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+		],
+		"scores": [
+			"0.1",
+			"0.9"
+		]
+	}`)
+
+	var apiResponse TaskProvidersResponse
+	if err := json.Unmarshal(rawData, &apiResponse); err != nil {
+		o.logger.Error("Failed to unmarshal raw JSON data", "error", err)
+		return nil
+	}
+
+	// Create and populate the task response
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		Providers:          make([]common.Address, 0),
-		Scores:             make([]*big.Int, 0),
+		Providers:          make([]common.Address, 0, len(apiResponse.Providers)),
+		Scores:             make([]*big.Int, 0, len(apiResponse.Scores)),
 	}
+
+	// Convert provider strings to common.Address
+	for _, providerStr := range apiResponse.Providers {
+		taskResponse.Providers = append(taskResponse.Providers, common.HexToAddress(providerStr))
+	}
+
+	// Convert score strings (in decimals) to basis points.
+	// Multiply each decimal value by 1e4 to convert it to an integer representation in basis points.
+	scale := new(big.Float).SetFloat64(1e4)
+	for _, scoreStr := range apiResponse.Scores {
+		// Parse the decimal string.
+		scoreFloat, _, err := big.ParseFloat(scoreStr, 10, 256, big.ToNearestEven)
+		if err != nil {
+			o.logger.Error("Invalid score value", "score", scoreStr, "error", err)
+			continue
+		}
+		// Multiply by the scale.
+		scoreFloat.Mul(scoreFloat, scale)
+		scoreInt := new(big.Int)
+		scoreFloat.Int(scoreInt) // Convert to integer by truncation.
+		taskResponse.Scores = append(taskResponse.Scores, scoreInt)
+	}
+
 	return taskResponse
 }
 
