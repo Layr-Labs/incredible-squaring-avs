@@ -117,8 +117,12 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 				Type: "uint32",
 			},
 			{
-				Name: "numberSquared",
-				Type: "uint256",
+				Name: "providers",
+				Type: "address[]",
+			},
+			{
+				Name: "scores",
+				Type: "uint256[]",
 			},
 		})
 		if err != nil {

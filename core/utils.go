@@ -12,7 +12,6 @@ import (
 // this hardcodes abi.encode() for cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
 // unclear why abigen doesn't provide this out of the box...
 func AbiEncodeTaskResponse(h *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) ([]byte, error) {
-
 	// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
 	taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
 		{
@@ -20,8 +19,12 @@ func AbiEncodeTaskResponse(h *cstaskmanager.IIncredibleSquaringTaskManagerTaskRe
 			Type: "uint32",
 		},
 		{
-			Name: "numberSquared",
-			Type: "uint256",
+			Name: "providers",
+			Type: "address[]",
+		},
+		{
+			Name: "scores",
+			Type: "uint256[]",
 		},
 	})
 	if err != nil {
@@ -43,7 +46,6 @@ func AbiEncodeTaskResponse(h *cstaskmanager.IIncredibleSquaringTaskManagerTaskRe
 
 // GetTaskResponseDigest returns the hash of the TaskResponse, which is what operators sign over
 func GetTaskResponseDigest(h *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) ([32]byte, error) {
-
 	encodeTaskResponseByte, err := AbiEncodeTaskResponse(h)
 	if err != nil {
 		return [32]byte{}, err

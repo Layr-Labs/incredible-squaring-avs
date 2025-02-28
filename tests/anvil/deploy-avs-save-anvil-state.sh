@@ -45,6 +45,16 @@ cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-k
 
 token_address=$(jq -r '.addresses.erc20MockStrategy' "script/output/31337/credible_squaring_avs_deployment_output.json")
 echo "Extracted token: $token_address"
+registry_coordinator=$(jq -r '.addresses.registryCoordinator' "script/output/31337/credible_squaring_avs_deployment_output.json")
+echo "Extracted registry_coordinator: $registry_coordinator"
+operator_state_retriever=$(jq -r '.addresses.operatorStateRetriever' "script/output/31337/credible_squaring_avs_deployment_output.json")
+echo "Extracted operator_state_retriever: $operator_state_retriever"
+
+sed -i.bak -E "s/^(avs_registry_coordinator_address:\s*).*/\1$registry_coordinator/" "../config-files/operator-docker-compose.anvil.yaml"
+sed -i.bak -E "s/^(avs_registry_coordinator_address:\s*).*/\1$registry_coordinator/" "../config-files/operator.anvil.yaml"
+sed -i.bak -E "s/^(avs_registry_coordinator_address:\s*).*/\1$operator_state_retriever/" "../config-files/operator-docker-compose.anvil.yaml"
+sed -i.bak -E "s/^(avs_registry_coordinator_address:\s*).*/\1$operator_state_retriever/" "../config-files/operator.anvil.yaml"
+
 strategy_manager=$(jq -r '.addresses.strategyManager' "script/output/31337/eigenlayer_deployment_output.json")
 echo "Extracted strategy_manager: $strategy_manager"
 
