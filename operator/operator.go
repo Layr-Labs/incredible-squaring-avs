@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -36,8 +37,10 @@ import (
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 )
 
-const AVS_NAME = "incredible-squaring"
-const SEM_VER = "0.0.1"
+const (
+	AVS_NAME = "incredible-squaring"
+	SEM_VER  = "0.0.1"
+)
 
 type Operator struct {
 	config    types.NodeConfig
@@ -253,7 +256,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	)
 
 	return operator, nil
-
 }
 
 func (o *Operator) Start(ctx context.Context) error {
@@ -313,17 +315,88 @@ func (o *Operator) Start(ctx context.Context) error {
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("Received new task",
-		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
+		"fileHash", newTaskCreatedLog.Task.FileHash,
 		"taskIndex", newTaskCreatedLog.TaskIndex,
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+
+	// Call the API endpoint to get providers and scores
+	// apiURL := "http://example.com/api/taskproviders" // update with the actual URL
+	// resp, err := http.Get(apiURL)
+	// if err != nil {
+	// 	o.logger.Error("Failed to call API", "error", err)
+	// 	return nil // or handle the error as appropriate
+	// }
+	// defer resp.Body.Close()
+	//
+	// body, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	o.logger.Error("Failed to read API response", "error", err)
+	// 	return nil // or handle the error as appropriate
+	// }
+
+	// TaskProvidersResponse represents the expected JSON response from the API.
+	type TaskProvidersResponse struct {
+		Providers []string `json:"providers"`
+		Scores    []string `json:"scores"`
+	}
+
+	// var apiResponse TaskProvidersResponse
+	// err = json.Unmarshal(body, &apiResponse)
+	// if err != nil {
+	// 	o.logger.Error("Failed to unmarshal API response", "error", err)
+	// 	return nil // or handle the error as appropriate
+	// }
+
+	// Use raw JSON data to simulate an API response.
+	rawData := []byte(`{
+		"providers": [
+			"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+			"0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+		],
+		"scores": [
+			"0.1",
+			"0.9"
+		]
+	}`)
+
+	var apiResponse TaskProvidersResponse
+	if err := json.Unmarshal(rawData, &apiResponse); err != nil {
+		o.logger.Error("Failed to unmarshal raw JSON data", "error", err)
+		return nil
+	}
+
+	// Create and populate the task response
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
-		NumberSquared:      numberSquared,
+		Providers:          make([]common.Address, 0, len(apiResponse.Providers)),
+		Scores:             make([]*big.Int, 0, len(apiResponse.Scores)),
 	}
+
+	// Convert provider strings to common.Address
+	for _, providerStr := range apiResponse.Providers {
+		taskResponse.Providers = append(taskResponse.Providers, common.HexToAddress(providerStr))
+	}
+
+	// Convert score strings (in decimals) to basis points.
+	// Multiply each decimal value by 1e4 to convert it to an integer representation in basis points.
+	scale := new(big.Float).SetFloat64(1e4)
+	for _, scoreStr := range apiResponse.Scores {
+		// Parse the decimal string.
+		scoreFloat, _, err := big.ParseFloat(scoreStr, 10, 256, big.ToNearestEven)
+		if err != nil {
+			o.logger.Error("Invalid score value", "score", scoreStr, "error", err)
+			continue
+		}
+		// Multiply by the scale.
+		scoreFloat.Mul(scoreFloat, scale)
+		scoreInt := new(big.Int)
+		scoreFloat.Int(scoreInt) // Convert to integer by truncation.
+		taskResponse.Scores = append(taskResponse.Scores, scoreInt)
+	}
+
 	return taskResponse
 }
 

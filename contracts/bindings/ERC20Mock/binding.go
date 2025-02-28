@@ -31,8 +31,8 @@ var (
 
 // ContractERC20MockMetaData contains all meta data concerning the ContractERC20Mock contract.
 var ContractERC20MockMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"function\",\"name\":\"allowance\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"spender\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"approve\",\"inputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"balanceOf\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"mint\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"totalSupply\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transfer\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferFrom\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Approval\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"spender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Transfer\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false}]",
-	Bin: "0x608060405234801561001057600080fd5b50610527806100206000396000f3fe608060405234801561001057600080fd5b506004361061007d5760003560e01c806340c10f191161005b57806340c10f19146100d257806370a08231146100e7578063a9059cbb14610110578063dd62ed3e1461012357600080fd5b8063095ea7b31461008257806318160ddd146100ad57806323b872dd146100bf575b600080fd5b610098610090366004610410565b600192915050565b60405190151581526020015b60405180910390f35b6002545b6040519081526020016100a4565b6100986100cd36600461043a565b61015c565b6100e56100e0366004610410565b610173565b005b6100b16100f5366004610476565b6001600160a01b031660009081526020819052604090205490565b61009861011e366004610410565b610181565b6100b1610131366004610498565b6001600160a01b03918216600090815260016020908152604080832093909416825291909152205490565b600061016984848461018b565b5060019392505050565b61017d8282610335565b5050565b6000336101698185855b6001600160a01b0383166101f45760405162461bcd60e51b815260206004820152602560248201527f45524332303a207472616e736665722066726f6d20746865207a65726f206164604482015264647265737360d81b60648201526084015b60405180910390fd5b6001600160a01b0382166102565760405162461bcd60e51b815260206004820152602360248201527f45524332303a207472616e7366657220746f20746865207a65726f206164647260448201526265737360e81b60648201526084016101eb565b6001600160a01b0383166000908152602081905260409020548111156102cd5760405162461bcd60e51b815260206004820152602660248201527f45524332303a207472616e7366657220616d6f756e7420657863656564732062604482015265616c616e636560d01b60648201526084016101eb565b6001600160a01b038381166000818152602081815260408083208054879003905593861680835291849020805486019055925184815290927fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef910160405180910390a3505050565b6001600160a01b03821661038b5760405162461bcd60e51b815260206004820152601f60248201527f45524332303a206d696e7420746f20746865207a65726f20616464726573730060448201526064016101eb565b806002600082825461039d91906104cb565b90915550506001600160a01b038216600081815260208181526040808320805486019055518481527fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef910160405180910390a35050565b80356001600160a01b038116811461040b57600080fd5b919050565b6000806040838503121561042357600080fd5b61042c836103f4565b946020939093013593505050565b60008060006060848603121561044f57600080fd5b610458846103f4565b9250610466602085016103f4565b9150604084013590509250925092565b60006020828403121561048857600080fd5b610491826103f4565b9392505050565b600080604083850312156104ab57600080fd5b6104b4836103f4565b91506104c2602084016103f4565b90509250929050565b600082198211156104ec57634e487b7160e01b600052601160045260246000fd5b50019056fea26469706673582212200c8f4a0047ca0322c22cf7e6a789abbe36ca3141cd508f864ec741dccdc347f964736f6c634300080c0033",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"allowance\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"spender\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"approve\",\"inputs\":[{\"name\":\"spender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"balanceOf\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"decimals\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint8\",\"internalType\":\"uint8\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"decreaseAllowance\",\"inputs\":[{\"name\":\"spender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"subtractedValue\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"increaseAllowance\",\"inputs\":[{\"name\":\"spender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"addedValue\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"mint\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"name\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"symbol\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"string\",\"internalType\":\"string\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"totalSupply\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transfer\",\"inputs\":[{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"transferFrom\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"amount\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"event\",\"name\":\"Approval\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"spender\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"Transfer\",\"inputs\":[{\"name\":\"from\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"to\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"value\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false}]",
+	Bin: "0x608060405234801561001057600080fd5b506040805160208082018084526000808452845192830190945292815281519192909161003f9160039161005b565b50805161005390600490602084019061005b565b50505061012f565b828054610067906100f4565b90600052602060002090601f01602090048101928261008957600085556100cf565b82601f106100a257805160ff19168380011785556100cf565b828001600101855582156100cf579182015b828111156100cf5782518255916020019190600101906100b4565b506100db9291506100df565b5090565b5b808211156100db57600081556001016100e0565b600181811c9082168061010857607f821691505b6020821081141561012957634e487b7160e01b600052602260045260246000fd5b50919050565b6109808061013e6000396000f3fe608060405234801561001057600080fd5b50600436106100a45760003560e01c806306fdde03146100a9578063095ea7b3146100c757806318160ddd146100ea57806323b872dd146100fc578063313ce5671461010f578063395093511461011e57806340c10f191461013157806370a082311461014657806395d89b411461016f578063a457c2d714610177578063a9059cbb1461018a578063dd62ed3e1461019d575b600080fd5b6100b16101b0565b6040516100be919061079d565b60405180910390f35b6100da6100d536600461080e565b610242565b60405190151581526020016100be565b6002545b6040519081526020016100be565b6100da61010a366004610838565b61025a565b604051601281526020016100be565b6100da61012c36600461080e565b61027e565b61014461013f36600461080e565b6102a0565b005b6100ee610154366004610874565b6001600160a01b031660009081526020819052604090205490565b6100b16102ae565b6100da61018536600461080e565b6102bd565b6100da61019836600461080e565b61033d565b6100ee6101ab366004610896565b61034b565b6060600380546101bf906108c9565b80601f01602080910402602001604051908101604052809291908181526020018280546101eb906108c9565b80156102385780601f1061020d57610100808354040283529160200191610238565b820191906000526020600020905b81548152906001019060200180831161021b57829003601f168201915b5050505050905090565b600033610250818585610376565b5060019392505050565b60003361026885828561049a565b610273858585610514565b506001949350505050565b600033610250818585610291838361034b565b61029b9190610904565b610376565b6102aa82826106d0565b5050565b6060600480546101bf906108c9565b600033816102cb828661034b565b9050838110156103305760405162461bcd60e51b815260206004820152602560248201527f45524332303a2064656372656173656420616c6c6f77616e63652062656c6f77604482015264207a65726f60d81b60648201526084015b60405180910390fd5b6102738286868403610376565b600033610250818585610514565b6001600160a01b03918216600090815260016020908152604080832093909416825291909152205490565b6001600160a01b0383166103d85760405162461bcd60e51b8152602060048201526024808201527f45524332303a20617070726f76652066726f6d20746865207a65726f206164646044820152637265737360e01b6064820152608401610327565b6001600160a01b0382166104395760405162461bcd60e51b815260206004820152602260248201527f45524332303a20617070726f766520746f20746865207a65726f206164647265604482015261737360f01b6064820152608401610327565b6001600160a01b0383811660008181526001602090815260408083209487168084529482529182902085905590518481527f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925910160405180910390a3505050565b60006104a6848461034b565b9050600019811461050e57818110156105015760405162461bcd60e51b815260206004820152601d60248201527f45524332303a20696e73756666696369656e7420616c6c6f77616e63650000006044820152606401610327565b61050e8484848403610376565b50505050565b6001600160a01b0383166105785760405162461bcd60e51b815260206004820152602560248201527f45524332303a207472616e736665722066726f6d20746865207a65726f206164604482015264647265737360d81b6064820152608401610327565b6001600160a01b0382166105da5760405162461bcd60e51b815260206004820152602360248201527f45524332303a207472616e7366657220746f20746865207a65726f206164647260448201526265737360e81b6064820152608401610327565b6001600160a01b038316600090815260208190526040902054818110156106525760405162461bcd60e51b815260206004820152602660248201527f45524332303a207472616e7366657220616d6f756e7420657863656564732062604482015265616c616e636560d01b6064820152608401610327565b6001600160a01b03808516600090815260208190526040808220858503905591851681529081208054849290610689908490610904565b92505081905550826001600160a01b0316846001600160a01b031660008051602061092b833981519152846040516106c391815260200190565b60405180910390a361050e565b6001600160a01b0382166107265760405162461bcd60e51b815260206004820152601f60248201527f45524332303a206d696e7420746f20746865207a65726f2061646472657373006044820152606401610327565b80600260008282546107389190610904565b90915550506001600160a01b03821660009081526020819052604081208054839290610765908490610904565b90915550506040518181526001600160a01b0383169060009060008051602061092b8339815191529060200160405180910390a35050565b600060208083528351808285015260005b818110156107ca578581018301518582016040015282016107ae565b818111156107dc576000604083870101525b50601f01601f1916929092016040019392505050565b80356001600160a01b038116811461080957600080fd5b919050565b6000806040838503121561082157600080fd5b61082a836107f2565b946020939093013593505050565b60008060006060848603121561084d57600080fd5b610856846107f2565b9250610864602085016107f2565b9150604084013590509250925092565b60006020828403121561088657600080fd5b61088f826107f2565b9392505050565b600080604083850312156108a957600080fd5b6108b2836107f2565b91506108c0602084016107f2565b90509250929050565b600181811c908216806108dd57607f821691505b602082108114156108fe57634e487b7160e01b600052602260045260246000fd5b50919050565b6000821982111561092557634e487b7160e01b600052601160045260246000fd5b50019056feddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3efa264697066735822122094315f999275a06c674dfd5005d0cb7732c9add8f37fe83b2a6d0379157713b064736f6c634300080c0033",
 }
 
 // ContractERC20MockABI is the input ABI used to generate the binding from.
@@ -264,6 +264,99 @@ func (_ContractERC20Mock *ContractERC20MockCallerSession) BalanceOf(account comm
 	return _ContractERC20Mock.Contract.BalanceOf(&_ContractERC20Mock.CallOpts, account)
 }
 
+// Decimals is a free data retrieval call binding the contract method 0x313ce567.
+//
+// Solidity: function decimals() view returns(uint8)
+func (_ContractERC20Mock *ContractERC20MockCaller) Decimals(opts *bind.CallOpts) (uint8, error) {
+	var out []interface{}
+	err := _ContractERC20Mock.contract.Call(opts, &out, "decimals")
+
+	if err != nil {
+		return *new(uint8), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+
+	return out0, err
+
+}
+
+// Decimals is a free data retrieval call binding the contract method 0x313ce567.
+//
+// Solidity: function decimals() view returns(uint8)
+func (_ContractERC20Mock *ContractERC20MockSession) Decimals() (uint8, error) {
+	return _ContractERC20Mock.Contract.Decimals(&_ContractERC20Mock.CallOpts)
+}
+
+// Decimals is a free data retrieval call binding the contract method 0x313ce567.
+//
+// Solidity: function decimals() view returns(uint8)
+func (_ContractERC20Mock *ContractERC20MockCallerSession) Decimals() (uint8, error) {
+	return _ContractERC20Mock.Contract.Decimals(&_ContractERC20Mock.CallOpts)
+}
+
+// Name is a free data retrieval call binding the contract method 0x06fdde03.
+//
+// Solidity: function name() view returns(string)
+func (_ContractERC20Mock *ContractERC20MockCaller) Name(opts *bind.CallOpts) (string, error) {
+	var out []interface{}
+	err := _ContractERC20Mock.contract.Call(opts, &out, "name")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// Name is a free data retrieval call binding the contract method 0x06fdde03.
+//
+// Solidity: function name() view returns(string)
+func (_ContractERC20Mock *ContractERC20MockSession) Name() (string, error) {
+	return _ContractERC20Mock.Contract.Name(&_ContractERC20Mock.CallOpts)
+}
+
+// Name is a free data retrieval call binding the contract method 0x06fdde03.
+//
+// Solidity: function name() view returns(string)
+func (_ContractERC20Mock *ContractERC20MockCallerSession) Name() (string, error) {
+	return _ContractERC20Mock.Contract.Name(&_ContractERC20Mock.CallOpts)
+}
+
+// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
+//
+// Solidity: function symbol() view returns(string)
+func (_ContractERC20Mock *ContractERC20MockCaller) Symbol(opts *bind.CallOpts) (string, error) {
+	var out []interface{}
+	err := _ContractERC20Mock.contract.Call(opts, &out, "symbol")
+
+	if err != nil {
+		return *new(string), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(string)).(*string)
+
+	return out0, err
+
+}
+
+// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
+//
+// Solidity: function symbol() view returns(string)
+func (_ContractERC20Mock *ContractERC20MockSession) Symbol() (string, error) {
+	return _ContractERC20Mock.Contract.Symbol(&_ContractERC20Mock.CallOpts)
+}
+
+// Symbol is a free data retrieval call binding the contract method 0x95d89b41.
+//
+// Solidity: function symbol() view returns(string)
+func (_ContractERC20Mock *ContractERC20MockCallerSession) Symbol() (string, error) {
+	return _ContractERC20Mock.Contract.Symbol(&_ContractERC20Mock.CallOpts)
+}
+
 // TotalSupply is a free data retrieval call binding the contract method 0x18160ddd.
 //
 // Solidity: function totalSupply() view returns(uint256)
@@ -297,23 +390,65 @@ func (_ContractERC20Mock *ContractERC20MockCallerSession) TotalSupply() (*big.In
 
 // Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
 //
-// Solidity: function approve(address , uint256 ) returns(bool)
-func (_ContractERC20Mock *ContractERC20MockTransactor) Approve(opts *bind.TransactOpts, arg0 common.Address, arg1 *big.Int) (*types.Transaction, error) {
-	return _ContractERC20Mock.contract.Transact(opts, "approve", arg0, arg1)
+// Solidity: function approve(address spender, uint256 amount) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockTransactor) Approve(opts *bind.TransactOpts, spender common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.contract.Transact(opts, "approve", spender, amount)
 }
 
 // Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
 //
-// Solidity: function approve(address , uint256 ) returns(bool)
-func (_ContractERC20Mock *ContractERC20MockSession) Approve(arg0 common.Address, arg1 *big.Int) (*types.Transaction, error) {
-	return _ContractERC20Mock.Contract.Approve(&_ContractERC20Mock.TransactOpts, arg0, arg1)
+// Solidity: function approve(address spender, uint256 amount) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockSession) Approve(spender common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.Contract.Approve(&_ContractERC20Mock.TransactOpts, spender, amount)
 }
 
 // Approve is a paid mutator transaction binding the contract method 0x095ea7b3.
 //
-// Solidity: function approve(address , uint256 ) returns(bool)
-func (_ContractERC20Mock *ContractERC20MockTransactorSession) Approve(arg0 common.Address, arg1 *big.Int) (*types.Transaction, error) {
-	return _ContractERC20Mock.Contract.Approve(&_ContractERC20Mock.TransactOpts, arg0, arg1)
+// Solidity: function approve(address spender, uint256 amount) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockTransactorSession) Approve(spender common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.Contract.Approve(&_ContractERC20Mock.TransactOpts, spender, amount)
+}
+
+// DecreaseAllowance is a paid mutator transaction binding the contract method 0xa457c2d7.
+//
+// Solidity: function decreaseAllowance(address spender, uint256 subtractedValue) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockTransactor) DecreaseAllowance(opts *bind.TransactOpts, spender common.Address, subtractedValue *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.contract.Transact(opts, "decreaseAllowance", spender, subtractedValue)
+}
+
+// DecreaseAllowance is a paid mutator transaction binding the contract method 0xa457c2d7.
+//
+// Solidity: function decreaseAllowance(address spender, uint256 subtractedValue) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockSession) DecreaseAllowance(spender common.Address, subtractedValue *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.Contract.DecreaseAllowance(&_ContractERC20Mock.TransactOpts, spender, subtractedValue)
+}
+
+// DecreaseAllowance is a paid mutator transaction binding the contract method 0xa457c2d7.
+//
+// Solidity: function decreaseAllowance(address spender, uint256 subtractedValue) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockTransactorSession) DecreaseAllowance(spender common.Address, subtractedValue *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.Contract.DecreaseAllowance(&_ContractERC20Mock.TransactOpts, spender, subtractedValue)
+}
+
+// IncreaseAllowance is a paid mutator transaction binding the contract method 0x39509351.
+//
+// Solidity: function increaseAllowance(address spender, uint256 addedValue) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockTransactor) IncreaseAllowance(opts *bind.TransactOpts, spender common.Address, addedValue *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.contract.Transact(opts, "increaseAllowance", spender, addedValue)
+}
+
+// IncreaseAllowance is a paid mutator transaction binding the contract method 0x39509351.
+//
+// Solidity: function increaseAllowance(address spender, uint256 addedValue) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockSession) IncreaseAllowance(spender common.Address, addedValue *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.Contract.IncreaseAllowance(&_ContractERC20Mock.TransactOpts, spender, addedValue)
+}
+
+// IncreaseAllowance is a paid mutator transaction binding the contract method 0x39509351.
+//
+// Solidity: function increaseAllowance(address spender, uint256 addedValue) returns(bool)
+func (_ContractERC20Mock *ContractERC20MockTransactorSession) IncreaseAllowance(spender common.Address, addedValue *big.Int) (*types.Transaction, error) {
+	return _ContractERC20Mock.Contract.IncreaseAllowance(&_ContractERC20Mock.TransactOpts, spender, addedValue)
 }
 
 // Mint is a paid mutator transaction binding the contract method 0x40c10f19.
