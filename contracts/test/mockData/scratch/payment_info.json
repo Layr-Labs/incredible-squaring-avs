@@ -1,0 +1,12 @@
+{
+  "earners": ["0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"],
+  "earnerTokenRoots":["0x923fc601a87379854a5697ab0879f9bd472b4f4377da2464982e8cdc67293d64"],
+  "recipient": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "numPayments": 1,
+  "amountPerPayment":100,
+  "duration": 86400,
+  "indexToProve": 0
+}
+
+
+
