@@ -44,4 +44,4 @@ enable_node_api: true
 register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
-token_strategy_addr: 0x09635F643e140090A9A8Dcd712eD6285858ceBef
+token_strategy_addr: 0x5e3d0fde6f793b3115a9e7f5ebc195bbeed35d6c
