@@ -31,6 +31,7 @@ func NewAvsManagersBindings(serviceManagerAddr gethcommon.Address, operatorState
 	logger.Info("33")
 	logger.Info(serviceManagerAddr.String())
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	logger.Info(taskManagerAddr.String())
 	if err != nil {
 		logger.Error("Failed to fetch TaskManager address", "err", err)
 		return nil, err
@@ -40,6 +41,9 @@ func NewAvsManagersBindings(serviceManagerAddr gethcommon.Address, operatorState
 		logger.Error("Failed to fetch IIncredibleSquaringTaskManager contract", "err", err)
 		return nil, err
 	}
+	add , _ :=contractTaskManager.Generator(&bind.CallOpts{})
+	logger.Info("mimi");
+	logger.Info(add.String())
 
 	return &AvsManagersBindings{
 		ServiceManager: contractServiceManager,

@@ -97,7 +97,8 @@ library IncredibleSquaringDeploymentLib {
         CoreDeploymentLib.DeploymentData memory coredata =
             readCoreDeploymentJson("script/deployments/core/", block.chainid);
         address avsdirectory = coredata.avsDirectory;
-
+        console2.log("addd");
+        console2.log(admin);
         DeploymentData memory result;
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.

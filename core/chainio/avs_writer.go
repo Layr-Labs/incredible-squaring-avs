@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -59,6 +60,7 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
 	}
+	c.Logger.Info("yyyy");
 	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
 }
 
@@ -93,6 +95,10 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
+	
+	t,err := w.AvsContractBindings.TaskManager.Owner(&bind.CallOpts{})
+	w.logger.Info("generator_addr")
+	w.logger.Info(t.String())
 	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, numToSquare, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
