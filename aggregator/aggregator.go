@@ -2,13 +2,12 @@ package aggregator
 
 import (
 	"context"
-	"math/big"
+	"encoding/hex"
 	"sync"
 	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/crypto"
 	"golang.org/x/crypto/sha3"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
@@ -172,10 +171,13 @@ func (agg *Aggregator) Start(ctx context.Context) error {
 	defer ticker.Stop()
 	taskNum := int64(0)
 	// Convert taskNum to a big.Int
-	taskNumBigInt := big.NewInt(taskNum)
+	// taskNumBigInt := big.NewInt(taskNum)
 
-	// Generate the Keccak256 hash (returns []byte)
-	hashBytes := crypto.Keccak256(taskNumBigInt.Bytes())
+	hexStr := "285d72c1eef59f8d294ef6e216a443a3101e01b357960778d962eb3e8424a7a7"
+	hashBytes, err := hex.DecodeString(hexStr)
+	if err != nil {
+		agg.logger.Error("Failed to decode hexStr", "err", err)
+	}
 
 	// Copy the hashBytes into a [32]byte array
 	var hash [32]byte

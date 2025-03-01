@@ -28,7 +28,7 @@ set +a
 # start an anvil instance in the background that has eigenlayer contracts deployed
 # start_anvil_docker $parent_path/eigenlayer-deployed-anvil-state.json $parent_path/avs-and-eigenlayer-deployed-anvil-state.json
 
-cd ../../contracts
+cd $parent_path/../../contracts
 forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --legacy --broadcast -v
 # save the block-number in the genesis file which we also need to restart the anvil chain at the correct block
 # otherwise the indexRegistry has a quorumUpdate at a high block number, and when we restart a clean anvil (without genesis.json) file
@@ -53,4 +53,20 @@ echo "Extracted operator_state_retriever: $operator_state_retriever"
 strategy_manager=$(jq -r '.addresses.strategyManager' "script/output/31337/eigenlayer_deployment_output.json")
 echo "Extracted strategy_manager: $strategy_manager"
 
+# whitelist newly deployed strategy
 cast send "$strategy_manager" "addStrategiesToDepositWhitelist(address[],bool[])" "[$token_address]" "[true]" --private-key "$PRIVATE_KEY"
+
+cd $parent_path/../../config-files
+# File to update
+OPERATOR_CONFIG_FILE="./operator.anvil.yaml"
+DOCKER_OPERATOR_CONFIG_FILE="./operator-docker-compose.anvil.yaml"
+
+# Update the values in the operator file
+sed -i '' "s/avs_registry_coordinator_address: 0x[0-9a-fA-F]\+/avs_registry_coordinator_address: $registry_coordinator/" "$OPERATOR_CONFIG_FILE"
+sed -i '' "s/operator_state_retriever_address: 0x[0-9a-fA-F]\+/operator_state_retriever_address: $operator_state_retriever/" "$OPERATOR_CONFIG_FILE"
+sed -i '' "s/token_strategy_addr: 0x[0-9a-fA-F]\+/token_strategy_addr: $token_address/" "$OPERATOR_CONFIG_FILE"
+
+# Update the values in the docker operator file
+sed -i '' "s/avs_registry_coordinator_address: 0x[0-9a-fA-F]\+/avs_registry_coordinator_address: $registry_coordinator/" "$DOCKER_OPERATOR_CONFIG_FILE"
+sed -i '' "s/operator_state_retriever_address: 0x[0-9a-fA-F]\+/operator_state_retriever_address: $operator_state_retriever/" "$DOCKER_OPERATOR_CONFIG_FILE"
+sed -i '' "s/token_strategy_addr: 0x[0-9a-fA-F]\+/token_strategy_addr: $token_address/" "$DOCKER_OPERATOR_CONFIG_FILE"

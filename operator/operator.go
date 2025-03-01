@@ -335,8 +335,12 @@ func fetchAndTransformScores(fileHash [32]byte, taskIndex uint32) *cstaskmanager
 	// Convert fileHash ([32]byte) to its hex string representation.
 	hexFileHash := hex.EncodeToString(fileHash[:])
 
+	log.Printf("hexFileHash: %s", hexFileHash)
+
 	// Construct the API URL (adjust the base URL as needed)
 	url := fmt.Sprintf("http://localhost:8080/api/v0/query/%s", hexFileHash)
+
+	log.Printf("url: %s", url)
 
 	// Make the HTTP GET request.
 	resp, err := http.Get(url)
@@ -357,6 +361,8 @@ func fetchAndTransformScores(fileHash [32]byte, taskIndex uint32) *cstaskmanager
 		log.Printf("failed to read response: %v", err)
 		return taskResponse
 	}
+
+	log.Printf("Response body: %s", string(body))
 
 	var queryResp QueryLocationsResponse
 	if err := json.Unmarshal(body, &queryResp); err != nil {
