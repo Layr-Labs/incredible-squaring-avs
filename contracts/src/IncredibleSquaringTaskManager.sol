@@ -289,6 +289,10 @@ contract IncredibleSquaringTaskManager is
         return TASK_RESPONSE_WINDOW_BLOCK;
     }
 
+    function getTaskResponse(uint32 taskIndex) external view returns (TaskResponse memory taskResponse) {
+        taskResponse = TaskResponse(taskResponse.referenceTaskIndex, taskResponse.providers, taskResponse.scores);
+    }
+
     function _setGenerator(address newGenerator) internal {
         address oldGenerator = generator;
         generator = newGenerator;

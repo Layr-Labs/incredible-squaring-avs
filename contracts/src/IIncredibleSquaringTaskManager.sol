@@ -67,4 +67,6 @@ interface IIncredibleSquaringTaskManager {
 
     /// @notice Returns the TASK_RESPONSE_WINDOW_BLOCK
     function getTaskResponseWindowBlock() external view returns (uint32);
+
+    function getTaskResponse(uint32 taskIndex) external view returns (TaskResponse memory taskResponse);
 }
