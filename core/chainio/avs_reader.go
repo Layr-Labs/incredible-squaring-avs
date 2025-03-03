@@ -52,7 +52,6 @@ func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr,c.IncredibleSquaringServiceManager, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
 }
 func BuildAvsReader(registryCoordinatorAddr,serviceManagerAddr gethcommon.Address, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend,ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
-	logger.Info("22")
 	avsManagersBindings, err := NewAvsManagersBindings(serviceManagerAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		return nil, err

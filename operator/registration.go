@@ -71,7 +71,6 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	o.logger.Info(strategyAddr.String())
 	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)

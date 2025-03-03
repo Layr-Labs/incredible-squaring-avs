@@ -13,7 +13,8 @@ operator_state_retriever_address: 0xdbc43ba45381e02825b14322cddd15ec4b3164e6
 rewards_coordinator_address: 0x0dcd1bf9a1b36ce34237eeafef220932846bcd82
 permission_controller_address: 0x4ed7c70f96b99c776995fb64377f0d4ab3b0e1c1
 service_manager_address: 0xb7278a61aa25c888815afc32ad3cc52ff24fe575
-
+allocation_manager_address: 0x8a791620dd6260079bf849dc5567adc3f2fdc318
+instant_slasher_address: 0x1fa02b2d6a771842690194cf62d91bdd92bfe28d
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
 eth_ws_url: ws://localhost:8545
@@ -45,3 +46,4 @@ register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
 token_strategy_addr: 0x5e3d0fde6f793b3115a9e7f5ebc195bbeed35d6c
+slash_simulate: true

@@ -165,7 +165,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.Info(c.AVSRegistryCoordinatorAddress)
 	sdkClients, err := clients.BuildAll(chainioConfig, operatorEcdsaPrivateKey, logger)
 	if err != nil {
 		panic(err)
@@ -242,7 +241,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	operatorSetsIds := []uint32{0}
 	waitForReceipt := true
 	socket := "socket"
-	operator.SetAppointee(operator.credibleSquaringServiceManagerAddr)
+	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.credibleSquaringServiceManagerAddr,common.HexToAddress(c.AllocationManagerAddress),common.HexToAddress(c.AVSRegistryCoordinatorAddress))
 	operator.CreateTotalDelegatedStakeQuorum()
 
 	if c.RegisterOperatorOnStartup {
@@ -256,13 +255,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 	operator.operatorId = operatorId
-	logger.Info("Operator info",
-		"operatorId", operatorId,
-		"operatorAddr", c.OperatorAddress,
-		"operatorG1Pubkey", operator.blsKeypair.GetPubKeyG1(),
-		"operatorG2Pubkey", operator.blsKeypair.GetPubKeyG2(),
-	)
-
 	return operator, nil
 
 }
@@ -330,13 +322,19 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	// numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
-	numberSquared := big.NewInt(24)
+	var numberSquared *big.Int
+	if o.config.SlashSimulate {
+		numberSquared = big.NewInt(24)
+	} else {
+	 	numberSquared = big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+	}
+
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		NumberSquared:      numberSquared,
 	}
 	return taskResponse
+	// numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
 }
 
 func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {

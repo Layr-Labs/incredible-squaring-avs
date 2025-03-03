@@ -6,9 +6,11 @@ type NodeConfig struct {
 	OperatorAddress               string `yaml:"operator_address"`
 	OperatorStateRetrieverAddress string `yaml:"operator_state_retriever_address"`
 	IncredibleSquaringServiceManager string `yaml:"service_manager_address"`
+	InstantSlasher 				  string `yaml:"instant_slasher_address"`
 	AVSRegistryCoordinatorAddress string `yaml:"avs_registry_coordinator_address"`
 	RewardsCoordinatorAddress 	  string `yaml:"rewards_coordinator_address"`
 	PermissionControllerAddress	  string `yaml:"permission_controller_address"`
+	AllocationManagerAddress 	  string `yaml:"allocation_manager_address"`
 	TokenStrategyAddr             string `yaml:"token_strategy_addr"`
 	EthRpcUrl                     string `yaml:"eth_rpc_url"`
 	EthWsUrl                      string `yaml:"eth_ws_url"`
@@ -20,4 +22,5 @@ type NodeConfig struct {
 	EnableMetrics                 bool   `yaml:"enable_metrics"`
 	NodeApiIpPortAddress          string `yaml:"node_api_ip_port_address"`
 	EnableNodeApi                 bool   `yaml:"enable_node_api"`
+	SlashSimulate 				  bool   `yaml:"slash_simulate"`
 }

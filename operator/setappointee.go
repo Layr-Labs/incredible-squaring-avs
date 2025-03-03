@@ -9,11 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-func (o *Operator) SetAppointee(serviceManagerAddr common.Address) error {
-	o.logger.Info(serviceManagerAddr.String())
-	// request:= elcontracts.SetPermissionRequest{}
-	allocationManagerAddr := common.HexToAddress("0x8a791620dd6260079bf849dc5567adc3f2fdc318")
-	registryCoordinatorAddr := common.HexToAddress("0xc351628eb244ec633d5f21fbd6621e1a683b1181")
+func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManagerAddr common.Address,allocationManagerAddr common.Address,registryCoordinatorAddr common.Address) error {
+
 	serviceManager, _ := mockAvsServiceManager.NewContractMockAvsServiceManager(serviceManagerAddr, o.ethClient)
 	noSendTxOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
 	waitForReceipt := true
@@ -29,7 +26,7 @@ func (o *Operator) SetAppointee(serviceManagerAddr common.Address) error {
 	if err != nil {
 		return utils.WrapError("failed to send setAvsRegistrar appointee tx with err", err)
 	}
-	o.logger.Info("tx successfully included", "txHash", receipt.TxHash.String())
+	o.logger.Info("tx successfully included for setAppointee for selector setAvsRegistrar ", "txHash", receipt.TxHash.String())
 
 	allocationManagerContract, _ := allocationManager.NewContractAllocationManager(allocationManagerAddr, o.ethClient)
 
@@ -38,7 +35,7 @@ func (o *Operator) SetAppointee(serviceManagerAddr common.Address) error {
 	if err != nil {
 		return utils.WrapError("failed to send setAvsRegistrar tx with err", err)
 	}
-	o.logger.Info("tx successfully included", "txHash", receipt.TxHash.String())
+	o.logger.Info("tx successfully included for setAvsRegistrar ", "txHash", receipt.TxHash.String())
 
 	createOperatorSetsSelector := [4]byte{38, 31, 132, 224}
 	tx, err = serviceManager.SetAppointee(noSendTxOpts, registryCoordinatorAddr, allocationManagerAddr, createOperatorSetsSelector)
@@ -49,9 +46,8 @@ func (o *Operator) SetAppointee(serviceManagerAddr common.Address) error {
 	if err != nil {
 		return utils.WrapError("failed to send createOperatorSets appointee tx with err", err)
 	}
-	o.logger.Info("tx successfully included", "txHash", receipt.TxHash.String())
+	o.logger.Info("tx successfully included for setAppointee for selector createOperatorSets", "txHash", receipt.TxHash.String())
 
-	instantSlasherAddr := common.HexToAddress("0x1fa02b2d6a771842690194cf62d91bdd92bfe28d")
 	slashOperatorSelector := [4]byte{54, 53, 32, 87}
 	tx, err = serviceManager.SetAppointee(noSendTxOpts, instantSlasherAddr, allocationManagerAddr, slashOperatorSelector)
 	if err != nil {
