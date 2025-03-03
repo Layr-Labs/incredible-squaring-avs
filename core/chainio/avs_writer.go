@@ -6,7 +6,6 @@ import (
 
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -60,12 +59,10 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
 	}
-	c.Logger.Info("yyyy");
-	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(c.TxMgr,c.IncredibleSquaringServiceManager, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
 }
 
-func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,wsClient eth.WsBackend, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
-	serviceManagerAddr := common.HexToAddress("0xb7278a61aa25c888815afc32ad3cc52ff24fe575")
+func BuildAvsWriter(txMgr txmgr.TxManager,serviceManagerAddr gethcommon.Address, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,wsClient eth.WsBackend, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(serviceManagerAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		logger.Error("Failed to create contract bindings", "err", err)

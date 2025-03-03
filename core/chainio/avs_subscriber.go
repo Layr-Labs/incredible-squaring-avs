@@ -2,7 +2,6 @@ package chainio
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/event"
@@ -32,14 +31,14 @@ type AvsSubscriber struct {
 func BuildAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error) {
 	return BuildAvsSubscriber(
 		config.IncredibleSquaringRegistryCoordinatorAddr,
+		config.IncredibleSquaringServiceManager,
 		config.OperatorStateRetrieverAddr,
 		&config.EthWsClient,
 		config.Logger,
 	)
 }
 
-func BuildAvsSubscriber(registryCoordinatorAddr, blsOperatorStateRetrieverAddr gethcommon.Address, ethclient sdkcommon.EthClientInterface, logger sdklogging.Logger) (*AvsSubscriber, error) {
-	serviceManagerAddr := common.HexToAddress("0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575")
+func BuildAvsSubscriber(registryCoordinatorAddr,serviceManagerAddr gethcommon.Address, blsOperatorStateRetrieverAddr gethcommon.Address, ethclient sdkcommon.EthClientInterface, logger sdklogging.Logger) (*AvsSubscriber, error) {
 	avsContractBindings, err := NewAvsManagersBindings(serviceManagerAddr, blsOperatorStateRetrieverAddr, ethclient, logger)
 	if err != nil {
 		logger.Errorf("Failed to create contract bindings", "err", err)

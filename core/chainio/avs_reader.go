@@ -49,10 +49,9 @@ func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
 	}
-	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
+	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr,c.IncredibleSquaringServiceManager, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
 }
-func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend,ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
-	serviceManagerAddr := common.HexToAddress("0xb7278A61aa25c888815aFC32Ad3cC52fF24fE575")
+func BuildAvsReader(registryCoordinatorAddr,serviceManagerAddr gethcommon.Address, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend,ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
 	logger.Info("22")
 	avsManagersBindings, err := NewAvsManagersBindings(serviceManagerAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
