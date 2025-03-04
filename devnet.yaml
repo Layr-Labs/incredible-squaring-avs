@@ -32,12 +32,12 @@ deployments:
     input:
       script/output/3151908: eigenlayer_addresses
     output:
-      avs_addresses: "script/output/3151908/credible_squaring_avs_deployment_output.json"
+      avs_addresses: "script/deployments/incredible-squaring/31337.json"
     # Specify addresses to fetch from avs_addresses artifact
     addresses:
-      serviceManager: avs_addresses:.addresses.credibleSquaringServiceManager
-      taskManager: avs_addresses:.addresses.credibleSquaringTaskManager
-      erc20MockStrategy: avs_addresses:.addresses.erc20MockStrategy
+      serviceManager: avs_addresses:.addresses.IncredibleSquaringServiceManager
+      taskManager: avs_addresses:.addresses.IncredibleSquaringTaskManager
+      erc20MockStrategy: avs_addresses:.addresses.strategy
       operatorStateRetriever: avs_addresses:.addresses.operatorStateRetriever
       registryCoordinator: avs_addresses:.addresses.registryCoordinator
 

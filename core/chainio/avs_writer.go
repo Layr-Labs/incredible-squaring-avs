@@ -5,7 +5,6 @@ import (
 	"math/big"
 
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
