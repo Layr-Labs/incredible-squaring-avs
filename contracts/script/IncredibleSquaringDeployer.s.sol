@@ -110,18 +110,15 @@ contract IncredibleSquaringDeployer is Script {
         erc20Mock = new MockERC20();
         console.log(address(erc20Mock));
         FundOperator.fund_operator(address(erc20Mock), isConfig.operator_addr, 15_000e18);
-        FundOperator.fund_operator(address(erc20Mock), isConfig.operator_2_addr, 30_000e18);
-        console.log(isConfig.operator_2_addr);
-        (bool s,) = isConfig.operator_2_addr.call{value: 0.1 ether}("");
-        require(s);
         incredibleSquaringStrategy =
             IStrategy(StrategyFactory(configData.strategyFactory).deployNewStrategy(erc20Mock));
         rewardscoordinator = configData.rewardsCoordinator;
 
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
-        require(address(incredibleSquaringStrategy) != address(0));
+        // IncredibleSquaringDeploymentLib.DeploymentParams memory params = IncredibleSquaringDeploymentLib.DeploymentParams(proxyAdmin,address(incredibleSquaringStrategy),isConfig,msg.sender);
+
         incrediblSquaringDeployment = IncredibleSquaringDeploymentLib.deployContracts(
-            proxyAdmin, configData, address(incredibleSquaringStrategy), isConfig, msg.sender
+            proxyAdmin, address(incredibleSquaringStrategy), isConfig, msg.sender
         );
         console.log("instantSlasher", incrediblSquaringDeployment.slasher);
 

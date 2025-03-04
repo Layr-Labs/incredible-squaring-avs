@@ -93,9 +93,6 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
 	
-	t,err := w.AvsContractBindings.TaskManager.Owner(&bind.CallOpts{})
-	w.logger.Info("generator_addr")
-	w.logger.Info(t.String())
 	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, numToSquare, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
