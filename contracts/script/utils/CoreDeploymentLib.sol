@@ -214,7 +214,7 @@ library CoreDeploymentLib {
         result.strategyBeacon = address(new UpgradeableBeacon(baseStrategyImpl));
 
         // Upgrade contracts
-        /// TODO: Get from config
+        // / TODO: Get from config
         bytes memory upgradeCall = abi.encodeCall(
             DelegationManager.initialize,
             (
