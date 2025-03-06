@@ -110,6 +110,8 @@ contract IncredibleSquaringDeployer is Script {
         erc20Mock = new MockERC20();
         console.log(address(erc20Mock));
         FundOperator.fund_operator(address(erc20Mock), isConfig.operator_addr, 15_000e18);
+        console2.log("strategy_factory");
+        console2.log(configData.strategyFactory);
         incredibleSquaringStrategy =
             IStrategy(StrategyFactory(configData.strategyFactory).deployNewStrategy(erc20Mock));
         rewardscoordinator = configData.rewardsCoordinator;

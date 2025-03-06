@@ -196,6 +196,9 @@ library IncredibleSquaringDeploymentLib {
         UpgradeableProxyLib.upgradeAndCall(
             result.registryCoordinator, registryCoordinatorImpl, upgradeCall
         );
+        console2.log("rewarr");
+        console2.log(coredata.rewardsCoordinator);
+                console2.log(coredata.permissionController);
         IncredibleSquaringServiceManager incredibleSquaringServiceManagerImpl = new IncredibleSquaringServiceManager(
             (IAVSDirectory(coredata.avsDirectory)),
             IRegistryCoordinator(result.registryCoordinator),
@@ -392,6 +395,9 @@ library IncredibleSquaringDeploymentLib {
         data.delegationManager = json.readAddress(".addresses.delegation");
         data.avsDirectory = json.readAddress(".addresses.avsDirectory");
         data.pauserRegistry = json.readAddress(".addresses.pauserRegistry");
+        data.rewardsCoordinator = json.readAddress(".addresses.rewardsCoordinator");
+        data.permissionController = json.readAddress(".addresses.permissionController");
+        data.allocationManager = json.readAddress(".addresses.allocationManager");
 
         return data;
     }

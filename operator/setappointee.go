@@ -10,7 +10,7 @@ import (
 )
 
 func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManagerAddr common.Address,allocationManagerAddr common.Address,registryCoordinatorAddr common.Address) error {
-
+	o.Logger.Info(serviceManagerAddr.String())
 	serviceManager, _ := mockAvsServiceManager.NewContractMockAvsServiceManager(serviceManagerAddr, o.EthClient)
 	noSendTxOpts, err := o.AvsWriter.TxMgr.GetNoSendTxOpts()
 	waitForReceipt := true
@@ -18,8 +18,12 @@ func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManage
 		return err
 	}
 	selector := [4]byte{211, 217, 111, 244}
+	o.Logger.Info(allocationManagerAddr.String())
+	// a,_ := serviceManager.(&bind.CallOpts{})
 	tx, err := serviceManager.SetAppointee(noSendTxOpts, o.OperatorAddr, allocationManagerAddr, selector)
 	if err != nil {
+
+		o.Logger.Info(err.Error())
 		return err
 	}
 	receipt, err := o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
@@ -27,7 +31,7 @@ func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManage
 		return utils.WrapError("failed to send setAvsRegistrar appointee tx with err", err)
 	}
 	o.Logger.Info("tx successfully included for setAppointee for selector setAvsRegistrar ", "txHash", receipt.TxHash.String())
-
+	
 	allocationManagerContract, _ := allocationManager.NewContractAllocationManager(allocationManagerAddr, o.EthClient)
 
 	tx, _ = allocationManagerContract.SetAVSRegistrar(noSendTxOpts, serviceManagerAddr, registryCoordinatorAddr)

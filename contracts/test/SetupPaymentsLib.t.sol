@@ -179,7 +179,6 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory earnerLeaves =
             SetupPaymentsLib.createEarnerLeaves(earners, tokenLeaves);
 
-        console2.log("222");
         console2.log(rewardsCoordinator.rewardsUpdater());
         cheats.startPrank(deployer);
         SetupPaymentsLib.submitRoot(
