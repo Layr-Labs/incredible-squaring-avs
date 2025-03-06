@@ -5,12 +5,14 @@ import (
 	"log"
 	"os"
 
-	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
+	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
+
 )
 
 func RegisterOperatorWithAvs(ctx *cli.Context) error {
@@ -34,7 +36,13 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
+	
+	if err != nil {
+		return err
+	}
+	operatorSetIds := []uint32{0}
+	waitForReceipt := true
+	socket := "socket"	
 	ecdsaKeyPassword, ok := os.LookupEnv("OPERATOR_ECDSA_KEY_PASSWORD")
 	if !ok {
 		log.Printf("OPERATOR_ECDSA_KEY_PASSWORD env var not set. using empty string")
@@ -43,11 +51,10 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 		nodeConfig.EcdsaPrivateKeyStorePath,
 		ecdsaKeyPassword,
 	)
-	if err != nil {
-		return err
-	}
 
-	err = operator.RegisterOperatorWithAvs(operatorEcdsaPrivKey)
+	operator.SetAppointee(common.HexToAddress(nodeConfig.InstantSlasher), common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),common.HexToAddress(nodeConfig.AllocationManagerAddress),common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress))
+	operator.CreateTotalDelegatedStakeQuorum()
+	err = operator.RegisterForOperatorSets(common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),operatorSetIds,waitForReceipt,*operator.BlsKeypair,socket,operatorEcdsaPrivKey)
 	if err != nil {
 		return err
 	}

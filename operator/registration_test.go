@@ -43,12 +43,12 @@ func createMockOperator() (*Operator, error) {
 	operatorKeypair := bls.NewKeyPair(blsPrivateKey)
 
 	operator := &Operator{
-		logger:             logger,
-		blsKeypair:         operatorKeypair,
-		metricsReg:         reg,
-		metrics:            noopMetrics,
-		newTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
-		operatorId:         MOCK_OPERATOR_ID,
+		Logger:             logger,
+		BlsKeypair:         operatorKeypair,
+		MetricsReg:         reg,
+		Metrics:            noopMetrics,
+		NewTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		OperatorId:         MOCK_OPERATOR_ID,
 	}
 	return operator, nil
 }

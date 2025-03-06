@@ -40,33 +40,33 @@ const AVS_NAME = "incredible-squaring"
 const SEM_VER = "0.0.1"
 
 type Operator struct {
-	config    types.NodeConfig
-	logger    logging.Logger
-	ethClient sdkcommon.EthClientInterface
+	Config    types.NodeConfig
+	Logger    logging.Logger
+	EthClient sdkcommon.EthClientInterface
 	// TODO(samlaf): remove both avsWriter and eigenlayerWrite from operator
 	// they are only used for registration, so we should make a special registration package
 	// this way, auditing this operator code makes it obvious that operators don't need to
 	// write to the chain during the course of their normal operations
 	// writing to the chain should be done via the cli only
-	metricsReg       *prometheus.Registry
-	metrics          metrics.Metrics
-	nodeApi          *nodeapi.NodeApi
-	avsWriter        *chainio.AvsWriter
-	avsReader        chainio.AvsReaderer
-	avsSubscriber    chainio.AvsSubscriberer
-	eigenlayerReader sdkelcontracts.ChainReader
-	eigenlayerWriter sdkelcontracts.ChainWriter
-	blsKeypair       *bls.KeyPair
-	operatorId       sdktypes.OperatorId
-	operatorAddr     common.Address
+	MetricsReg       *prometheus.Registry
+	Metrics          metrics.Metrics
+	NodeApi          *nodeapi.NodeApi
+	AvsWriter        *chainio.AvsWriter
+	AvsReader        chainio.AvsReaderer
+	AvsSubscriber    chainio.AvsSubscriberer
+	EigenlayerReader sdkelcontracts.ChainReader
+	EigenlayerWriter sdkelcontracts.ChainWriter
+	BlsKeypair       *bls.KeyPair
+	OperatorId       sdktypes.OperatorId
+	OperatorAddr     common.Address
 	// receive new tasks in this chan (typically from listening to onchain event)
-	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+	NewTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 	// ip address of aggregator
-	aggregatorServerIpPortAddr string
+	AggregatorServerIpPortAddr string
 	// rpc client to send signed task responses to aggregator
-	aggregatorRpcClient AggregatorRpcClienter
+	AggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
-	credibleSquaringServiceManagerAddr common.Address
+	CredibleSquaringServiceManagerAddr common.Address
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -218,51 +218,51 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	operator := &Operator{
-		config:                             c,
-		logger:                             logger,
-		metricsReg:                         reg,
-		metrics:                            avsAndEigenMetrics,
-		nodeApi:                            nodeApi,
-		ethClient:                          ethRpcClient,
-		avsWriter:                          avsWriter,
-		avsReader:                          avsReader,
-		avsSubscriber:                      avsSubscriber,
-		eigenlayerReader:                   *sdkClients.ElChainReader,
-		eigenlayerWriter:                   *sdkClients.ElChainWriter,
-		blsKeypair:                         blsKeyPair,
-		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
-		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
-		aggregatorRpcClient:                aggregatorRpcClient,
-		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
-		credibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
-		operatorId:                         [32]byte{0}, // this is set below
+		Config:                             c,
+		Logger:                             logger,
+		MetricsReg:                         reg,
+		Metrics:                            avsAndEigenMetrics,
+		NodeApi:                            nodeApi,
+		EthClient:                          ethRpcClient,
+		AvsWriter:                          avsWriter,
+		AvsReader:                          avsReader,
+		AvsSubscriber:                      avsSubscriber,
+		EigenlayerReader:                   *sdkClients.ElChainReader,
+		EigenlayerWriter:                   *sdkClients.ElChainWriter,
+		BlsKeypair:                         blsKeyPair,
+		OperatorAddr:                       common.HexToAddress(c.OperatorAddress),
+		AggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
+		AggregatorRpcClient:                aggregatorRpcClient,
+		NewTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		CredibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
+		OperatorId:                         [32]byte{0}, // this is set below
 
 	}
 	operatorSetsIds := []uint32{0}
 	waitForReceipt := true
 	socket := "socket"
-	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.credibleSquaringServiceManagerAddr,common.HexToAddress(c.AllocationManagerAddress),common.HexToAddress(c.AVSRegistryCoordinatorAddress))
+	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.CredibleSquaringServiceManagerAddr,common.HexToAddress(c.AllocationManagerAddress),common.HexToAddress(c.AVSRegistryCoordinatorAddress))
 	operator.CreateTotalDelegatedStakeQuorum()
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager), operatorSetsIds, waitForReceipt, *operator.blsKeypair, socket)
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager), operatorSetsIds, waitForReceipt, *operator.BlsKeypair, socket)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
-	operatorId, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.operatorAddr)
+	operatorId, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.OperatorAddr)
 	if err != nil {
 		logger.Error("Cannot get operator id", "err", err)
 		return nil, err
 	}
-	operator.operatorId = operatorId
+	operator.OperatorId = operatorId
 	return operator, nil
 
 }
 
 func (o *Operator) Start(ctx context.Context) error {
-	operatorIsRegistered, err := o.avsReader.IsOperatorRegistered(&bind.CallOpts{}, o.operatorAddr)
+	operatorIsRegistered, err := o.AvsReader.IsOperatorRegistered(&bind.CallOpts{}, o.OperatorAddr)
 	if err != nil {
-		o.logger.Error("Error checking if operator is registered", "err", err)
+		o.Logger.Error("Error checking if operator is registered", "err", err)
 		return err
 	}
 	if !operatorIsRegistered {
@@ -271,20 +271,20 @@ func (o *Operator) Start(ctx context.Context) error {
 		return fmt.Errorf("operator is not registered. Registering operator using the operator-cli before starting operator")
 	}
 
-	o.logger.Infof("Starting operator.")
+	o.Logger.Infof("Starting operator.")
 
-	if o.config.EnableNodeApi {
-		o.nodeApi.Start()
+	if o.Config.EnableNodeApi {
+		o.NodeApi.Start()
 	}
 	var metricsErrChan <-chan error
-	if o.config.EnableMetrics {
-		metricsErrChan = o.metrics.Start(ctx, o.metricsReg)
+	if o.Config.EnableMetrics {
+		metricsErrChan = o.Metrics.Start(ctx, o.MetricsReg)
 	} else {
 		metricsErrChan = make(chan error, 1)
 	}
 
 	// TODO(samlaf): wrap this call with increase in avs-node-spec metric
-	sub := o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
+	sub := o.AvsSubscriber.SubscribeToNewTasks(o.NewTaskCreatedChan)
 	for {
 		select {
 		case <-ctx.Done():
@@ -292,21 +292,21 @@ func (o *Operator) Start(ctx context.Context) error {
 		case err := <-metricsErrChan:
 			// TODO(samlaf); we should also register the service as unhealthy in the node api
 			// https://eigen.nethermind.io/docs/spec/api/
-			o.logger.Fatal("Error in metrics server", "err", err)
+			o.Logger.Fatal("Error in metrics server", "err", err)
 		case err := <-sub.Err():
-			o.logger.Error("Error in websocket subscription", "err", err)
+			o.Logger.Error("Error in websocket subscription", "err", err)
 			// TODO(samlaf): write unit tests to check if this fixed the issues we were seeing
 			sub.Unsubscribe()
 			// TODO(samlaf): wrap this call with increase in avs-node-spec metric
-			sub = o.avsSubscriber.SubscribeToNewTasks(o.newTaskCreatedChan)
-		case newTaskCreatedLog := <-o.newTaskCreatedChan:
-			o.metrics.IncNumTasksReceived()
+			sub = o.AvsSubscriber.SubscribeToNewTasks(o.NewTaskCreatedChan)
+		case newTaskCreatedLog := <-o.NewTaskCreatedChan:
+			o.Metrics.IncNumTasksReceived()
 			taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
 			signedTaskResponse, err := o.SignTaskResponse(taskResponse)
 			if err != nil {
 				continue
 			}
-			go o.aggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
+			go o.AggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
 		}
 	}
 }
@@ -314,8 +314,8 @@ func (o *Operator) Start(ctx context.Context) error {
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
-	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
-	o.logger.Info("Received new task",
+	o.Logger.Debug("Received new task", "task", newTaskCreatedLog)
+	o.Logger.Info("Received new task",
 		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
 		"taskIndex", newTaskCreatedLog.TaskIndex,
 		"taskCreatedBlock", newTaskCreatedLog.Task.TaskCreatedBlock,
@@ -323,7 +323,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
 	var numberSquared *big.Int
-	if o.config.SlashSimulate {
+	if o.Config.SlashSimulate {
 		numberSquared = big.NewInt(24)
 	} else {
 	 	numberSquared = big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
@@ -340,15 +340,15 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
-		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
+		o.Logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
 		return nil, err
 	}
-	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
+	blsSignature := o.BlsKeypair.SignMessage(taskResponseHash)
 	signedTaskResponse := &aggregator.SignedTaskResponse{
 		TaskResponse: *taskResponse,
 		BlsSignature: *blsSignature,
-		OperatorId:   o.operatorId,
+		OperatorId:   o.OperatorId,
 	}
-	o.logger.Debug("Signed task response", "signedTaskResponse", signedTaskResponse)
+	o.Logger.Debug("Signed task response", "signedTaskResponse", signedTaskResponse)
 	return signedTaskResponse, nil
 }

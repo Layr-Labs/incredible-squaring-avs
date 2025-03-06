@@ -37,69 +37,69 @@ func (o *Operator) registerOperatorOnStartup(
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
 		// This error might only be that the operator was already registered with eigenlayer, so we don't want to fatal
-		o.logger.Error("Error registering operator with eigenlayer", "err", err)
+		o.Logger.Error("Error registering operator with eigenlayer", "err", err)
 	} else {
-		o.logger.Infof("Registered operator with eigenlayer")
+		o.Logger.Infof("Registered operator with eigenlayer")
 	}
 
 	// TODO(samlaf): shouldn't hardcode number here
 	amount := big.NewInt(1000)
 	err = o.DepositIntoStrategy(mockTokenStrategyAddr, amount)
 	if err != nil {
-		o.logger.Fatal("Error depositing into strategy", "err", err)
+		o.Logger.Fatal("Error depositing into strategy", "err", err)
 	}
-	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
+	o.Logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
 	err = o.RegisterForOperatorSets(registryAddr, avsAddress, operatorSetsIds, waitForReceipt, blsKeyPair, socket, operatorEcdsaPrivateKey)
 	if err != nil {
-		o.logger.Fatal("Error registering operator with avs", "err", err)
+		o.Logger.Fatal("Error registering operator with avs", "err", err)
 	}
-	o.logger.Infof("Registered operator with avs")
+	o.Logger.Infof("Registered operator with avs")
 }
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
 	op := eigenSdkTypes.Operator{
-		Address:                   o.operatorAddr.String(),
-		DelegationApproverAddress: o.operatorAddr.String(),
+		Address:                   (o.OperatorAddr).String(),
+		DelegationApproverAddress: o.OperatorAddr.String(),
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
+	_, err := o.EigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
 	if err != nil {
-		o.logger.Error("Error registering operator with eigenlayer", "err", err)
+		o.Logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
 	}
 	return nil
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
+	_, tokenAddr, err := o.EigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
 	if err != nil {
-		o.logger.Error("Failed to fetch strategy contract", "err", err)
+		o.Logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
 	}
-	contractErc20Mock, err := o.avsReader.GetErc20Mock(context.Background(), tokenAddr)
+	contractErc20Mock, err := o.AvsReader.GetErc20Mock(context.Background(), tokenAddr)
 	if err != nil {
-		o.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
+		o.Logger.Error("Failed to fetch ERC20Mock contract", "err", err)
 		return err
 	}
-	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
+	txOpts, err := o.AvsWriter.TxMgr.GetNoSendTxOpts()
 	if err != nil {
-		o.logger.Errorf("Error in GetNoSendTxOpts")
+		o.Logger.Errorf("Error in GetNoSendTxOpts")
 		return err
 	}
-	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
+	tx, err := contractErc20Mock.Mint(txOpts, o.OperatorAddr, amount)
 	if err != nil {
-		o.logger.Errorf("Error assembling Mint tx")
+		o.Logger.Errorf("Error assembling Mint tx")
 		return err
 	}
-	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx, true)
+	_, err = o.AvsWriter.TxMgr.Send(context.Background(), tx, true)
 	if err != nil {
-		o.logger.Errorf("Error submitting Mint tx")
+		o.Logger.Errorf("Error submitting Mint tx")
 		return err
 	}
 
-	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
+	_, err = o.EigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
 	if err != nil {
-		o.logger.Errorf("Error depositing into strategy", "err", err)
+		o.Logger.Errorf("Error depositing into strategy", "err", err)
 		return err
 	}
 	return nil
@@ -125,33 +125,18 @@ func (o *Operator) RegisterForOperatorSets(
 		BlsKeyPair:      &blsKeyPair,
 		Socket:          socket,
 	}
-	// hardcode these things for now
-	// quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}
-	// socket := "Not Needed"
-	// operatorToAvsRegistrationSigSalt := [32]byte{123}
-	// curBlockNum, err := o.ethClient.BlockNumber(context.Background())
-	// if err != nil {
-	// 	o.logger.Errorf("Unable to get current block number")
-	// 	return err
-	// }
-	// curBlock, err := o.ethClient.HeaderByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
-	// if err != nil {
-	// 	o.logger.Errorf("Unable to get current block")
-	// 	return err
-	// }
-	// sigValidForSeconds := int64(1_000_000)
-	// operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time) + sigValidForSeconds)
-	_, err := o.eigenlayerWriter.RegisterForOperatorSets(
+
+	_, err := o.EigenlayerWriter.RegisterForOperatorSets(
 		context.Background(),
 		registryAddr,
 		registrationRequest,
 	)
 
 	if err != nil {
-		o.logger.Errorf("Unable to register operator with the operator set")
+		o.Logger.Errorf("Unable to register operator with the operator set")
 		return err
 	}
-	o.logger.Infof("Registered operator with operator set")
+	o.Logger.Infof("Registered operator with operator set")
 
 	return nil
 }
@@ -182,19 +167,19 @@ type OperatorStatus struct {
 
 func (o *Operator) PrintOperatorStatus() error {
 	fmt.Println("Printing operator status")
-	operatorId, err := o.avsReader.GetOperatorId(&bind.CallOpts{}, o.operatorAddr)
+	operatorId, err := o.AvsReader.GetOperatorId(&bind.CallOpts{}, o.OperatorAddr)
 	if err != nil {
 		return err
 	}
 	pubkeysRegistered := operatorId != [32]byte{}
-	registeredWithAvs := o.operatorId != [32]byte{}
+	registeredWithAvs := o.OperatorId != [32]byte{}
 	operatorStatus := OperatorStatus{
-		EcdsaAddress:      o.operatorAddr.String(),
+		EcdsaAddress:      (o.OperatorAddr).String(),
 		PubkeysRegistered: pubkeysRegistered,
-		G1Pubkey:          o.blsKeypair.GetPubKeyG1().String(),
-		G2Pubkey:          o.blsKeypair.GetPubKeyG2().String(),
+		G1Pubkey:          o.BlsKeypair.GetPubKeyG1().String(),
+		G2Pubkey:          o.BlsKeypair.GetPubKeyG2().String(),
 		RegisteredWithAvs: registeredWithAvs,
-		OperatorId:        hex.EncodeToString(o.operatorId[:]),
+		OperatorId:        hex.EncodeToString(o.OperatorId[:]),
 	}
 	operatorStatusJson, err := json.MarshalIndent(operatorStatus, "", " ")
 	if err != nil {

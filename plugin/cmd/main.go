@@ -6,22 +6,30 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"time"
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
+	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
+	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
+	"github.com/Layr-Labs/eigensdk-go/nodeapi"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
-	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
+	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
+	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli"
 )
 
@@ -58,6 +66,9 @@ var (
 		EnvVar:   "STRATEGY_ADDR",
 	}
 )
+
+const AVS_NAME = "incredible-squaring"
+const SEM_VER = "0.0.1"
 
 func main() {
 	app := cli.NewApp()
@@ -144,6 +155,7 @@ func plugin(ctx *cli.Context) {
 	}
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
 		ethWsClient,
 		ethHttpClient,
@@ -163,8 +175,10 @@ func plugin(ctx *cli.Context) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethHttpClient, logger, common.HexToAddress(avsConfig.OperatorAddress))
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
+		common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
+		ethWsClient,
 		ethHttpClient,
 		logger,
 	)
@@ -182,19 +196,95 @@ func plugin(ctx *cli.Context) {
 			fmt.Println(err)
 			return
 		}
+		reg:= prometheus.NewRegistry()
+		eigenMetrics := sdkmetrics.NewEigenMetrics(AVS_NAME, avsConfig.EigenMetricsIpPortAddress, reg, logger)
+	avsAndEigenMetrics := metrics.NewAvsAndEigenMetrics(AVS_NAME, eigenMetrics, reg)
+	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, avsConfig.NodeApiIpPortAddress, logger)
+	var ethRpcClient, ethWsClient sdkcommon.EthClientInterface
+	if avsConfig.EnableMetrics {
+		rpcCallsCollector := rpccalls.NewCollector(AVS_NAME, reg)
+		ethRpcClient, err = eth.NewInstrumentedClient(avsConfig.EthRpcUrl, rpcCallsCollector)
+		if err != nil {
+			logger.Errorf("Cannot create http ethclient", "err", err)
+		}
+		ethWsClient, err = eth.NewInstrumentedClient(avsConfig.EthWsUrl, rpcCallsCollector)
+		if err != nil {
+			logger.Errorf("Cannot create ws ethclient", "err", err)
+			
+		}
+	} else {
+		ethRpcClient, err = ethclient.Dial(avsConfig.EthRpcUrl)
+		if err != nil {
+			logger.Errorf("Cannot create http ethclient", "err", err)
+		}
+		ethWsClient, err = ethclient.Dial(avsConfig.EthWsUrl)
+		if err != nil {
+			logger.Errorf("Cannot create ws ethclient", "err", err)
+		}
+	}
+	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
+		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress), ethWsClient, logger,
+	)
 
-		// Register with registry coordination
-		quorumNumbers := sdktypes.QuorumNums{0}
-		socket := "Not Needed"
-		sigValidForSeconds := int64(1_000_000)
-		operatorToAvsRegistrationSigSalt := [32]byte{123}
-		operatorToAvsRegistrationSigExpiry := big.NewInt(int64(time.Now().Unix()) + sigValidForSeconds)
-		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
+	chainioConfig := sdkclients.BuildAllConfig{
+		EthHttpUrl:                  avsConfig.EthRpcUrl,
+		EthWsUrl:                    avsConfig.EthWsUrl,
+		RegistryCoordinatorAddr:     avsConfig.AVSRegistryCoordinatorAddress,
+		OperatorStateRetrieverAddr:  avsConfig.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:       avsConfig.IncredibleSquaringServiceManager,
+		RewardsCoordinatorAddress:   avsConfig.RewardsCoordinatorAddress,
+		PermissionControllerAddress: avsConfig.PermissionControllerAddress,
+		AvsName:                     AVS_NAME,
+		PromMetricsIpPortAddress:    avsConfig.EigenMetricsIpPortAddress,
+	}
+	operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
+		avsConfig.EcdsaPrivateKeyStorePath,
+		ecdsaKeyPassword,
+	)
+	sdkClients, err := sdkclients.BuildAll(chainioConfig, operatorEcdsaPrivateKey, logger)
+	if err != nil {
+		panic(err)
+	}
+	aggregatorRpcClient, err := operator.NewAggregatorRpcClient(avsConfig.AggregatorServerIpPortAddress, logger, avsAndEigenMetrics)
+	if err != nil {
+		logger.Error("Cannot create AggregatorRpcClient. Is aggregator running?", "err", err)
+	}
+		operator := operator.Operator{
+		Config:                             avsConfig,
+		Logger:                             logger,
+		MetricsReg:                         reg,
+		Metrics:                            avsAndEigenMetrics,
+		NodeApi:                            nodeApi,
+		EthClient:                          ethRpcClient,
+		AvsWriter:                          avsWriter,
+		AvsReader:                          avsReader,
+		AvsSubscriber:                      avsSubscriber,
+		EigenlayerReader:                   *sdkClients.ElChainReader,
+		EigenlayerWriter:                   *sdkClients.ElChainWriter,
+		BlsKeypair:                         blsKeypair,
+		OperatorAddr:                       common.HexToAddress(avsConfig.OperatorAddress),
+		AggregatorServerIpPortAddr:         avsConfig.AggregatorServerIpPortAddress,
+		AggregatorRpcClient:                aggregatorRpcClient,
+		NewTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		CredibleSquaringServiceManagerAddr: common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
+		OperatorId:                         [32]byte{0}, // this is set below
+		}
+
+		operatorSetIds := []uint32{0}
+	waitForReceipt := true
+	socket := "socket"
+	operator.SetAppointee(common.HexToAddress(avsConfig.InstantSlasher), common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),common.HexToAddress(avsConfig.AllocationManagerAddress),common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress))
+	operator.CreateTotalDelegatedStakeQuorum()
+		registrationRequest := elcontracts.RegistrationRequest{
+			OperatorAddress: common.HexToAddress(avsConfig.OperatorAddress),
+			AVSAddress:      common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
+			OperatorSetIds:  operatorSetIds,
+			WaitForReceipt:  waitForReceipt,
+			BlsKeyPair:      blsKeypair,
+			Socket:          socket,
+		}
 		r, err := clients.ElChainWriter.RegisterForOperatorSets(
-			goCtx,
-			operatorEcdsaPrivateKey, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
-			blsKeypair, quorumNumbers, socket, true,
-		)
+			goCtx,common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),registrationRequest)
 		if err != nil {
 			logger.Errorf("Error assembling CreateNewTask tx")
 			fmt.Println(err)
