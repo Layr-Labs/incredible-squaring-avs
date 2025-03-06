@@ -5,16 +5,12 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {ContractsRegistry} from "../src/ContractsRegistry.sol";
 
-
-contract DeployContractsRegistry is Script{
-
+contract DeployContractsRegistry is Script {
     address private deployer;
-
 
     function setUp() public {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
-
     }
 
     function run() external {
@@ -28,6 +24,4 @@ contract DeployContractsRegistry is Script{
 
         vm.stopBroadcast();
     }
-
-
 }
