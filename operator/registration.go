@@ -50,11 +50,11 @@ func (o *Operator) registerOperatorOnStartup(
 }
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
-	op := eigenSdkTypes.Operator{
+	op := eigenSdkTypes.M2Operator{
 		Address:                   o.operatorAddr.String(),
 		DelegationApproverAddress: o.operatorAddr.String(),
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
+	_, err := o.eigenlayerWriter.RegisterAsOperatorPreSlashing(context.Background(), op, true)
 	if err != nil {
 		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
