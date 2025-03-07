@@ -103,3 +103,13 @@ tests-contract: ## runs all forge tests
 tests-integration: ## runs all integration tests
 	go test ./tests/integration/... -v -count=1
 
+
+.PHONY: copy-env
+copy-env:
+		@echo "Copying .env.example to .env..."
+		# cp ./contracts/.env.example ./contracts/.env
+
+.PHONY: dump-state
+dump-state: 
+		./tests/anvil/dump-state.sh
+

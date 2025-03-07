@@ -73,6 +73,7 @@ type Operator struct {
 //
 //	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
+
 	var logLevel logging.LogLevel
 	if c.Production {
 		logLevel = sdklogging.Production
@@ -80,6 +81,8 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logLevel = sdklogging.Development
 	}
 	logger, err := sdklogging.NewZapLogger(logLevel)
+	logger.Info("permissioncc")
+	logger.Info(c.PermissionControllerAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -166,6 +169,8 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 	logger.Info(chainioConfig.RegistryCoordinatorAddr)
+	logger.Info(chainioConfig.ServiceManagerAddress)
+	logger.Info(chainioConfig.RegistryCoordinatorAddr)
 	sdkClients, err := clients.BuildAll(chainioConfig, operatorEcdsaPrivateKey, logger)
 	if err != nil {
 		panic(err)
@@ -201,7 +206,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger.Error("Cannot create AvsSubscriber", "err", err)
 		return nil, err
 	}
-
+	
 	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph calls)
 	// and not instrumented metrics: see https://prometheus.io/docs/instrumenting/writing_clientlibs/#overall-structure
 	quorumNames := map[sdktypes.QuorumNum]string{

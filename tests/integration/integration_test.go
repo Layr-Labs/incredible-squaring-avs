@@ -22,6 +22,8 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/go-connections/nat"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -54,10 +56,14 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
 	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
-	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
+	credibleSquaringDeploymentFilePath := "../../contracts/script/deployments/incredible-squaring//31337.json"
 	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
+	logger.Info(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager)
+	logger.Info(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr)
+	logger.Info(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr)
+
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
@@ -111,6 +117,7 @@ func TestIntegration(t *testing.T) {
 		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
 		TxMgr:                                     txMgr,
 		AggregatorAddress:                         aggregatorAddr,
+		IncredibleSquaringServiceManager: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
 	}
 
 	/* Prepare the config file for operator */
@@ -205,18 +212,26 @@ func startAnvilTestContainer() testcontainers.Container {
 
 	ctx := context.Background()
 	req := testcontainers.ContainerRequest{
-		Image: "ghcr.io/foundry-rs/foundry:nightly-3abac322efdb69e27b6fe8748b72754ae878f64d@sha256:871b66957335636a02c6c324c969db9adb1d6d64f148753c4a986cf32a40dc3c",
+		Image: "ghcr.io/foundry-rs/foundry:latest",
 		Mounts: testcontainers.ContainerMounts{
 			testcontainers.ContainerMount{
 				Source: testcontainers.GenericBindMountSource{
-					HostPath: filepath.Join(integrationDir, "../anvil/avs-and-eigenlayer-deployed-anvil-state.json"),
+					HostPath: filepath.Join(integrationDir, "../anvil/avs-and-eigenlayer-deployed-anvil-state/state.json"),
 				},
-				Target: "/root/.anvil/state.json",
+				Target: "/state.json",
 			},
 		},
 		Entrypoint:   []string{"anvil"},
-		Cmd:          []string{"--host", "0.0.0.0", "--load-state", "/root/.anvil/state.json"},
+		Cmd:          []string{"--host", "0.0.0.0", "--load-state", "/state.json"},
 		ExposedPorts: []string{"8545/tcp"},
+		HostConfigModifier: func(hostConfig *container.HostConfig) {
+    		hostConfig.PortBindings = map[nat.Port][]nat.PortBinding{
+        		"8545/tcp": {
+            	{HostIP: "0.0.0.0", HostPort: "8545"},
+        		},
+    		}
+		},
+
 		WaitingFor:   wait.ForLog("Listening on"),
 	}
 	anvilC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

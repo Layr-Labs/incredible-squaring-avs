@@ -22,12 +22,13 @@ func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManage
 	// a,_ := serviceManager.(&bind.CallOpts{})
 	tx, err := serviceManager.SetAppointee(noSendTxOpts, o.OperatorAddr, allocationManagerAddr, selector)
 	if err != nil {
-
+		o.Logger.Info("22")
 		o.Logger.Info(err.Error())
 		return err
 	}
 	receipt, err := o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
 	if err != nil {
+		o.Logger.Info("33")
 		return utils.WrapError("failed to send setAvsRegistrar appointee tx with err", err)
 	}
 	o.Logger.Info("tx successfully included for setAppointee for selector setAvsRegistrar ", "txHash", receipt.TxHash.String())

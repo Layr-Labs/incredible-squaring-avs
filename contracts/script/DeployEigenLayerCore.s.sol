@@ -6,7 +6,7 @@ import {console2} from "forge-std/console2.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
-contract DeployEigenlayerCore is Script {
+contract DeployEigenLayerCore is Script {
     using CoreDeploymentLib for *;
     using UpgradeableProxyLib for address;
 

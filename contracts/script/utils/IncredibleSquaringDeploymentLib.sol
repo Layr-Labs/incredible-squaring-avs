@@ -199,6 +199,7 @@ library IncredibleSquaringDeploymentLib {
         console2.log("rewarr");
         console2.log(coredata.rewardsCoordinator);
                 console2.log(coredata.permissionController);
+        require(coredata.permissionController != address(0));
         IncredibleSquaringServiceManager incredibleSquaringServiceManagerImpl = new IncredibleSquaringServiceManager(
             (IAVSDirectory(coredata.avsDirectory)),
             IRegistryCoordinator(result.registryCoordinator),

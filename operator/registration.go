@@ -71,11 +71,13 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
+	
 	_, tokenAddr, err := o.EigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
 	if err != nil {
 		o.Logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
 	}
+	o.Logger.Info(tokenAddr.String())
 	contractErc20Mock, err := o.AvsReader.GetErc20Mock(context.Background(), tokenAddr)
 	if err != nil {
 		o.Logger.Error("Failed to fetch ERC20Mock contract", "err", err)
