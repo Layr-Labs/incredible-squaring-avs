@@ -99,6 +99,8 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddr.String(),
 		AvsName:                    avsName,
 		PromMetricsIpPortAddress:   ":9090",
+
+		DontUseAllocationManager: true,
 	}
 	clients, err := clients.BuildAll(chainioConfig, c.EcdsaPrivateKey, c.Logger)
 	if err != nil {
@@ -255,6 +257,7 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 	for _, quorumNum := range newTask.QuorumNumbers {
 		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
 	}
-	agg.blsAggregationService.InitializeNewTask(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
+	metadata := blsagg.NewTaskMetadata(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
+	agg.blsAggregationService.InitializeNewTask(metadata)
 	return nil
 }
