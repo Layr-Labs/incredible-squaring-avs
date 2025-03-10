@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/exp/rand"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -322,6 +324,14 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
 	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+
+	if o.timesFailing > 0 {
+		rand.Seed(uint64((time.Now().UnixNano())))
+		num := rand.Intn(100)
+		if num < o.timesFailing {
+			numberSquared = big.NewInt(908243203843)
+		}
+	}
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		NumberSquared:      numberSquared,
