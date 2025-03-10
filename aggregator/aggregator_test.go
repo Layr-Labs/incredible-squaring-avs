@@ -98,6 +98,12 @@ func createMockAggregator(
 	return aggregator, mockAvsWriter, mockBlsAggregationService, nil
 }
 
+type MockTask struct {
+	TaskNum        uint32
+	BlockNumber    uint32
+	NumberToSquare uint32
+}
+
 func TestSendNewTask(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
