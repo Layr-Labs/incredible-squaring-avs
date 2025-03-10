@@ -12,7 +12,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.14
 	go.uber.org/mock v0.4.0
-	golang.org/x/crypto v0.32.0
+	golang.org/x/crypto v0.32.0 
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	gopkg.in/yaml.v3 v3.0.1
 )
