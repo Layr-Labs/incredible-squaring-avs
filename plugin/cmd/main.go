@@ -274,7 +274,12 @@ func plugin(ctx *cli.Context) {
 	waitForReceipt := true
 	socket := "socket"
 	operator.SetAppointee(common.HexToAddress(avsConfig.InstantSlasher), common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),common.HexToAddress(avsConfig.AllocationManagerAddress),common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress))
-	operator.CreateTotalDelegatedStakeQuorum()
+	maxOperatorCount:=3
+	kickBpsOfOperatorStake:= 100
+	kickBpsOfTotalStake:= 1000
+	minimumStake :=0
+	multiplier:= 1
+	operator.CreateTotalDelegatedStakeQuorum(uint32(maxOperatorCount),uint16(kickBpsOfOperatorStake),uint16(kickBpsOfTotalStake),int64(minimumStake),int64(multiplier))
 		registrationRequest := elcontracts.RegistrationRequest{
 			OperatorAddress: common.HexToAddress(avsConfig.OperatorAddress),
 			AVSAddress:      common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
