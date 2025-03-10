@@ -30,9 +30,6 @@ deploy-el-and-avs-contracts:
 	$(MAKE) deploy-eigenlayer
 	$(MAKE) deploy-avs
 
-start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
-
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
 
@@ -63,7 +60,7 @@ cli-print-operator-status: ##
 	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
 send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
-	cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+	cast send 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
 -----------------------------: ## 
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it

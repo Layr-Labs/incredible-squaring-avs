@@ -26,10 +26,11 @@ forge create src/ContractsRegistry.sol:ContractsRegistry --rpc-url $RPC_URL --pr
 
 forge script script/DeployEigenLayerCore.s.sol:DeployEigenLayerCore --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY 
 
-forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow
+forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
-forge script script/ContractsRegistry.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --slow
+forge script script/ContractsRegistry.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast 
 
-# forge script script/SetupPayments.s.sol --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY
+# TODO(nova) this fails if we run all together with arithmetic underlow or overflow in createAVSRewardsSubmission
+# forge script script/SetupPayments.s.sol --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY  -vvv
 
 # forge script script/OperatorDirectedPayments.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
