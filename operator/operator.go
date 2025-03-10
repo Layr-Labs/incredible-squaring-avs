@@ -26,7 +26,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
-	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
@@ -41,7 +40,7 @@ const SEM_VER = "0.0.1"
 
 type Operator struct {
 	config    types.NodeConfig
-	logger    logging.Logger
+	logger    sdklogging.Logger
 	ethClient sdkcommon.EthClientInterface
 	// TODO(samlaf): remove both avsWriter and eigenlayerWrite from operator
 	// they are only used for registration, so we should make a special registration package
@@ -73,7 +72,7 @@ type Operator struct {
 //
 //	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
-	var logLevel logging.LogLevel
+	var logLevel sdklogging.LogLevel
 	if c.Production {
 		logLevel = sdklogging.Production
 	} else {
