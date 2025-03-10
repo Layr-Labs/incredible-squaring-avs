@@ -13,7 +13,6 @@ import (
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	gethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -74,10 +73,10 @@ func (mr *MockEthClientMockRecorder) TransactionByHash(arg0, arg1 any) *gomock.C
 }
 
 // TransactionByHash mocks base method.
-func (m *MockEthClient) TransactionByHash(arg0 context.Context, arg1 common.Hash) (*types.Transaction, bool, error) {
+func (m *MockEthClient) TransactionByHash(arg0 context.Context, arg1 common.Hash) (*gethtypes.Transaction, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransactionByHash", arg0, arg1)
-	ret0, _ := ret[0].(*types.Transaction)
+	ret0, _ := ret[0].(*gethtypes.Transaction)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -113,7 +112,7 @@ func TestCallChallengeModule(t *testing.T) {
 			NumberSquared:      big.NewInt(2),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskResponsedBlock: 1001,
+			TaskRespondedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
@@ -155,7 +154,7 @@ func TestRaiseChallenge(t *testing.T) {
 			NumberSquared:      big.NewInt(9),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskResponsedBlock: 1001,
+			TaskRespondedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
@@ -195,7 +194,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 			NumberSquared:      big.NewInt(9),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskResponsedBlock: 1001,
+			TaskRespondedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},

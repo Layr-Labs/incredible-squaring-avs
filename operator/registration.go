@@ -50,11 +50,11 @@ func (o *Operator) registerOperatorOnStartup(
 }
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
-	op := eigenSdkTypes.Operator{
+	op := eigenSdkTypes.M2Operator{
 		Address:                   o.operatorAddr.String(),
 		DelegationApproverAddress: o.operatorAddr.String(),
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
+	_, err := o.eigenlayerWriter.RegisterAsOperatorPreSlashing(context.Background(), op, true)
 	if err != nil {
 		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
@@ -63,7 +63,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(nil, strategyAddr)
+	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
@@ -104,22 +104,9 @@ func (o *Operator) RegisterOperatorWithAvs(
 	// hardcode these things for now
 	quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}
 	socket := "Not Needed"
-	operatorToAvsRegistrationSigSalt := [32]byte{123}
-	curBlockNum, err := o.ethClient.BlockNumber(context.Background())
-	if err != nil {
-		o.logger.Errorf("Unable to get current block number")
-		return err
-	}
-	curBlock, err := o.ethClient.HeaderByNumber(context.Background(), big.NewInt(int64(curBlockNum)))
-	if err != nil {
-		o.logger.Errorf("Unable to get current block")
-		return err
-	}
-	sigValidForSeconds := int64(1_000_000)
-	operatorToAvsRegistrationSigExpiry := big.NewInt(int64(curBlock.Time) + sigValidForSeconds)
-	_, err = o.avsWriter.RegisterOperatorInQuorumWithAVSRegistryCoordinator(
+	_, err := o.avsWriter.RegisterOperator(
 		context.Background(),
-		operatorEcdsaKeyPair, operatorToAvsRegistrationSigSalt, operatorToAvsRegistrationSigExpiry,
+		operatorEcdsaKeyPair,
 		o.blsKeypair, quorumNumbers, socket, true,
 	)
 
