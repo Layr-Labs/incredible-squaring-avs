@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/exp/rand"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -26,7 +28,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
-	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
@@ -41,7 +42,7 @@ const SEM_VER = "0.0.1"
 
 type Operator struct {
 	config    types.NodeConfig
-	logger    logging.Logger
+	logger    sdklogging.Logger
 	ethClient sdkcommon.EthClientInterface
 	// TODO(samlaf): remove both avsWriter and eigenlayerWrite from operator
 	// they are only used for registration, so we should make a special registration package
@@ -67,13 +68,15 @@ type Operator struct {
 	aggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	credibleSquaringServiceManagerAddr common.Address
+	// If bigger than zero, submits wrong responses that many times every 100
+	timesFailing int
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
 //
 //	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
-	var logLevel logging.LogLevel
+	var logLevel sdklogging.LogLevel
 	if c.Production {
 		logLevel = sdklogging.Production
 	} else {
@@ -233,7 +236,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
-
+		timesFailing:                       c.TimesFailing,
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -255,7 +258,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	)
 
 	return operator, nil
-
 }
 
 func (o *Operator) Start(ctx context.Context) error {
@@ -322,6 +324,14 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
 	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+
+	if o.timesFailing > 0 {
+		rand.Seed(uint64((time.Now().UnixNano())))
+		num := rand.Intn(100)
+		if num < o.timesFailing {
+			numberSquared = big.NewInt(908243203843)
+		}
+	}
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		NumberSquared:      numberSquared,

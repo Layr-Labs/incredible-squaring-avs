@@ -47,7 +47,9 @@ Register the operator with eigenlayer and incredible-squaring, and then start th
 make start-operator
 ```
 
-> By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`.
+> By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`. 
+
+> The operator also will produce an invalid result 10 times every 100, as it is set in `times_failing` flag of the same config file.
 
 ## Running via docker compose
 
