@@ -17,18 +17,13 @@ func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManage
 	if err != nil {
 		return err
 	}
-	selector := [4]byte{211, 217, 111, 244}
-	o.Logger.Info(allocationManagerAddr.String())
-	// a,_ := serviceManager.(&bind.CallOpts{})
+	selector := [4]byte{211, 217, 111, 244} // setAvsRegistrar call selector
 	tx, err := serviceManager.SetAppointee(noSendTxOpts, o.OperatorAddr, allocationManagerAddr, selector)
 	if err != nil {
-		o.Logger.Info("22")
-		o.Logger.Info(err.Error())
 		return err
 	}
 	receipt, err := o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
 	if err != nil {
-		o.Logger.Info("33")
 		return utils.WrapError("failed to send setAvsRegistrar appointee tx with err", err)
 	}
 	o.Logger.Info("tx successfully included for setAppointee for selector setAvsRegistrar ", "txHash", receipt.TxHash.String())
@@ -42,7 +37,7 @@ func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManage
 	}
 	o.Logger.Info("tx successfully included for setAvsRegistrar ", "txHash", receipt.TxHash.String())
 
-	createOperatorSetsSelector := [4]byte{38, 31, 132, 224}
+	createOperatorSetsSelector := [4]byte{38, 31, 132, 224} // createOperatorSets selector
 	tx, err = serviceManager.SetAppointee(noSendTxOpts, registryCoordinatorAddr, allocationManagerAddr, createOperatorSetsSelector)
 	if err != nil {
 		return err
@@ -53,7 +48,7 @@ func (o *Operator) SetAppointee(instantSlasherAddr common.Address, serviceManage
 	}
 	o.Logger.Info("tx successfully included for setAppointee for selector createOperatorSets", "txHash", receipt.TxHash.String())
 
-	slashOperatorSelector := [4]byte{54, 53, 32, 87}
+	slashOperatorSelector := [4]byte{54, 53, 32, 87} // slashOperator selector 
 	tx, err = serviceManager.SetAppointee(noSendTxOpts, instantSlasherAddr, allocationManagerAddr, slashOperatorSelector)
 	if err != nil {
 		return err

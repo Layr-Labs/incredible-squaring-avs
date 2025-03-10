@@ -131,7 +131,6 @@ func (w *AvsWriter) SendAggregatedResponse(
 		return nil, err
 	}
 	w.logger.Info("tx hash :respond to task")
-	w.logger.Info(receipt.TxHash.String())
 	return receipt, nil
 }
 
