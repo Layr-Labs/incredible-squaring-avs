@@ -26,4 +26,6 @@ type NodeConfig struct {
 	OperatorSetId 				  uint32 `yaml:"operator_set_id"`
 	Socket						  string `yaml:"socket"`
 	MaxOperatorCount			  uint32 `yaml:"max_operator_count"`
+	KickBIPsOfOperatorStake		  uint16 `yaml:"kick_bips_of_operator_stake"`
+	KickBIPsOfTotalStake		  uint16 `yaml:"kick_bips_of_total_stake"`
 }

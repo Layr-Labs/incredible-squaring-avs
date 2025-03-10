@@ -191,6 +191,8 @@ artifacts:
           slash_simulate: True
           operator_set_id: 0
           max_operator_count: 3
+          kick_bips_of_operator_stake: 100
+          kick_bips_of_total_stake: 1000
 
   # operator2-config:
   #   files:
