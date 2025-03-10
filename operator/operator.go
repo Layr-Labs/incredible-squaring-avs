@@ -66,6 +66,8 @@ type Operator struct {
 	aggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	credibleSquaringServiceManagerAddr common.Address
+	// If bigger than zero, submits wrong responses that many times every 100
+	timesFailing int
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -232,7 +234,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
-
+		timesFailing:                       c.TimesFailing,
 	}
 
 	if c.RegisterOperatorOnStartup {
@@ -254,7 +256,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	)
 
 	return operator, nil
-
 }
 
 func (o *Operator) Start(ctx context.Context) error {
