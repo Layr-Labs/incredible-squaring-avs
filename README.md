@@ -30,10 +30,14 @@ This simple session illustrates the basic flow of the AVS. The makefile commands
 Start anvil in a separate terminal:
 
 ```bash
-make start-anvil-chain-with-el-and-avs-deployed
+anvil
 ```
 
-The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and incredible-squaring contracts already deployed (but no operator registered).
+Deploy contracts:
+
+```bash
+make deploy-el-and-avs-contracts
+```
 
 Start the aggregator:
 
@@ -48,6 +52,12 @@ make start-operator
 ```
 
 > By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`.
+
+Start the challenger:
+
+```bash
+make challenger
+```
 
 ## Running via docker compose
 
