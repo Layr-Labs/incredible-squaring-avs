@@ -9,8 +9,8 @@ import (
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 )
 
-func (o *Operator) CreateTotalDelegatedStakeQuorum() error {
-	operatorSetParams := regcoord.ISlashingRegistryCoordinatorTypesOperatorSetParam{MaxOperatorCount: 3, KickBIPsOfOperatorStake: 100, KickBIPsOfTotalStake: 1000}
+func (o *Operator) CreateTotalDelegatedStakeQuorum(maxOperatorCount uint32) error {
+	operatorSetParams := regcoord.ISlashingRegistryCoordinatorTypesOperatorSetParam{MaxOperatorCount: maxOperatorCount, KickBIPsOfOperatorStake: 100, KickBIPsOfTotalStake: 1000}
 	minimumStake := big.NewInt(0)
 	strategyParams := []regcoord.IStakeRegistryTypesStrategyParams{
 		{

@@ -61,7 +61,7 @@ services:
     input:
       /usr/src/app/config-files/:
         - operator1-config
-      /usr/src/app/keys/:  # Use an absolute path instead of "."
+      /usr/src/app/keys/:  
         - keys-config
         # - operator1_bls_keys
         # - deployer_key
@@ -190,6 +190,7 @@ artifacts:
           token_strategy_addr: {{.addresses.incredible_squaring.erc20MockStrategy}}
           slash_simulate: True
           operator_set_id: 0
+          max_operator_count: 3
 
   # operator2-config:
   #   files:

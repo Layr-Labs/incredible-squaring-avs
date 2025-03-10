@@ -24,4 +24,6 @@ type NodeConfig struct {
 	EnableNodeApi                 bool   `yaml:"enable_node_api"`
 	SlashSimulate 				  bool   `yaml:"slash_simulate"`
 	OperatorSetId 				  uint32 `yaml:"operator_set_id"`
+	Socket						  string `yaml:"socket"`
+	MaxOperatorCount			  uint32 `yaml:"max_operator_count"`
 }

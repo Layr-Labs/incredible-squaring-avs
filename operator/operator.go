@@ -244,12 +244,11 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 	operatorSetsIds := []uint32{c.OperatorSetId}
 	waitForReceipt := true
-	socket := "socket"
 	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.CredibleSquaringServiceManagerAddr,common.HexToAddress(c.AllocationManagerAddress),common.HexToAddress(c.AVSRegistryCoordinatorAddress))
-	operator.CreateTotalDelegatedStakeQuorum()
+	operator.CreateTotalDelegatedStakeQuorum(c.MaxOperatorCount)
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager), operatorSetsIds, waitForReceipt, *operator.BlsKeypair, socket)
+		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager), operatorSetsIds, waitForReceipt, *operator.BlsKeypair, c.Socket)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
