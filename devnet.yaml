@@ -18,7 +18,6 @@ deployments:
     script: script/DeployEigenLayerCore.s.sol
     env:
       PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
-      extra_args: --broadcast
       # RPC_URL: "{{.http_rpc_url}}"
     output:
       eigenlayer_addresses: "script/deployments/core/3151908.json"
@@ -26,13 +25,13 @@ deployments:
       allocationManager: eigenlayer_addresses:.addresses.allocationManager
       permissionController: eigenlayer_addresses:.addresses.permissionController
       rewardsCoordinator: eigenlayer_addresses:.addresses.rewardsCoordinator
+
   - name: incredible_squaring
     repo: "."
     contracts_path: "contracts"
     script: script/IncredibleSquaringDeployer.s.sol
     env:
       PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
-    # extra_args: --sig 'run(string memory configFile)' -- incredible_squaring_config.json
     input:
       .: 
         - incredible-config
@@ -62,11 +61,13 @@ services:
     input:
       /usr/src/app/config-files/:
         - operator1-config
-        - operator1_bls_keys
-        - operator1_ecdsa_keys
+      /usr/src/app/keys/:  # Use an absolute path instead of "."
+        - keys-config
+        # - operator1_bls_keys
+        # - deployer_key
     env:
-      OPERATOR_ECDSA_KEY_PASSWORD: "{{.keys.operator1_ecdsa_keys.password}}"
-      OPERATOR_BLS_KEY_PASSWORD: "{{.keys.operator1_bls_keys.password}}"
+      OPERATOR_ECDSA_KEY_PASSWORD: ""
+      OPERATOR_BLS_KEY_PASSWORD: ""
     cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
 
   # - name: operator2
@@ -131,25 +132,26 @@ services:
 
 keys:
   # This generates new keypairs for each operator
-  - name: operator1_bls_keys
-    type: bls
-  - name: operator1_ecdsa_keys
-    type: ecdsa
-  - name: operator2_bls_keys
-    type: bls
-  - name: operator2_ecdsa_keys
-    type: ecdsa
-  - name: operator3_bls_keys
-    type: bls
-  - name: operator3_ecdsa_keys
-    type: ecdsa
+  - name: deployer_key
+    type: "ecdsa"
+    address: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+    private_key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+  # - name: operator1_bls_keys
+  #   type: bls
+  # - name: operator1_ecdsa_keys
+  #   type: ecdsa
+  # - name: operator2_bls_keys
+  #   type: bls
+  # - name: operator2_ecdsa_keys
+  #   type: ecdsa
+  # - name: operator3_bls_keys
+  #   type: bls
+  # - name: operator3_ecdsa_keys
+  #   type: ecdsa
   # This ensures the aggregator has funds
   - name: aggregator_key
     address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
     private_key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-  - name: deployer_key
-    address: "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
-    private_key: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 artifacts:
   aggregator-config:
     files:
@@ -177,8 +179,8 @@ artifacts:
           instant_slasher_address: {{.addresses.incredible_squaring.instantSlasher}}
           eth_rpc_url: {{.http_rpc_url}}
           eth_ws_url: {{.ws_rpc_url}}
-          ecdsa_private_key_store_path: /usr/src/app/config-files/keys/1.ecdsa.key.json
-          bls_private_key_store_path: /usr/src/app/config-files/keys/1.bls.key.json
+          ecdsa_private_key_store_path: /usr/src/app/keys/test.ecdsa.key.json
+          bls_private_key_store_path: /usr/src/app/keys/test.bls.key.json
           aggregator_server_ip_port_address: aggregator:8090
           eigen_metrics_ip_port_address: "0.0.0.0:8081"
           enable_metrics: True
@@ -242,6 +244,12 @@ artifacts:
     files:
       incredible_squaring_config.json:
         static_file: "contracts/incredible_squaring_config.json"
+  keys-config:
+    files:
+      test.ecdsa.key.json:
+        static_file: "tests/keys/test.ecdsa.key.json"
+      test.bls.key.json:
+        static_file: "tests/keys/test.bls.key.json"
 
 ethereum_package:
   additional_services:

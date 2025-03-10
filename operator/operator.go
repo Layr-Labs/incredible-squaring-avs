@@ -180,6 +180,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		panic(err)
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, common.HexToAddress(c.OperatorAddress))
+	logger.Info(c.AVSRegistryCoordinatorAddress)
+	logger.Info(c.OperatorStateRetrieverAddress)
+	logger.Info(c.IncredibleSquaringServiceManager)
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.IncredibleSquaringServiceManager), common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, ethRpcClient, logger,
