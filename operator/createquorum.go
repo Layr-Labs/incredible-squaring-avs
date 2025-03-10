@@ -10,9 +10,6 @@ import (
 )
 
 func (o *Operator) CreateTotalDelegatedStakeQuorum() error {
-	o.Logger.Info(o.Config.PermissionControllerAddress)
-	o.Logger.Info(o.Config.AllocationManagerAddress)
-	o.Logger.Info(o.Config.AVSRegistryCoordinatorAddress)
 	operatorSetParams := regcoord.ISlashingRegistryCoordinatorTypesOperatorSetParam{MaxOperatorCount: 3, KickBIPsOfOperatorStake: 100, KickBIPsOfTotalStake: 1000}
 	minimumStake := big.NewInt(0)
 	strategyParams := []regcoord.IStakeRegistryTypesStrategyParams{

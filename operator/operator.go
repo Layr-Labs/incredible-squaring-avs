@@ -168,9 +168,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.Info(chainioConfig.RegistryCoordinatorAddr)
-	logger.Info(chainioConfig.ServiceManagerAddress)
-	logger.Info(chainioConfig.RegistryCoordinatorAddr)
 	sdkClients, err := clients.BuildAll(chainioConfig, operatorEcdsaPrivateKey, logger)
 	if err != nil {
 		panic(err)

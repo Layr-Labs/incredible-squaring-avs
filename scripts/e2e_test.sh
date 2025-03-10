@@ -5,9 +5,9 @@
 
 # This script receives the EL contract version to test against
 # In case they aren't specified, we use a default one
-DEFAULT_REF=v0.3.3-mainnet-rewards
-EL_REF="${EL_REF:-$DEFAULT_REF}"
-EL_VERSION="${EL_VERSION:-$EL_REF}"
+# DEFAULT_REF=v0.3.3-mainnet-rewards
+# EL_REF="${EL_REF:-$DEFAULT_REF}"
+# EL_VERSION="${EL_VERSION:-$EL_REF}"
 
 set -e -o nounset
 
@@ -24,11 +24,11 @@ avs-devnet stop || true
 
 cp devnet.yaml devnet.yaml.bak
 
-# Update the devnet configuration with the EL contract versions to test against
-if [[ $EL_REF != $DEFAULT_REF ]] ; then
-    yq -i ".deployments.0.ref = \"$EL_REF\"" devnet.yaml
-    yq -i ".deployments.0.version = \"$EL_VERSION\"" devnet.yaml
-fi
+# # Update the devnet configuration with the EL contract versions to test against
+# if [[ $EL_REF != $DEFAULT_REF ]] ; then
+#     yq -i ".deployments.0.ref = \"$EL_REF\"" devnet.yaml
+#     yq -i ".deployments.0.version = \"$EL_VERSION\"" devnet.yaml
+# fi
 
 # Stop the devnet after we finish
 cleanup() {
@@ -47,7 +47,7 @@ avs-devnet start || { echo "Failed to start the devnet" ; exit 42; }
 RPC_URL=$(avs-devnet get-ports | yq .el-1-besu-lighthouse.rpc)
 echo "Fetched RPC URL: $RPC_URL"
 
-TASK_MANAGER_ADDR=$(avs-devnet get-address avs_addresses:credibleSquaringTaskManager)
+TASK_MANAGER_ADDR=$(avs-devnet get-address avs_addresses:IncredibleSquaringTaskManager)
 echo "Fetched TaskManager address: $TASK_MANAGER_ADDR"
 
 # Fetch the latest task number

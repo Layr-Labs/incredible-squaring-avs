@@ -73,6 +73,4 @@ jobs:
       - name: Run end-to-end test
         working-directory: ics
         run: |
-          export EL_REF=${{ matrix.el-contracts.ref }}
-          export EL_VERSION=${{ matrix.el-contracts.version }}
           ./scripts/e2e_test.sh
