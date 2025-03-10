@@ -189,6 +189,7 @@ artifacts:
           register_operator_on_startup: True
           token_strategy_addr: {{.addresses.incredible_squaring.erc20MockStrategy}}
           slash_simulate: True
+          operator_set_id: 0
 
   # operator2-config:
   #   files:

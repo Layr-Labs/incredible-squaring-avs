@@ -23,4 +23,5 @@ type NodeConfig struct {
 	NodeApiIpPortAddress          string `yaml:"node_api_ip_port_address"`
 	EnableNodeApi                 bool   `yaml:"enable_node_api"`
 	SlashSimulate 				  bool   `yaml:"slash_simulate"`
+	OperatorSetId 				  uint32 `yaml:"operator_set_id"`
 }

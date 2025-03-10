@@ -9,7 +9,7 @@ on:
 env:
   KURTOSIS_VERSION: "1.4.4"
   DEVNET_VERSION: "v0.1.0-rc.3"
-
+  
 jobs:  
   e2e:
     strategy:

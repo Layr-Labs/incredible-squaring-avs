@@ -81,8 +81,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logLevel = sdklogging.Development
 	}
 	logger, err := sdklogging.NewZapLogger(logLevel)
-	logger.Info("permissioncc")
-	logger.Info(c.PermissionControllerAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +242,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		OperatorId:                         [32]byte{0}, // this is set below
 
 	}
-	operatorSetsIds := []uint32{0}
+	operatorSetsIds := []uint32{c.OperatorSetId}
 	waitForReceipt := true
 	socket := "socket"
 	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.CredibleSquaringServiceManagerAddr,common.HexToAddress(c.AllocationManagerAddress),common.HexToAddress(c.AVSRegistryCoordinatorAddress))
