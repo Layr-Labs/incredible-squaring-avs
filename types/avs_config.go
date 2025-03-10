@@ -28,4 +28,7 @@ type NodeConfig struct {
 	MaxOperatorCount			  uint32 `yaml:"max_operator_count"`
 	KickBIPsOfOperatorStake		  uint16 `yaml:"kick_bips_of_operator_stake"`
 	KickBIPsOfTotalStake		  uint16 `yaml:"kick_bips_of_total_stake"`
+	MinimumStake				  int64 `yaml:"minimum_stake"`
+	Multiplier					  int64 `yaml:"multiplier"`
+
 }

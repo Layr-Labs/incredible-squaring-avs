@@ -52,3 +52,5 @@ socket: operator-socket
 max_operator_count: 3
 kick_bips_of_operator_stake: 100
 kick_bips_of_total_stake: 1000
+minimum_stake: 0
+multiplier: 1
