@@ -16,11 +16,13 @@ import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
 import {
     IBLSApkRegistry,
     IIndexRegistry,
-    IStakeRegistry
+    IStakeRegistry,
+    ISocketRegistry
 } from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
+import {SocketRegistry} from "eigenlayer-middleware/src/SocketRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
 import {
@@ -75,6 +77,9 @@ contract IncredibleSquaringDeployer is Script {
 
     IStakeRegistry public stakeRegistry;
     IStakeRegistry public stakeRegistryImplementation;
+
+    ISocketRegistry public socketRegistry;
+    ISocketRegistry public socketRegistryImplementation;
 
     OperatorStateRetriever public operatorStateRetriever;
 
