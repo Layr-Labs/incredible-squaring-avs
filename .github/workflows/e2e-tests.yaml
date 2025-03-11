@@ -20,16 +20,15 @@ jobs:
           - ref: v0.3.3-mainnet-rewards
             version: v0.3.3
           # All of them fail because "delegation" was renamed to "delegationManager" in the addresses JSON
-          # TODO: fix these
-          # # Rewards v1
-          # - ref: v0.4.3-mainnet-rewards-foundation-incentives
-          #   version: v0.4.3
-          # # Rewards v2
-          # - ref: v0.5.3
-          #   version: v0.5.3
-          # # Slashing
-          # - ref: slashing-magnitudes
-          #   version: v1.0.3
+          # Rewards v1
+          - ref: v0.4.3-mainnet-rewards-foundation-incentives
+            version: v0.4.3
+          # Rewards v2
+          - ref: v0.5.3
+            version: v0.5.3
+          # Slashing
+          - ref: slashing-magnitudes
+            version: v1.0.3
 
     permissions:
       contents: read
