@@ -201,7 +201,8 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 
-	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph calls)
+	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph
+	// calls)
 	// and not instrumented metrics: see https://prometheus.io/docs/instrumenting/writing_clientlibs/#overall-structure
 	quorumNames := map[sdktypes.QuorumNum]string{
 		0: "quorum0",
@@ -218,22 +219,24 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	operator := &Operator{
-		config:                             c,
-		logger:                             logger,
-		metricsReg:                         reg,
-		metrics:                            avsAndEigenMetrics,
-		nodeApi:                            nodeApi,
-		ethClient:                          ethRpcClient,
-		avsWriter:                          avsWriter,
-		avsReader:                          avsReader,
-		avsSubscriber:                      avsSubscriber,
-		eigenlayerReader:                   *sdkClients.ElChainReader,
-		eigenlayerWriter:                   *sdkClients.ElChainWriter,
-		blsKeypair:                         blsKeyPair,
-		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
-		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
-		aggregatorRpcClient:                aggregatorRpcClient,
-		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		config:                     c,
+		logger:                     logger,
+		metricsReg:                 reg,
+		metrics:                    avsAndEigenMetrics,
+		nodeApi:                    nodeApi,
+		ethClient:                  ethRpcClient,
+		avsWriter:                  avsWriter,
+		avsReader:                  avsReader,
+		avsSubscriber:              avsSubscriber,
+		eigenlayerReader:           *sdkClients.ElChainReader,
+		eigenlayerWriter:           *sdkClients.ElChainWriter,
+		blsKeypair:                 blsKeyPair,
+		operatorAddr:               common.HexToAddress(c.OperatorAddress),
+		aggregatorServerIpPortAddr: c.AggregatorServerIpPortAddress,
+		aggregatorRpcClient:        aggregatorRpcClient,
+		newTaskCreatedChan: make(
+			chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+		),
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		operatorId:                         [32]byte{0}, // this is set below
 		timesFailing:                       c.TimesFailing,
@@ -267,9 +270,12 @@ func (o *Operator) Start(ctx context.Context) error {
 		return err
 	}
 	if !operatorIsRegistered {
-		// We bubble the error all the way up instead of using logger.Fatal because logger.Fatal prints a huge stack trace
-		// that hides the actual error message. This error msg is more explicit and doesn't require showing a stack trace to the user.
-		return fmt.Errorf("operator is not registered. Registering operator using the operator-cli before starting operator")
+		// We bubble the error all the way up instead of using logger.Fatal because logger.Fatal prints a huge stack
+		// trace that hides the actual error message. This error msg is more explicit and doesn't require showing a
+		// stack trace to the user.
+		return fmt.Errorf(
+			"operator is not registered. Registering operator using the operator-cli before starting operator",
+		)
 	}
 
 	o.logger.Infof("Starting operator.")
@@ -314,7 +320,9 @@ func (o *Operator) Start(ctx context.Context) error {
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
+func (o *Operator) ProcessNewTaskCreatedLog(
+	newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("Received new task",
 		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
@@ -339,10 +347,16 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 	return taskResponse
 }
 
-func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
+func (o *Operator) SignTaskResponse(
+	taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
+) (*aggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
-		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
+		o.logger.Error(
+			"Error getting task response header hash. skipping task (this is not expected and should be investigated)",
+			"err",
+			err,
+		)
 		return nil, err
 	}
 	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)

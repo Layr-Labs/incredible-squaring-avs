@@ -78,13 +78,15 @@ func (c *Challenger) Start(ctx context.Context) error {
 	for {
 		select {
 		case err := <-newTaskSub.Err():
-			// TODO(samlaf): Copied from operator. There was a comment about this on when should exactly do these errors occur? do we need to restart the websocket
+			// TODO(samlaf): Copied from operator. There was a comment about this on when should exactly do these errors
+			// occur? do we need to restart the websocket
 			c.logger.Error("Error in websocket subscription for new Task", "err", err)
 			newTaskSub.Unsubscribe()
 			newTaskSub = c.avsSubscriber.SubscribeToNewTasks(c.newTaskCreatedChan)
 
 		case err := <-taskResponseSub.Err():
-			// TODO(samlaf): Copied from operator. There was a comment about this on when should exactly do these errors occur? do we need to restart the websocket
+			// TODO(samlaf): Copied from operator. There was a comment about this on when should exactly do these errors
+			// occur? do we need to restart the websocket
 			c.logger.Error("Error in websocket subscription for task response", "err", err)
 			taskResponseSub.Unsubscribe()
 			taskResponseSub = c.avsSubscriber.SubscribeToTaskResponses(c.taskResponseChan)
@@ -117,15 +119,23 @@ func (c *Challenger) Start(ctx context.Context) error {
 
 }
 
-func (c *Challenger) processNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) uint32 {
+func (c *Challenger) processNewTaskCreatedLog(
+	newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+) uint32 {
 	c.tasks[newTaskCreatedLog.TaskIndex] = newTaskCreatedLog.Task
 	return newTaskCreatedLog.TaskIndex
 }
 
-func (c *Challenger) processTaskResponseLog(taskResponseLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) uint32 {
+func (c *Challenger) processTaskResponseLog(
+	taskResponseLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded,
+) uint32 {
 	taskResponseRawLog, err := c.avsSubscriber.ParseTaskResponded(taskResponseLog.Raw)
 	if err != nil {
-		c.logger.Error("Error parsing task response. skipping task (this is probably bad and should be investigated)", "err", err)
+		c.logger.Error(
+			"Error parsing task response. skipping task (this is probably bad and should be investigated)",
+			"err",
+			err,
+		)
 	}
 
 	// get the inputs necessary for raising a challenge
@@ -157,7 +167,9 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	return types.NoErrorInTaskResponse
 }
 
-func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded) []cstaskmanager.BN254G1Point {
+func (c *Challenger) getNonSigningOperatorPubKeys(
+	vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded,
+) []cstaskmanager.BN254G1Point {
 	c.logger.Info("vLog.Raw is", "vLog.Raw", vLog.Raw)
 
 	// get the nonSignerStakesAndSignature
@@ -213,7 +225,10 @@ func (c *Challenger) getNonSigningOperatorPubKeys(vLog *cstaskmanager.ContractIn
 	})
 
 	// get pubkeys of non-signing operators and submit them to the contract
-	nonSigningOperatorPubKeys := make([]cstaskmanager.BN254G1Point, len(nonSignerStakesAndSignatureInput.NonSignerPubkeys))
+	nonSigningOperatorPubKeys := make(
+		[]cstaskmanager.BN254G1Point,
+		len(nonSignerStakesAndSignatureInput.NonSignerPubkeys),
+	)
 	for i, pubkey := range nonSignerStakesAndSignatureInput.NonSignerPubkeys {
 		nonSigningOperatorPubKeys[i] = cstaskmanager.BN254G1Point{
 			X: pubkey.X,
@@ -229,7 +244,11 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 	c.logger.Info("Task", "Task", c.tasks[taskIndex])
 	c.logger.Info("TaskResponse", "TaskResponse", c.taskResponses[taskIndex].TaskResponse)
 	c.logger.Info("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
-	c.logger.Info("NonSigningOperatorPubKeys", "NonSigningOperatorPubKeys", c.taskResponses[taskIndex].NonSigningOperatorPubKeys)
+	c.logger.Info(
+		"NonSigningOperatorPubKeys",
+		"NonSigningOperatorPubKeys",
+		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
+	)
 
 	receipt, err := c.avsWriter.RaiseChallenge(
 		context.Background(),
