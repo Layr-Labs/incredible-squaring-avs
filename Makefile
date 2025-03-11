@@ -105,3 +105,8 @@ tests-integration: ## runs all integration tests
 fmt: ## formats all go files
 	go fmt ./...
 	make format-lines
+
+.PHONY: format-lines
+format-lines: ## formats all go files with golines
+	go install github.com/segmentio/golines@latest
+	golines -w -m 120 --ignore-generated --shorten-comments --ignored-dirs=${GO_LINES_IGNORED_DIRS} ${GO_FOLDERS}
