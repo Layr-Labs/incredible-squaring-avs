@@ -16,16 +16,16 @@ jobs:
       fail-fast: false
       matrix:
         el-contracts:
-          # Mainnet version isn't used because of compile errors
-          - ref: v0.3.3-mainnet-rewards
-            version: v0.3.3
-          # All of them fail because "delegation" was renamed to "delegationManager" in the addresses JSON
-          # Rewards v1
-          - ref: v0.4.3-mainnet-rewards-foundation-incentives
-            version: v0.4.3
-          # Rewards v2
-          - ref: v0.5.4
-            version: v0.5.4
+          # # Mainnet version isn't used because of compile errors
+          # - ref: v0.3.3-mainnet-rewards
+          #   version: v0.3.3
+          # # All of them fail because "delegation" was renamed to "delegationManager" in the addresses JSON
+          # # Rewards v1
+          # - ref: v0.4.3-mainnet-rewards-foundation-incentives
+          #   version: v0.4.3
+          # # Rewards v2
+          # - ref: v0.5.4
+          #   version: v0.5.4
           # Slashing
           - ref: v1.1.0-testnet
             version: v1.1.0
