@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/exp/rand"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -26,7 +28,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
-	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
@@ -67,6 +68,8 @@ type Operator struct {
 	AggregatorRpcClient AggregatorRpcClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	CredibleSquaringServiceManagerAddr common.Address
+	// If bigger than zero, submits wrong responses that many times every 100
+	TimesFailing int
 }
 
 // TODO(samlaf): config is a mess right now, since the chainio client constructors
@@ -237,6 +240,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		NewTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 		CredibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
 		OperatorId:                         [32]byte{0}, // this is set below
+		TimesFailing:                       c.TimesFailing,
 
 	}
 	operatorSetsIds := []uint32{c.OperatorSetId}
@@ -256,7 +260,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 	operator.OperatorId = operatorId
 	return operator, nil
-
 }
 
 func (o *Operator) Start(ctx context.Context) error {
@@ -322,13 +325,15 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		"quorumNumbers", newTaskCreatedLog.Task.QuorumNumbers,
 		"QuorumThresholdPercentage", newTaskCreatedLog.Task.QuorumThresholdPercentage,
 	)
-	var numberSquared *big.Int
-	if o.Config.SlashSimulate {
-		numberSquared = big.NewInt(24)
-	} else {
-	 	numberSquared = big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
-	}
+	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
 
+	if o.TimesFailing > 0 {
+		rand.Seed(uint64((time.Now().UnixNano())))
+		num := rand.Intn(100)
+		if num < o.TimesFailing {
+			numberSquared = big.NewInt(908243203843)
+		}
+	}
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
 		NumberSquared:      numberSquared,

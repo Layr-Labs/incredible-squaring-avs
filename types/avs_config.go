@@ -22,7 +22,6 @@ type NodeConfig struct {
 	EnableMetrics                 bool   `yaml:"enable_metrics"`
 	NodeApiIpPortAddress          string `yaml:"node_api_ip_port_address"`
 	EnableNodeApi                 bool   `yaml:"enable_node_api"`
-	SlashSimulate 				  bool   `yaml:"slash_simulate"`
 	OperatorSetId 				  uint32 `yaml:"operator_set_id"`
 	Socket						  string `yaml:"socket"`
 	MaxOperatorCount			  uint32 `yaml:"max_operator_count"`
@@ -30,5 +29,6 @@ type NodeConfig struct {
 	KickBIPsOfTotalStake		  uint16 `yaml:"kick_bips_of_total_stake"`
 	MinimumStake				  int64 `yaml:"minimum_stake"`
 	Multiplier					  int64 `yaml:"multiplier"`
+	TimesFailing                  int    `yaml:"times_failing"`
 
 }
