@@ -101,3 +101,7 @@ tests-contract: ## runs all forge tests
 tests-integration: ## runs all integration tests
 	go test ./tests/integration/... -v -count=1
 
+.PHONY: fmt
+fmt: ## formats all go files
+	go fmt ./...
+	make format-lines
