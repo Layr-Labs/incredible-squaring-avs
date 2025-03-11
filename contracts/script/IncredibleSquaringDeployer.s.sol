@@ -15,11 +15,13 @@ import "@eigenlayer-middleware/src/RegistryCoordinator.sol" as regcoord;
 import {
     IBLSApkRegistry,
     IIndexRegistry,
-    IStakeRegistry
+    IStakeRegistry,
+    ISocketRegistry
 } from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
+import {SocketRegistry} from "eigenlayer-middleware/src/SocketRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {
@@ -68,6 +70,9 @@ contract IncredibleSquaringDeployer is Script, Utils {
 
     IStakeRegistry public stakeRegistry;
     IStakeRegistry public stakeRegistryImplementation;
+
+    ISocketRegistry public socketRegistry;
+    ISocketRegistry public socketRegistryImplementation;
 
     OperatorStateRetriever public operatorStateRetriever;
 
@@ -185,6 +190,13 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 )
             )
         );
+        socketRegistry = ISocketRegistry(
+            address(
+                new TransparentUpgradeableProxy(
+                    address(emptyContract), address(incredibleSquaringProxyAdmin), ""
+                )
+            )
+        );
 
         operatorStateRetriever = new OperatorStateRetriever();
 
@@ -210,13 +222,21 @@ contract IncredibleSquaringDeployer is Script, Utils {
                 TransparentUpgradeableProxy(payable(address(indexRegistry))),
                 address(indexRegistryImplementation)
             );
+
+            socketRegistryImplementation = new SocketRegistry(registryCoordinator);
+
+            incredibleSquaringProxyAdmin.upgrade(
+                TransparentUpgradeableProxy(payable(address(socketRegistry))),
+                address(socketRegistryImplementation)
+            );
         }
 
         registryCoordinatorImplementation = new regcoord.RegistryCoordinator(
             incredibleSquaringServiceManager,
             regcoord.IStakeRegistry(address(stakeRegistry)),
             regcoord.IBLSApkRegistry(address(blsApkRegistry)),
-            regcoord.IIndexRegistry(address(indexRegistry))
+            regcoord.IIndexRegistry(address(indexRegistry)),
+            regcoord.ISocketRegistry(address(socketRegistry))
         );
 
         {
