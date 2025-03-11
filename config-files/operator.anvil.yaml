@@ -53,4 +53,5 @@ kick_bips_of_operator_stake: 100
 kick_bips_of_total_stake: 1000
 minimum_stake: 0
 multiplier: 1
+# the times the operator will fail in 100 rounds (0 means wont fail)
 times_failing: 100
