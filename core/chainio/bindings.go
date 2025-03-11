@@ -22,7 +22,11 @@ type AvsManagersBindings struct {
 	logger             logging.Logger
 }
 
-func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr common.Address, ethclient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsManagersBindings, error) {
+func NewAvsManagersBindings(
+	registryCoordinatorAddr, operatorStateRetrieverAddr common.Address,
+	ethclient sdkcommon.EthClientInterface,
+	logger logging.Logger,
+) (*AvsManagersBindings, error) {
 	contractRegistryCoordinator, err := regcoord.NewContractRegistryCoordinator(registryCoordinatorAddr, ethclient)
 	if err != nil {
 		return nil, err
@@ -31,7 +35,10 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	if err != nil {
 		return nil, err
 	}
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(serviceManagerAddr, ethclient)
+	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
+		serviceManagerAddr,
+		ethclient,
+	)
 	if err != nil {
 		logger.Error("Failed to fetch IServiceManager contract", "err", err)
 		return nil, err

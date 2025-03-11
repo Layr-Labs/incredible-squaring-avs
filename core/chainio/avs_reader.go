@@ -41,10 +41,25 @@ type AvsReader struct {
 //var _ AvsReaderer = (*AvsReader)(nil)
 
 func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
-	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, &c.EthHttpClient, c.Logger)
+	return BuildAvsReader(
+		c.IncredibleSquaringRegistryCoordinatorAddr,
+		c.OperatorStateRetrieverAddr,
+		&c.EthHttpClient,
+		c.Logger,
+	)
 }
-func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr common.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
-	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+
+func BuildAvsReader(
+	registryCoordinatorAddr, operatorStateRetrieverAddr common.Address,
+	ethHttpClient sdkcommon.EthClientInterface,
+	logger logging.Logger,
+) (*AvsReader, error) {
+	avsManagersBindings, err := NewAvsManagersBindings(
+		registryCoordinatorAddr,
+		operatorStateRetrieverAddr,
+		ethHttpClient,
+		logger,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +75,12 @@ func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr common.A
 	}
 	return NewAvsReader(*avsRegistryReader, avsManagersBindings, logger)
 }
-func NewAvsReader(avsRegistryReader sdkavsregistry.ChainReader, avsServiceBindings *AvsManagersBindings, logger logging.Logger) (*AvsReader, error) {
+
+func NewAvsReader(
+	avsRegistryReader sdkavsregistry.ChainReader,
+	avsServiceBindings *AvsManagersBindings,
+	logger logging.Logger,
+) (*AvsReader, error) {
 	return &AvsReader{
 		ChainReader:        avsRegistryReader,
 		AvsServiceBindings: avsServiceBindings,
@@ -69,7 +89,11 @@ func NewAvsReader(avsRegistryReader sdkavsregistry.ChainReader, avsServiceBindin
 }
 
 func (r *AvsReader) CheckSignatures(
-	ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	ctx context.Context,
+	msgHash [32]byte,
+	quorumNumbers []byte,
+	referenceBlockNumber uint32,
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
 ) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error) {
 	stakeTotalsPerQuorum, _, err := r.AvsServiceBindings.TaskManager.CheckSignatures(
 		&bind.CallOpts{}, msgHash, quorumNumbers, referenceBlockNumber, nonSignerStakesAndSignature,

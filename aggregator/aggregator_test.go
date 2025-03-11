@@ -25,7 +25,40 @@ import (
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
 )
 
-var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
+var MOCK_OPERATOR_ID = [32]byte{
+	207,
+	73,
+	226,
+	221,
+	104,
+	100,
+	123,
+	41,
+	192,
+	3,
+	9,
+	119,
+	90,
+	83,
+	233,
+	159,
+	231,
+	151,
+	245,
+	96,
+	150,
+	48,
+	144,
+	27,
+	102,
+	253,
+	39,
+	101,
+	1,
+	26,
+	135,
+	173,
+}
 var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
 
@@ -63,7 +96,11 @@ func (m *MockBlsAggregationService) GetResponseChannel() <-chan blsagg.BlsAggreg
 // GetResponseChannel indicates an expected call of GetResponseChannel.
 func (mr *MockBlsAggregationServiceMockRecorder) GetResponseChannel() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetResponseChannel", reflect.TypeOf((*MockBlsAggregationService)(nil).GetResponseChannel))
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"GetResponseChannel",
+		reflect.TypeOf((*MockBlsAggregationService)(nil).GetResponseChannel),
+	)
 }
 
 // InitializeNewTask mocks base method.
@@ -77,7 +114,12 @@ func (m *MockBlsAggregationService) InitializeNewTask(arg0 blsagg.TaskMetadata) 
 // InitializeNewTask indicates an expected call of InitializeNewTask.
 func (mr *MockBlsAggregationServiceMockRecorder) InitializeNewTask(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeNewTask", reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"InitializeNewTask",
+		reflect.TypeOf((*MockBlsAggregationService)(nil).InitializeNewTask),
+		arg0,
+	)
 }
 
 // ProcessNewSignature mocks base method.
@@ -91,7 +133,13 @@ func (m *MockBlsAggregationService) ProcessNewSignature(arg0 context.Context, ar
 // ProcessNewSignature indicates an expected call of ProcessNewSignature.
 func (mr *MockBlsAggregationServiceMockRecorder) ProcessNewSignature(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessNewSignature", reflect.TypeOf((*MockBlsAggregationService)(nil).ProcessNewSignature), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"ProcessNewSignature",
+		reflect.TypeOf((*MockBlsAggregationService)(nil).ProcessNewSignature),
+		arg0,
+		arg1,
+	)
 }
 
 type MockTask struct {

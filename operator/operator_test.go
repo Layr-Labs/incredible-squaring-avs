@@ -62,9 +62,11 @@ func TestOperator(t *testing.T) {
 			Raw: types.Log{},
 		}
 		fmt.Println("newTaskCreatedEvent", newTaskCreatedEvent)
-		X, ok := big.NewInt(0).SetString("7926134832136282318561896451042374984489965925674521194255549259381336496956", 10)
+		X, ok := big.NewInt(0).
+			SetString("7926134832136282318561896451042374984489965925674521194255549259381336496956", 10)
 		assert.True(t, ok)
-		Y, ok := big.NewInt(0).SetString("15243507701692917330954619280683582177901049846125926696838777109165913318327", 10)
+		Y, ok := big.NewInt(0).
+			SetString("15243507701692917330954619280683582177901049846125926696838777109165913318327", 10)
 		assert.True(t, ok)
 
 		signedTaskResponse := &aggregator.SignedTaskResponse{
@@ -85,11 +87,13 @@ func TestOperator(t *testing.T) {
 		operator.aggregatorRpcClient = mockAggregatorRpcClient
 
 		mockSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
-		mockSubscriber.EXPECT().SubscribeToNewTasks(operator.newTaskCreatedChan).Return(event.NewSubscription(func(quit <-chan struct{}) error {
-			// loop forever
-			<-quit
-			return nil
-		}))
+		mockSubscriber.EXPECT().
+			SubscribeToNewTasks(operator.newTaskCreatedChan).
+			Return(event.NewSubscription(func(quit <-chan struct{}) error {
+				// loop forever
+				<-quit
+				return nil
+			}))
 		operator.avsSubscriber = mockSubscriber
 
 		mockReader := chainiomocks.NewMockAvsReaderer(mockCtrl)

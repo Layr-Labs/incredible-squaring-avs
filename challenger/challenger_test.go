@@ -18,7 +18,40 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var MOCK_OPERATOR_ID = [32]byte{207, 73, 226, 221, 104, 100, 123, 41, 192, 3, 9, 119, 90, 83, 233, 159, 231, 151, 245, 96, 150, 48, 144, 27, 102, 253, 39, 101, 1, 26, 135, 173}
+var MOCK_OPERATOR_ID = [32]byte{
+	207,
+	73,
+	226,
+	221,
+	104,
+	100,
+	123,
+	41,
+	192,
+	3,
+	9,
+	119,
+	90,
+	83,
+	233,
+	159,
+	231,
+	151,
+	245,
+	96,
+	150,
+	48,
+	144,
+	27,
+	102,
+	253,
+	39,
+	101,
+	1,
+	26,
+	135,
+	173,
+}
 var MOCK_OPERATOR_STAKE = big.NewInt(100)
 var MOCK_OPERATOR_BLS_PRIVATE_KEY_STRING = "50"
 
@@ -63,17 +96,33 @@ func (m *MockEthClient) BalanceAt(arg0 context.Context, arg1 common.Address, arg
 // BalanceAt indicates an expected call of BalanceAt.
 func (mr *MockEthClientMockRecorder) BalanceAt(arg0, arg1, arg2 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceAt", reflect.TypeOf((*MockEthClient)(nil).BalanceAt), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"BalanceAt",
+		reflect.TypeOf((*MockEthClient)(nil).BalanceAt),
+		arg0,
+		arg1,
+		arg2,
+	)
 }
 
 // TransactionByHash indicates an expected call of TransactionByHash.
 func (mr *MockEthClientMockRecorder) TransactionByHash(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransactionByHash", reflect.TypeOf((*MockEthClient)(nil).TransactionByHash), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(
+		mr.mock,
+		"TransactionByHash",
+		reflect.TypeOf((*MockEthClient)(nil).TransactionByHash),
+		arg0,
+		arg1,
+	)
 }
 
 // TransactionByHash mocks base method.
-func (m *MockEthClient) TransactionByHash(arg0 context.Context, arg1 common.Hash) (*gethtypes.Transaction, bool, error) {
+func (m *MockEthClient) TransactionByHash(
+	arg0 context.Context,
+	arg1 common.Hash,
+) (*gethtypes.Transaction, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransactionByHash", arg0, arg1)
 	ret0, _ := ret[0].(*gethtypes.Transaction)
@@ -209,7 +258,9 @@ func TestProcessTaskResponseLog(t *testing.T) {
 				// this is the actual TaskChallengedSuccessfully event from calling the func "raiseAndResolveChallenge"
 				common.HexToHash("0x349c1ee60e4e8972ee9dba642c1774543d5c4136879b7f4caaf04bf81a487a2a"),
 			},
-			Data:        common.Hex2Bytes("0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a50fe07922f57ae3b4553201bfd7c11aca85e1541f91db8e62dca9c418dc5feae"),
+			Data: common.Hex2Bytes(
+				"0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a50fe07922f57ae3b4553201bfd7c11aca85e1541f91db8e62dca9c418dc5feae",
+			),
 			BlockNumber: uint64(100),
 			TxHash:      common.HexToHash("0x6d3b7741fef7cfb22d943cb1c3d221b71253acdf7e56925969d54a18a8566480"),
 			TxIndex:     1,
@@ -230,7 +281,9 @@ func TestProcessTaskResponseLog(t *testing.T) {
 
 }
 
-func createMockChallenger(mockCtrl *gomock.Controller) (*Challenger, *chainiomocks.MockAvsWriterer, *chainiomocks.MockAvsReaderer, *chainiomocks.MockAvsSubscriberer, *MockEthClient, error) {
+func createMockChallenger(
+	mockCtrl *gomock.Controller,
+) (*Challenger, *chainiomocks.MockAvsWriterer, *chainiomocks.MockAvsReaderer, *chainiomocks.MockAvsSubscriberer, *MockEthClient, error) {
 	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
 	mockAvsReader := chainiomocks.NewMockAvsReaderer(mockCtrl)

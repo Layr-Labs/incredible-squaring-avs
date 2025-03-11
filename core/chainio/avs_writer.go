@@ -48,11 +48,27 @@ type AvsWriter struct {
 var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
-	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, &c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(
+		c.TxMgr,
+		c.IncredibleSquaringRegistryCoordinatorAddr,
+		c.OperatorStateRetrieverAddr,
+		&c.EthHttpClient,
+		c.Logger,
+	)
 }
 
-func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
-	avsServiceBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+func BuildAvsWriter(
+	txMgr txmgr.TxManager,
+	registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,
+	ethHttpClient sdkcommon.EthClientInterface,
+	logger logging.Logger,
+) (*AvsWriter, error) {
+	avsServiceBindings, err := NewAvsManagersBindings(
+		registryCoordinatorAddr,
+		operatorStateRetrieverAddr,
+		ethHttpClient,
+		logger,
+	)
 	if err != nil {
 		logger.Error("Failed to create contract bindings", "err", err)
 		return nil, err
@@ -70,7 +86,13 @@ func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStat
 	}
 	return NewAvsWriter(*avsRegistryWriter, avsServiceBindings, logger, txMgr), nil
 }
-func NewAvsWriter(avsRegistryWriter avsregistry.ChainWriter, avsServiceBindings *AvsManagersBindings, logger logging.Logger, txMgr txmgr.TxManager) *AvsWriter {
+
+func NewAvsWriter(
+	avsRegistryWriter avsregistry.ChainWriter,
+	avsServiceBindings *AvsManagersBindings,
+	logger logging.Logger,
+	txMgr txmgr.TxManager,
+) *AvsWriter {
 	return &AvsWriter{
 		ChainWriter:         avsRegistryWriter,
 		AvsContractBindings: avsServiceBindings,
@@ -80,13 +102,23 @@ func NewAvsWriter(avsRegistryWriter avsregistry.ChainWriter, avsServiceBindings 
 }
 
 // returns the tx receipt, as well as the task index (which it gets from parsing the tx receipt logs)
-func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *big.Int, quorumThresholdPercentage sdktypes.QuorumThresholdPercentage, quorumNumbers sdktypes.QuorumNums) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
+func (w *AvsWriter) SendNewTaskNumberToSquare(
+	ctx context.Context,
+	numToSquare *big.Int,
+	quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
+	quorumNumbers sdktypes.QuorumNums,
+) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, numToSquare, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
+	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(
+		txOpts,
+		numToSquare,
+		uint32(quorumThresholdPercentage),
+		quorumNumbers.UnderlyingType(),
+	)
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
@@ -96,7 +128,9 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		w.logger.Errorf("Error submitting CreateNewTask tx")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
-	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractIncredibleSquaringTaskManagerFilterer.ParseNewTaskCreated(*receipt.Logs[0])
+	newTaskCreatedEvent, err := w.AvsContractBindings.TaskManager.ContractIncredibleSquaringTaskManagerFilterer.ParseNewTaskCreated(
+		*receipt.Logs[0],
+	)
 	if err != nil {
 		w.logger.Error("Aggregator failed to parse new task created event", "err", err)
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
@@ -139,7 +173,13 @@ func (w *AvsWriter) RaiseChallenge(
 		w.logger.Errorf("Error getting tx opts")
 		return nil, err
 	}
-	tx, err := w.AvsContractBindings.TaskManager.RaiseAndResolveChallenge(txOpts, task, taskResponse, taskResponseMetadata, pubkeysOfNonSigningOperators)
+	tx, err := w.AvsContractBindings.TaskManager.RaiseAndResolveChallenge(
+		txOpts,
+		task,
+		taskResponse,
+		taskResponseMetadata,
+		pubkeysOfNonSigningOperators,
+	)
 	if err != nil {
 		w.logger.Errorf("Error assembling RaiseChallenge tx")
 		return nil, err
