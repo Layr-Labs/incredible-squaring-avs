@@ -313,8 +313,6 @@ library CoreDeploymentLib {
         UpgradeableProxyLib.upgradeAndCall(
             result.allocationManager, allocationManagerImpl, upgradeCall
         );
-        console2.log("888");
-        console2.log(result.permissionController);
 
         return result;
     }
