@@ -46,7 +46,6 @@ register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
 token_strategy_addr: 0x5e3d0fde6f793b3115a9e7f5ebc195bbeed35d6c
-slash_simulate: true
 operator_set_id: 0x00
 socket: operator-socket
 max_operator_count: 3
@@ -54,3 +53,4 @@ kick_bips_of_operator_stake: 100
 kick_bips_of_total_stake: 1000
 minimum_stake: 0
 multiplier: 1
+times_failing: 100

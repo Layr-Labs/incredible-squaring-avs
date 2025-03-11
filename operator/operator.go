@@ -42,7 +42,7 @@ const SEM_VER = "0.0.1"
 
 type Operator struct {
 	Config    types.NodeConfig
-	Logger    logging.Logger
+	Logger    sdklogging.Logger
 	EthClient sdkcommon.EthClientInterface
 	// TODO(samlaf): remove both avsWriter and eigenlayerWrite from operator
 	// they are only used for registration, so we should make a special registration package
@@ -77,7 +77,7 @@ type Operator struct {
 //	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 
-	var logLevel logging.LogLevel
+	var logLevel sdklogging.LogLevel
 	if c.Production {
 		logLevel = sdklogging.Production
 	} else {

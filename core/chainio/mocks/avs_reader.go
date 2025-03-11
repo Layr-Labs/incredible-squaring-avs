@@ -12,8 +12,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	contractOperatorStateRetriever "github.com/Layr-Labs/eigensdk-go/contracts/bindings/OperatorStateRetriever"
-	types "github.com/Layr-Labs/eigensdk-go/types"
 	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	bind "github.com/ethereum/go-ethereum/accounts/abi/bind"

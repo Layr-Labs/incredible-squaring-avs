@@ -137,7 +137,7 @@ artifacts:
           enable_node_api: True
           register_operator_on_startup: True
           token_strategy_addr: {{.addresses.incredible_squaring.erc20MockStrategy}}
-          slash_simulate: True
+          times_failing: 100
           operator_set_id: 0
           max_operator_count: 3
           kick_bips_of_operator_stake: 100
