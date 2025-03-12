@@ -40,6 +40,26 @@ deployments:
       instantSlasher: avs_addresses:.addresses.instantSlasher
     cmd: ["--config", "./incredible_squaring_config.json"]
 
+  - name: uam_permissions
+    repo: "."
+    contracts_path: "contracts"
+    script: script/UAMPermissions.s.sol
+    env:
+      PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
+    input:
+      script/deployments/core/: eigenlayer_addresses
+      script/deployments/incredible-squaring/: avs_addresses
+
+  - name: create_quorum
+    repo: "."
+    contracts_path: "contracts"
+    script: script/CreateQuorum.s.sol
+    env:
+      PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
+    input:
+      script/deployments/core/: eigenlayer_addresses
+      script/deployments/incredible-squaring/: avs_addresses
+
 services:
   - name: operator1
     image: "ko.local/operator/cmd/main.go:latest"
