@@ -12,16 +12,13 @@ remappings = [
     "@eigenlayer/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/src/",
     "@eigenlayer-scripts/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/script/",
     "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
-    "@credible-squaring/=src/",
-    "@openzeppelin/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts/",
-    "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/lib/openzeppelin-contracts-upgradeable/",
+    "@openzeppelin/=lib/eigenlayer-middleware/lib/openzeppelin-contracts/",
+    "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/openzeppelin-contracts-upgradeable/",
     "forge-std/=lib/forge-std/src/",
-    "ds-test/=lib/forge-std/lib/ds-test/src/",
 ]
 
 gas_reports = ["*"]
 
-# A list of ignored solc error codes
 
 [fmt]
 bracket_spacing = false

@@ -35,6 +35,7 @@ type AvsSubscriber struct {
 func BuildAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error) {
 	return BuildAvsSubscriber(
 		config.IncredibleSquaringRegistryCoordinatorAddr,
+		config.IncredibleSquaringServiceManager,
 		config.OperatorStateRetrieverAddr,
 		&config.EthWsClient,
 		config.Logger,
@@ -42,12 +43,14 @@ func BuildAvsSubscriberFromConfig(config *config.Config) (*AvsSubscriber, error)
 }
 
 func BuildAvsSubscriber(
-	registryCoordinatorAddr, blsOperatorStateRetrieverAddr gethcommon.Address,
+	registryCoordinatorAddr, serviceManagerAddr gethcommon.Address,
+	blsOperatorStateRetrieverAddr gethcommon.Address,
 	ethclient sdkcommon.EthClientInterface,
 	logger sdklogging.Logger,
 ) (*AvsSubscriber, error) {
+	logger.Info(serviceManagerAddr.String())
 	avsContractBindings, err := NewAvsManagersBindings(
-		registryCoordinatorAddr,
+		serviceManagerAddr,
 		blsOperatorStateRetrieverAddr,
 		ethclient,
 		logger,

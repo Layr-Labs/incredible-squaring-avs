@@ -7,11 +7,14 @@ import (
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	gethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/avsregistry"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/Layr-Labs/eigensdk-go/utils"
 
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -34,7 +37,7 @@ type AvsWriterer interface {
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
 	) (*types.Receipt, error)
 }
 
@@ -48,10 +51,16 @@ type AvsWriter struct {
 var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
+	ethWsClient, err := ethclient.Dial(c.EthWsRpcUrl)
+	if err != nil {
+		return nil, utils.WrapError("Failed to create Eth WS client", err)
+	}
 	return BuildAvsWriter(
 		c.TxMgr,
+		c.IncredibleSquaringServiceManager,
 		c.IncredibleSquaringRegistryCoordinatorAddr,
 		c.OperatorStateRetrieverAddr,
+		ethWsClient,
 		&c.EthHttpClient,
 		c.Logger,
 	)
@@ -59,12 +68,14 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 
 func BuildAvsWriter(
 	txMgr txmgr.TxManager,
+	serviceManagerAddr gethcommon.Address,
 	registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,
+	wsClient eth.WsBackend,
 	ethHttpClient sdkcommon.EthClientInterface,
 	logger logging.Logger,
 ) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(
-		registryCoordinatorAddr,
+		serviceManagerAddr,
 		operatorStateRetrieverAddr,
 		ethHttpClient,
 		logger,
@@ -76,11 +87,11 @@ func BuildAvsWriter(
 	config := avsregistry.Config{
 		RegistryCoordinatorAddress:    registryCoordinatorAddr,
 		OperatorStateRetrieverAddress: operatorStateRetrieverAddr,
-		ServiceManagerAddress:         avsServiceBindings.ServiceManagerAddr,
-
-		DontUseAllocationManager: true,
+		DontUseAllocationManager:      false,
+		ServiceManagerAddress:         serviceManagerAddr,
 	}
-	avsRegistryWriter, err := avsregistry.NewWriterFromConfig(config, ethHttpClient, txMgr, logger)
+
+	_, _, avsRegistryWriter, _, err := avsregistry.BuildClients(config, ethHttpClient, wsClient, txMgr, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +152,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(
 func (w *AvsWriter) SendAggregatedResponse(
 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
@@ -158,6 +169,7 @@ func (w *AvsWriter) SendAggregatedResponse(
 		w.logger.Errorf("Error submitting respondToTask tx")
 		return nil, err
 	}
+	w.logger.Info("tx hash :respond to task")
 	return receipt, nil
 }
 

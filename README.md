@@ -12,7 +12,7 @@ You will need [foundry](https://book.getfoundry.sh/getting-started/installation)
 ```
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
-go install github.com/maoueh/zap-pretty@latest
+go install github.com/maoueh/zap-pretty/cmd/zap-pretty@latest
 ```
 You will also need to [install docker](https://docs.docker.com/get-docker/), and build the contracts:
 ```
@@ -30,10 +30,14 @@ This simple session illustrates the basic flow of the AVS. The makefile commands
 Start anvil in a separate terminal:
 
 ```bash
-make start-anvil-chain-with-el-and-avs-deployed
+anvil
 ```
 
-The above command starts a local anvil chain from a [saved state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) with eigenlayer and incredible-squaring contracts already deployed (but no operator registered).
+Deploy contracts, set UAM permissions, and create a quorum in a single command:
+
+```bash
+make deploy-all
+```
 
 Start the aggregator:
 
@@ -50,6 +54,12 @@ make start-operator
 > By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`. 
 
 > The operator also will produce an invalid result 10 times every 100, as it is set in `times_failing` flag of the same config file.
+
+Start the challenger:
+
+```bash
+make challenger
+```
 
 ## Running via docker compose
 

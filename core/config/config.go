@@ -36,6 +36,7 @@ type Config struct {
 	EthWsClient                               ethclient.Client
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
+	IncredibleSquaringServiceManager          common.Address
 	AggregatorServerIpPortAddr                string
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement
@@ -59,8 +60,9 @@ type IncredibleSquaringDeploymentRaw struct {
 	Addresses IncredibleSquaringContractsRaw `json:"addresses"`
 }
 type IncredibleSquaringContractsRaw struct {
-	RegistryCoordinatorAddr    string `json:"registryCoordinator"`
-	OperatorStateRetrieverAddr string `json:"operatorStateRetriever"`
+	RegistryCoordinatorAddr          string `json:"registryCoordinator"`
+	OperatorStateRetrieverAddr       string `json:"operatorStateRetriever"`
+	IncredibleSquaringServiceManager string `json:"IncredibleSquaringServiceManager"`
 }
 
 // NewConfig parses config file to read from from flags or environment variables
@@ -76,12 +78,13 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 
 	var credibleSquaringDeploymentRaw IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := ctx.GlobalString(CredibleSquaringDeploymentFileFlag.Name)
+	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
+	logger.Info(credibleSquaringDeploymentFilePath)
 	if _, err := os.Stat(credibleSquaringDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
 		panic("Path " + credibleSquaringDeploymentFilePath + " does not exist")
 	}
 	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
-	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +148,12 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		),
 		AggregatorServerIpPortAddr: configRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:  configRaw.RegisterOperatorOnStartup,
-		SignerFn:                   signerV2,
-		TxMgr:                      txMgr,
-		AggregatorAddress:          aggregatorAddr,
+		IncredibleSquaringServiceManager: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
+		),
+		SignerFn:          signerV2,
+		TxMgr:             txMgr,
+		AggregatorAddress: aggregatorAddr,
 	}
 	config.validate()
 	return config, nil

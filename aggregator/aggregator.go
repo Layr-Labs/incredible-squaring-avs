@@ -111,6 +111,7 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 
 		DontUseAllocationManager: true,
 	}
+
 	clients, err := clients.BuildAll(chainioConfig, c.EcdsaPrivateKey, c.Logger)
 	if err != nil {
 		c.Logger.Errorf("Cannot create sdk clients", "err", err)
@@ -223,7 +224,7 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
 		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
 	}
-	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature{
+	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature{
 		NonSignerPubkeys:             nonSignerPubkeys,
 		QuorumApks:                   quorumApks,
 		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),

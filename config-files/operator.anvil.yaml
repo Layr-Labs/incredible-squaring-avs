@@ -1,16 +1,20 @@
 # this sets the logger level (true = info, false = debug)
 production: true
 
-operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
+operator_address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 
 # EigenLayer Slasher contract address
 
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0xa82fF9aFd8f496c3d6ac40E2a0F282E47488CFc9
-operator_state_retriever_address: 0x95401dc811bb5740090279Ba06cfA8fcF6113778
-
+avs_registry_coordinator_address: 0x7969c5ed335650692bc04293b07f5bf2e7a673c0
+operator_state_retriever_address: 0x4c5859f0f772848b2d91f1d83e2fe57935348029
+rewards_coordinator_address: 0xa51c1fc2f0d1a1b8494ed1fe312d7c3a78ed91c0
+permission_controller_address: 0x59b670e9fa9d0a427751af201d676719a970857b
+service_manager_address: 0x1291be112d480055dafd8a610b7d1e203891c274
+allocation_manager_address: 0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6
+instant_slasher_address: 0x922d6956c99e12dfeb3224dea977d0939758a1fe
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
 eth_ws_url: ws://localhost:8545
@@ -41,7 +45,13 @@ enable_node_api: true
 register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
 # addresses.erc20MockStrategy in tests/anvil/credible_squaring_avs_deployment_output.json
-token_strategy_addr: 0x09635F643e140090A9A8Dcd712eD6285858ceBef
-
+token_strategy_addr: 0x2b961e3959b79326a8e7f64ef0d2d825707669b5
+operator_set_id: 0x00
+socket: operator-socket
+max_operator_count: 3
+kick_bips_of_operator_stake: 100
+kick_bips_of_total_stake: 1000
+minimum_stake: 0
+multiplier: 1
 # the times the operator will fail in 100 rounds (0 means wont fail)
-times_failing: 10
+times_failing: 100

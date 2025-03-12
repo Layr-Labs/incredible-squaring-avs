@@ -8,14 +8,13 @@ import (
 	"os"
 
 	sdkclients "github.com/Layr-Labs/eigensdk-go/chainio/clients"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
-	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -57,6 +56,9 @@ var (
 		EnvVar:   "STRATEGY_ADDR",
 	}
 )
+
+const AVS_NAME = "incredible-squaring"
+const SEM_VER = "0.0.1"
 
 func main() {
 	app := cli.NewApp()
@@ -110,6 +112,11 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
+	ethWsClient, err := ethclient.Dial(avsConfig.EthWsUrl)
+	if err != nil {
+		logger.Errorf("Cannot create ws ethclient", "err", err)
+		return
+	}
 	chainID, err := ethHttpClient.ChainID(goCtx)
 	if err != nil {
 		fmt.Println("can't get chain id")
@@ -140,7 +147,9 @@ func plugin(ctx *cli.Context) {
 	}
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
+		ethWsClient,
 		ethHttpClient,
 		logger,
 	)
@@ -163,8 +172,10 @@ func plugin(ctx *cli.Context) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethHttpClient, logger, common.HexToAddress(avsConfig.OperatorAddress))
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr,
+		common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
+		ethWsClient,
 		ethHttpClient,
 		logger,
 	)
@@ -183,19 +194,30 @@ func plugin(ctx *cli.Context) {
 			return
 		}
 
-		// Register with registry coordination
-		quorumNumbers := sdktypes.QuorumNums{0}
-		socket := "Not Needed"
-		logger.Infof(
-			"Registering with registry coordination with quorum numbers %v and socket %s",
-			quorumNumbers,
-			socket,
-		)
-		r, err := clients.AvsRegistryChainWriter.RegisterOperator(
-			goCtx,
-			operatorEcdsaPrivateKey,
-			blsKeypair, quorumNumbers, socket, true,
-		)
+		if err != nil {
+			logger.Error("Cannot create AggregatorRpcClient. Is aggregator running?", "err", err)
+		}
+
+		operatorSetIds := []uint32{0}
+		waitForReceipt := true
+		socket := "socket"
+
+		// maxOperatorCount := 3
+		// kickBpsOfOperatorStake := 100
+		// kickBpsOfTotalStake := 1000
+		// minimumStake := 0
+		// multiplier := 1
+
+		registrationRequest := elcontracts.RegistrationRequest{
+			OperatorAddress: common.HexToAddress(avsConfig.OperatorAddress),
+			AVSAddress:      common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
+			OperatorSetIds:  operatorSetIds,
+			WaitForReceipt:  waitForReceipt,
+			BlsKeyPair:      blsKeypair,
+			Socket:          socket,
+		}
+		r, err := clients.ElChainWriter.RegisterForOperatorSets(
+			goCtx, common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress), registrationRequest)
 		if err != nil {
 			logger.Errorf("Error assembling CreateNewTask tx")
 			fmt.Println(err)
@@ -246,12 +268,5 @@ func plugin(ctx *cli.Context) {
 		return
 	} else {
 		fmt.Println("Invalid operation type")
-	}
-}
-
-func pubKeyG1ToBN254G1Point(p *bls.G1Point) regcoord.BN254G1Point {
-	return regcoord.BN254G1Point{
-		X: p.X.BigInt(new(big.Int)),
-		Y: p.Y.BigInt(new(big.Int)),
 	}
 }

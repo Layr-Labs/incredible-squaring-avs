@@ -7,9 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
-	gethcore "github.com/ethereum/go-ethereum/core"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
@@ -68,24 +66,20 @@ type MockBlsAggregationService struct {
 	recorder *MockBlsAggregationServiceMockRecorder
 }
 
-// MockBlsAggregationServiceMockRecorder is the mock recorder for MockBlsAggregationService.
 type MockBlsAggregationServiceMockRecorder struct {
 	mock *MockBlsAggregationService
 }
 
-// NewMockBlsAggregationService creates a new mock instance.
 func NewMockBlsAggregationService(ctrl *gomock.Controller) *MockBlsAggregationService {
 	mock := &MockBlsAggregationService{ctrl: ctrl}
 	mock.recorder = &MockBlsAggregationServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBlsAggregationService) EXPECT() *MockBlsAggregationServiceMockRecorder {
 	return m.recorder
 }
 
-// GetResponseChannel mocks base method.
 func (m *MockBlsAggregationService) GetResponseChannel() <-chan blsagg.BlsAggregationServiceResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetResponseChannel")
@@ -93,7 +87,6 @@ func (m *MockBlsAggregationService) GetResponseChannel() <-chan blsagg.BlsAggreg
 	return ret0
 }
 
-// GetResponseChannel indicates an expected call of GetResponseChannel.
 func (mr *MockBlsAggregationServiceMockRecorder) GetResponseChannel() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(
@@ -142,6 +135,23 @@ func (mr *MockBlsAggregationServiceMockRecorder) ProcessNewSignature(arg0, arg1 
 	)
 }
 
+func createMockAggregator(
+	mockCtrl *gomock.Controller, operatorPubkeyDict map[sdktypes.OperatorId]types.OperatorInfo,
+) (*Aggregator, *chainiomocks.MockAvsWriterer, *MockBlsAggregationService, error) {
+	logger := testutils.GetTestLogger()
+	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
+	mockBlsAggregationService := NewMockBlsAggregationService(mockCtrl)
+
+	aggregator := &Aggregator{
+		logger:                logger,
+		avsWriter:             mockAvsWriter,
+		blsAggregationService: mockBlsAggregationService,
+		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
+	}
+	return aggregator, mockAvsWriter, mockBlsAggregationService, nil
+
+}
+
 type MockTask struct {
 	TaskNum        uint32
 	BlockNumber    uint32
@@ -168,15 +178,15 @@ func TestSendNewTask(t *testing.T) {
 		},
 	}
 
-	aggregator, mockAvsWriterer, mockBlsAggService, err := createMockAggregator(mockCtrl, operatorPubkeyDict)
+	aggregator, mockAvsWriter, mockBlsAggService, err := createMockAggregator(mockCtrl, operatorPubkeyDict)
 	assert.Nil(t, err)
 
-	var TASK_INDEX = uint32(0)
+	var TASK_INDEX = sdktypes.TaskIndex(0)
 	var BLOCK_NUMBER = uint32(100)
 	var NUMBER_TO_SQUARE = uint32(3)
 	var NUMBER_TO_SQUARE_BIG_INT = big.NewInt(int64(NUMBER_TO_SQUARE))
 
-	mockAvsWriterer.EXPECT().SendNewTaskNumberToSquare(
+	mockAvsWriter.EXPECT().SendNewTaskNumberToSquare(
 		context.Background(), NUMBER_TO_SQUARE_BIG_INT, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS,
 	).Return(mocks.MockSendNewTaskNumberToSquareCall(BLOCK_NUMBER, TASK_INDEX, NUMBER_TO_SQUARE))
 
@@ -196,29 +206,4 @@ func TestSendNewTask(t *testing.T) {
 
 	err = aggregator.sendNewTask(NUMBER_TO_SQUARE_BIG_INT)
 	assert.Nil(t, err)
-}
-
-func createMockAggregator(
-	mockCtrl *gomock.Controller, operatorPubkeyDict map[sdktypes.OperatorId]types.OperatorInfo,
-) (*Aggregator, *chainiomocks.MockAvsWriterer, *MockBlsAggregationService, error) {
-	logger := testutils.GetTestLogger()
-	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
-	mockBlsAggregationService := NewMockBlsAggregationService(mockCtrl)
-
-	aggregator := &Aggregator{
-		logger:                logger,
-		avsWriter:             mockAvsWriter,
-		blsAggregationService: mockBlsAggregationService,
-		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-	}
-	return aggregator, mockAvsWriter, mockBlsAggregationService, nil
-}
-
-// just a mock ethclient to pass to bindings
-// so that we can access abi methods
-func createMockEthClient() *backends.SimulatedBackend {
-	genesisAlloc := map[common.Address]gethcore.GenesisAccount{}
-	blockGasLimit := uint64(1000000)
-	client := backends.NewSimulatedBackend(genesisAlloc, blockGasLimit)
-	return client
 }
