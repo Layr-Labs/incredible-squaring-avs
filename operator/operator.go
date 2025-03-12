@@ -256,19 +256,19 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 	operatorSetsIds := []uint32{c.OperatorSetId}
 	waitForReceipt := true
-	operator.SetAppointee(
-		common.HexToAddress(c.InstantSlasher),
-		operator.CredibleSquaringServiceManagerAddr,
-		common.HexToAddress(c.AllocationManagerAddress),
-		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-	)
-	operator.CreateTotalDelegatedStakeQuorum(
-		c.MaxOperatorCount,
-		c.KickBIPsOfOperatorStake,
-		c.KickBIPsOfTotalStake,
-		c.MinimumStake,
-		c.Multiplier,
-	)
+	// operator.SetAppointee(
+	// 	common.HexToAddress(c.InstantSlasher),
+	// 	operator.CredibleSquaringServiceManagerAddr,
+	// 	common.HexToAddress(c.AllocationManagerAddress),
+	// 	common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+	// )
+	// operator.CreateTotalDelegatedStakeQuorum(
+	// 	c.MaxOperatorCount,
+	// 	c.KickBIPsOfOperatorStake,
+	// 	c.KickBIPsOfTotalStake,
+	// 	c.MinimumStake,
+	// 	c.Multiplier,
+	// )
 
 	if c.RegisterOperatorOnStartup {
 		operator.registerOperatorOnStartup(
