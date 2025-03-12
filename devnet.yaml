@@ -39,8 +39,8 @@ deployments:
       avs_addresses: "script/deployments/incredible-squaring/3151908.json"
     # Specify addresses to fetch from avs_addresses artifact
     addresses:
-      serviceManager: avs_addresses:.addresses.IncredibleSquaringServiceManager
-      taskManager: avs_addresses:.addresses.IncredibleSquaringTaskManager
+      serviceManager: avs_addresses:.addresses.incredibleSquaringServiceManager
+      taskManager: avs_addresses:.addresses.incredibleSquaringTaskManager
       erc20MockStrategy: avs_addresses:.addresses.strategy
       operatorStateRetriever: avs_addresses:.addresses.operatorStateRetriever
       registryCoordinator: avs_addresses:.addresses.registryCoordinator
