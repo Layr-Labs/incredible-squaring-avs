@@ -102,7 +102,7 @@ tests-integration: ## runs all integration tests
 .PHONY: copy-env
 copy-env:
 		@echo "Copying .env.example to .env..."
-		# cp ./contracts/.env.example ./contracts/.env
+		cp ./contracts/.env.example ./contracts/.env
 
 .PHONY: dump-state
 dump-state: 
