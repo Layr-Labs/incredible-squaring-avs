@@ -94,7 +94,10 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Cannot get chainId: %s", err.Error())
 	}
 
-	privateKeySigner, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: aggregatorEcdsaPrivateKey}, chainId)
+	privateKeySigner, _, err := signerv2.SignerFromConfig(
+		signerv2.Config{PrivateKey: aggregatorEcdsaPrivateKey},
+		chainId,
+	)
 	if err != nil {
 		t.Fatalf("Cannot create signer: %s", err.Error())
 	}

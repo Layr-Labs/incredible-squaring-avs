@@ -39,7 +39,8 @@ type Config struct {
 	IncredibleSquaringServiceManager          common.Address
 	AggregatorServerIpPortAddr                string
 	RegisterOperatorOnStartup                 bool
-	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
+	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement
+	// marshalJson
 	SignerFn          signerv2.SignerFn `json:"-"`
 	TxMgr             txmgr.TxManager
 	AggregatorAddress common.Address

@@ -35,8 +35,9 @@ const (
 )
 
 // Aggregator sends tasks (numbers to square) onchain, then listens for operator signed TaskResponses.
-// It aggregates responses signatures, and if any of the TaskResponses reaches the QuorumThresholdPercentage for each quorum
-// (currently we only use a single quorum of the ERC20Mock token), it sends the aggregated TaskResponse and signature onchain.
+// It aggregates responses signatures, and if any of the TaskResponses reaches the QuorumThresholdPercentage for each
+// quorum (currently we only use a single quorum of the ERC20Mock token), it sends the aggregated TaskResponse and
+// signature onchain.
 //
 // The signature is checked in the BLSSignatureChecker.sol contract, which expects a
 //
@@ -51,21 +52,29 @@ const (
 //		uint32[][] nonSignerStakeIndices; // nonSignerStakeIndices[quorumNumberIndex][nonSignerIndex]
 //	}
 //
-// A task can only be responded onchain by having enough operators sign on it such that their stake in each quorum reaches the QuorumThresholdPercentage.
-// In order to verify this onchain, the Registry contracts store the history of stakes and aggregate pubkeys (apks) for each operators and each quorum. These are
-// updated everytime an operator registers or deregisters with the BLSRegistryCoordinatorWithIndices.sol contract, or calls UpdateStakes() on the StakeRegistry.sol contract,
-// after having received new delegated shares or having delegated shares removed by stakers queuing withdrawals. Each of these pushes to their respective datatype array a new entry.
+// A task can only be responded onchain by having enough operators sign on it such that their stake in each quorum
+// reaches the QuorumThresholdPercentage. In order to verify this onchain, the Registry contracts store the history of
+// stakes and aggregate pubkeys (apks) for each operators and each quorum. These are updated everytime an operator
+// registers or deregisters with the BLSRegistryCoordinatorWithIndices.sol contract, or calls UpdateStakes() on the
+// StakeRegistry.sol contract, after having received new delegated shares or having delegated shares removed by stakers
+// queuing withdrawals. Each of these pushes to their respective datatype array a new entry.
 //
-// This is true for quorumBitmaps (represent the quorums each operator is opted into), quorumApks (apks per quorum), totalStakes (total stake per quorum), and nonSignerStakes (stake per quorum per operator).
-// The 4 "indices" in NonSignerStakesAndSignature basically represent the index at which to fetch their respective data, given a blockNumber at which the task was created.
-// Note that different data types might have different indices, since for eg QuorumBitmaps are updated for operators registering/deregistering, but not for UpdateStakes.
-// Thankfully, we have deployed a helper contract BLSOperatorStateRetriever.sol whose function getCheckSignaturesIndices() can be used to fetch the indices given a block number.
+// This is true for quorumBitmaps (represent the quorums each operator is opted into), quorumApks (apks per quorum),
+// totalStakes (total stake per quorum), and nonSignerStakes (stake per quorum per operator). The 4 "indices" in
+// NonSignerStakesAndSignature basically represent the index at which to fetch their respective data, given a
+// blockNumber at which the task was created. Note that different data types might have different indices, since for eg
+// QuorumBitmaps are updated for operators registering/deregistering, but not for UpdateStakes. Thankfully, we have
+// deployed a helper contract BLSOperatorStateRetriever.sol whose function getCheckSignaturesIndices() can be used to
+// fetch the indices given a block number.
 //
 // The 4 other fields nonSignerPubkeys, quorumApks, apkG2, and sigma, however, must be computed individually.
-// apkG2 and sigma are just the aggregated signature and pubkeys of the operators who signed the task response (aggregated over all quorums, so individual signatures might be duplicated).
-// quorumApks are the G1 aggregated pubkeys of the operators who signed the task response, but one per quorum, as opposed to apkG2 which is summed over all quorums.
-// nonSignerPubkeys are the G1 pubkeys of the operators who did not sign the task response, but were opted into the quorum at the blocknumber at which the task was created.
-// Upon sending a task onchain (or receiving a NewTaskCreated Event if the tasks were sent by an external task generator), the aggregator can get the list of all operators opted into each quorum at that
+// apkG2 and sigma are just the aggregated signature and pubkeys of the operators who signed the task response
+// (aggregated over all quorums, so individual signatures might be duplicated). quorumApks are the G1 aggregated pubkeys
+// of the operators who signed the task response, but one per quorum, as opposed to apkG2 which is summed over all
+// quorums. nonSignerPubkeys are the G1 pubkeys of the operators who did not sign the task response, but were opted into
+// the quorum at the blocknumber at which the task was created. Upon sending a task onchain (or receiving a
+// NewTaskCreated Event if the tasks were sent by an external task generator), the aggregator can get the list of all
+// operators opted into each quorum at that
 // block number by calling the getOperatorState() function of the BLSOperatorStateRetriever.sol contract.
 type Aggregator struct {
 	logger           logging.Logger
@@ -109,7 +118,14 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		return nil, err
 	}
 
-	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(context.Background(), clients.AvsRegistryChainSubscriber, clients.AvsRegistryChainReader, nil, operatorsinfo.Opts{}, c.Logger)
+	operatorPubkeysService := oprsinfoserv.NewOperatorsInfoServiceInMemory(
+		context.Background(),
+		clients.AvsRegistryChainSubscriber,
+		clients.AvsRegistryChainReader,
+		nil,
+		operatorsinfo.Opts{},
+		c.Logger,
+	)
 
 	// This is the same hash function used by the operator to hash the task response before signing it.
 	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
@@ -226,7 +242,12 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 	task := agg.tasks[blsAggServiceResp.TaskIndex]
 	agg.tasksMu.RUnlock()
 	taskResponse, _ := blsAggServiceResp.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
-	_, err := agg.avsWriter.SendAggregatedResponse(context.Background(), task, taskResponse, nonSignerStakesAndSignature)
+	_, err := agg.avsWriter.SendAggregatedResponse(
+		context.Background(),
+		task,
+		taskResponse,
+		nonSignerStakesAndSignature,
+	)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to respond to task", "err", err)
 	}
@@ -237,7 +258,12 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 	agg.logger.Info("Aggregator sending new task", "numberToSquare", numToSquare)
 	// Send number to square to the task manager contract
-	newTask, taskIndex, err := agg.avsWriter.SendNewTaskNumberToSquare(context.Background(), numToSquare, types.QUORUM_THRESHOLD_NUMERATOR, types.QUORUM_NUMBERS)
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskNumberToSquare(
+		context.Background(),
+		numToSquare,
+		types.QUORUM_THRESHOLD_NUMERATOR,
+		types.QUORUM_NUMBERS,
+	)
 	if err != nil {
 		agg.logger.Error("Aggregator failed to send number to square", "err", err)
 		return err
@@ -252,13 +278,20 @@ func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
 		quorumThresholdPercentages[i] = sdktypes.QuorumThresholdPercentage(newTask.QuorumThresholdPercentage)
 	}
 	// TODO(samlaf): we use seconds for now, but we should ideally pass a blocknumber to the blsAggregationService
-	// and it should monitor the chain and only expire the task aggregation once the chain has reached that block number.
+	// and it should monitor the chain and only expire the task aggregation once the chain has reached that block
+	// number.
 	taskTimeToExpiry := taskChallengeWindowBlock * blockTimeSeconds
 	var quorumNums sdktypes.QuorumNums
 	for _, quorumNum := range newTask.QuorumNumbers {
 		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
 	}
-	metadata := blsagg.NewTaskMetadata(taskIndex, newTask.TaskCreatedBlock, quorumNums, quorumThresholdPercentages, taskTimeToExpiry)
+	metadata := blsagg.NewTaskMetadata(
+		taskIndex,
+		newTask.TaskCreatedBlock,
+		quorumNums,
+		quorumThresholdPercentages,
+		taskTimeToExpiry,
+	)
 	agg.blsAggregationService.InitializeNewTask(metadata)
 	return nil
 }

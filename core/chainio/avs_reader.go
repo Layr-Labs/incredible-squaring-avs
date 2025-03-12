@@ -65,7 +65,12 @@ func BuildAvsReader(registryCoordinatorAddr, serviceManagerAddr gethcommon.Addre
 	}
 	return NewAvsReader(*chainReader, avsManagersBindings, logger)
 }
-func NewAvsReader(avsRegistryReader sdkavsregistry.ChainReader, avsServiceBindings *AvsManagersBindings, logger logging.Logger) (*AvsReader, error) {
+
+func NewAvsReader(
+	avsRegistryReader sdkavsregistry.ChainReader,
+	avsServiceBindings *AvsManagersBindings,
+	logger logging.Logger,
+) (*AvsReader, error) {
 	return &AvsReader{
 		ChainReader:        avsRegistryReader,
 		AvsServiceBindings: avsServiceBindings,

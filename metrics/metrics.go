@@ -25,7 +25,11 @@ type AvsAndEigenMetrics struct {
 
 const incredibleSquaringNamespace = "incsq"
 
-func NewAvsAndEigenMetrics(avsName string, eigenMetrics *metrics.EigenMetrics, reg prometheus.Registerer) *AvsAndEigenMetrics {
+func NewAvsAndEigenMetrics(
+	avsName string,
+	eigenMetrics *metrics.EigenMetrics,
+	reg prometheus.Registerer,
+) *AvsAndEigenMetrics {
 	return &AvsAndEigenMetrics{
 		Metrics: eigenMetrics,
 		numTasksReceived: promauto.With(reg).NewCounter(

@@ -168,7 +168,12 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	skWallet, err := wallet.NewPrivateKeyWallet(ethHttpClient, signerV2, common.HexToAddress(avsConfig.OperatorAddress), logger)
+	skWallet, err := wallet.NewPrivateKeyWallet(
+		ethHttpClient,
+		signerV2,
+		common.HexToAddress(avsConfig.OperatorAddress),
+		logger,
+	)
 	if err != nil {
 		fmt.Println("can't create wallet")
 		fmt.Println(err)
