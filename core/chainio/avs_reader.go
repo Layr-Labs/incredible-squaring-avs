@@ -50,14 +50,14 @@ func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
 	}
-	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr,c.IncredibleSquaringServiceManager, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
+	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.IncredibleSquaringServiceManager, c.OperatorStateRetrieverAddr, ethWsClient, &c.EthHttpClient, c.Logger)
 }
-func BuildAvsReader(registryCoordinatorAddr,serviceManagerAddr gethcommon.Address, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend,ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
+func BuildAvsReader(registryCoordinatorAddr, serviceManagerAddr gethcommon.Address, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsReader, error) {
 	avsManagersBindings, err := NewAvsManagersBindings(serviceManagerAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		return nil, err
 	}
-	config:= sdkavsregistry.Config{RegistryCoordinatorAddress: registryCoordinatorAddr,OperatorStateRetrieverAddress:operatorStateRetrieverAddr,DontUseAllocationManager: false,ServiceManagerAddress:serviceManagerAddr }
+	config := sdkavsregistry.Config{RegistryCoordinatorAddress: registryCoordinatorAddr, OperatorStateRetrieverAddress: operatorStateRetrieverAddr, DontUseAllocationManager: false, ServiceManagerAddress: serviceManagerAddr}
 
 	chainReader, _, _, err := sdkavsregistry.BuildReadClients(config, ethHttpClient, wsClient, logger)
 	if err != nil {

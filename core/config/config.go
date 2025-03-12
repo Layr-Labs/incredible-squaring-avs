@@ -36,7 +36,7 @@ type Config struct {
 	EthWsClient                               ethclient.Client
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
-	IncredibleSquaringServiceManager 		  common.Address
+	IncredibleSquaringServiceManager          common.Address
 	AggregatorServerIpPortAddr                string
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
@@ -59,8 +59,8 @@ type IncredibleSquaringDeploymentRaw struct {
 	Addresses IncredibleSquaringContractsRaw `json:"addresses"`
 }
 type IncredibleSquaringContractsRaw struct {
-	RegistryCoordinatorAddr    string `json:"registryCoordinator"`
-	OperatorStateRetrieverAddr string `json:"operatorStateRetriever"`
+	RegistryCoordinatorAddr          string `json:"registryCoordinator"`
+	OperatorStateRetrieverAddr       string `json:"operatorStateRetriever"`
 	IncredibleSquaringServiceManager string `json:"IncredibleSquaringServiceManager"`
 }
 
@@ -143,7 +143,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
-		IncredibleSquaringServiceManager: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
+		IncredibleSquaringServiceManager:          common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
 		SignerFn:                                  signerV2,
 		TxMgr:                                     txMgr,
 		AggregatorAddress:                         aggregatorAddr,

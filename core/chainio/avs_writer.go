@@ -27,7 +27,7 @@ type AvsWriterer interface {
 		quorumThresholdPercentage sdktypes.QuorumThresholdPercentage,
 		quorumNumbers sdktypes.QuorumNums,
 	) (cstaskmanager.IIncredibleSquaringTaskManagerTask, uint32, error)
-		RaiseChallenge(
+	RaiseChallenge(
 		ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
@@ -55,18 +55,18 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
 	}
-	return BuildAvsWriter(c.TxMgr,c.IncredibleSquaringServiceManager, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr,ethWsClient, &c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringServiceManager, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, ethWsClient, &c.EthHttpClient, c.Logger)
 }
 
-func BuildAvsWriter(txMgr txmgr.TxManager,serviceManagerAddr gethcommon.Address, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,wsClient eth.WsBackend, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
+func BuildAvsWriter(txMgr txmgr.TxManager, serviceManagerAddr gethcommon.Address, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, wsClient eth.WsBackend, ethHttpClient sdkcommon.EthClientInterface, logger logging.Logger) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(serviceManagerAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
 	if err != nil {
 		logger.Error("Failed to create contract bindings", "err", err)
 		return nil, err
 	}
-	config:= avsregistry.Config{RegistryCoordinatorAddress: registryCoordinatorAddr,OperatorStateRetrieverAddress:operatorStateRetrieverAddr , DontUseAllocationManager: false,ServiceManagerAddress: serviceManagerAddr}
+	config := avsregistry.Config{RegistryCoordinatorAddress: registryCoordinatorAddr, OperatorStateRetrieverAddress: operatorStateRetrieverAddr, DontUseAllocationManager: false, ServiceManagerAddress: serviceManagerAddr}
 
-	_,_,avsRegistryWriter,_, err := avsregistry.BuildClients(config, ethHttpClient,wsClient, txMgr,logger)
+	_, _, avsRegistryWriter, _, err := avsregistry.BuildClients(config, ethHttpClient, wsClient, txMgr, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(ctx context.Context, numToSquare *
 		w.logger.Errorf("Error getting tx opts")
 		return cstaskmanager.IIncredibleSquaringTaskManagerTask{}, 0, err
 	}
-	
+
 	tx, err := w.AvsContractBindings.TaskManager.CreateNewTask(txOpts, numToSquare, uint32(quorumThresholdPercentage), quorumNumbers.UnderlyingType())
 	if err != nil {
 		w.logger.Errorf("Error assembling CreateNewTask tx")

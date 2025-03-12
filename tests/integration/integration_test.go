@@ -117,7 +117,7 @@ func TestIntegration(t *testing.T) {
 		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
 		TxMgr:                                     txMgr,
 		AggregatorAddress:                         aggregatorAddr,
-		IncredibleSquaringServiceManager: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
+		IncredibleSquaringServiceManager:          common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
 	}
 
 	/* Prepare the config file for operator */
@@ -225,14 +225,14 @@ func startAnvilTestContainer() testcontainers.Container {
 		Cmd:          []string{"--host", "0.0.0.0", "--load-state", "/state.json"},
 		ExposedPorts: []string{"8545/tcp"},
 		// HostConfigModifier: func(hostConfig *container.HostConfig) {
-    	// 	hostConfig.PortBindings = map[nat.Port][]nat.PortBinding{
-        // 		"8545/tcp": {
-        //     	{HostIP: "0.0.0.0", HostPort: "8545"},
-        // 		},
-    	// 	}
+		// 	hostConfig.PortBindings = map[nat.Port][]nat.PortBinding{
+		// 		"8545/tcp": {
+		//     	{HostIP: "0.0.0.0", HostPort: "8545"},
+		// 		},
+		// 	}
 		// },
 
-		WaitingFor:   wait.ForLog("Listening on"),
+		WaitingFor: wait.ForLog("Listening on"),
 	}
 	anvilC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,

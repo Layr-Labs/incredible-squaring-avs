@@ -197,14 +197,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
 	}
-	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress),common.HexToAddress(c.IncredibleSquaringServiceManager),
+	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager),
 		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsSubscriber", "err", err)
 		return nil, err
 	}
-	
+
 	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph calls)
 	// and not instrumented metrics: see https://prometheus.io/docs/instrumenting/writing_clientlibs/#overall-structure
 	quorumNames := map[sdktypes.QuorumNum]string{
@@ -241,12 +241,11 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		CredibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
 		OperatorId:                         [32]byte{0}, // this is set below
 		TimesFailing:                       c.TimesFailing,
-
 	}
 	operatorSetsIds := []uint32{c.OperatorSetId}
 	waitForReceipt := true
-	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.CredibleSquaringServiceManagerAddr,common.HexToAddress(c.AllocationManagerAddress),common.HexToAddress(c.AVSRegistryCoordinatorAddress))
-	operator.CreateTotalDelegatedStakeQuorum(c.MaxOperatorCount,c.KickBIPsOfOperatorStake,c.KickBIPsOfTotalStake,c.MinimumStake,c.Multiplier)
+	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.CredibleSquaringServiceManagerAddr, common.HexToAddress(c.AllocationManagerAddress), common.HexToAddress(c.AVSRegistryCoordinatorAddress))
+	operator.CreateTotalDelegatedStakeQuorum(c.MaxOperatorCount, c.KickBIPsOfOperatorStake, c.KickBIPsOfTotalStake, c.MinimumStake, c.Multiplier)
 
 	if c.RegisterOperatorOnStartup {
 		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager), operatorSetsIds, waitForReceipt, *operator.BlsKeypair, c.Socket)
