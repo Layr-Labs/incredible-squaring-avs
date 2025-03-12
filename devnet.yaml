@@ -5,13 +5,6 @@
 
 deployments:
 
-  - name: contract_registry
-    repo: "."
-    contracts_path: "contracts"
-    script: script/DeployContractsRegistry.s.sol
-    env:
-      PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
-
   - name: eigenlayer
     repo: "."
     contracts_path: "contracts"
