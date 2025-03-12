@@ -26,9 +26,7 @@ deploy-eigenlayer: ## Deploy eigenlayer
 deploy-avs: ## Deploy avs
 	./tests/anvil/deploy-avs.sh
 
-deploy-el-and-avs-contracts:
-	$(MAKE) deploy-eigenlayer
-	$(MAKE) deploy-avs
+deploy-el-and-avs-contracts: deploy-eigenlayer deploy-avs
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
