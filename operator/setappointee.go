@@ -15,36 +15,36 @@ func (o *Operator) SetAppointee(
 	allocationManagerAddr common.Address,
 	registryCoordinatorAddr common.Address,
 ) error {
-	o.Logger.Info(serviceManagerAddr.String())
-	serviceManager, _ := mockAvsServiceManager.NewContractMockAvsServiceManager(serviceManagerAddr, o.EthClient)
-	noSendTxOpts, err := o.AvsWriter.TxMgr.GetNoSendTxOpts()
+	o.logger.Info(serviceManagerAddr.String())
+	serviceManager, _ := mockAvsServiceManager.NewContractMockAvsServiceManager(serviceManagerAddr, o.ethClient)
+	noSendTxOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
 	waitForReceipt := true
 	if err != nil {
 		return err
 	}
 	selector := [4]byte{211, 217, 111, 244} // setAvsRegistrar call selector
-	tx, err := serviceManager.SetAppointee(noSendTxOpts, o.OperatorAddr, allocationManagerAddr, selector)
+	tx, err := serviceManager.SetAppointee(noSendTxOpts, o.operatorAddr, allocationManagerAddr, selector)
 	if err != nil {
 		return err
 	}
-	receipt, err := o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
+	receipt, err := o.avsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
 	if err != nil {
 		return utils.WrapError("failed to send setAvsRegistrar appointee tx with err", err)
 	}
-	o.Logger.Info(
+	o.logger.Info(
 		"tx successfully included for setAppointee for selector setAvsRegistrar ",
 		"txHash",
 		receipt.TxHash.String(),
 	)
 
-	allocationManagerContract, _ := allocationManager.NewContractAllocationManager(allocationManagerAddr, o.EthClient)
+	allocationManagerContract, _ := allocationManager.NewContractAllocationManager(allocationManagerAddr, o.ethClient)
 
 	tx, _ = allocationManagerContract.SetAVSRegistrar(noSendTxOpts, serviceManagerAddr, registryCoordinatorAddr)
-	receipt, err = o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
+	receipt, err = o.avsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
 	if err != nil {
 		return utils.WrapError("failed to send setAvsRegistrar tx with err", err)
 	}
-	o.Logger.Info("tx successfully included for setAvsRegistrar ", "txHash", receipt.TxHash.String())
+	o.logger.Info("tx successfully included for setAvsRegistrar ", "txHash", receipt.TxHash.String())
 
 	createOperatorSetsSelector := [4]byte{38, 31, 132, 224} // createOperatorSets selector
 	tx, err = serviceManager.SetAppointee(
@@ -56,11 +56,11 @@ func (o *Operator) SetAppointee(
 	if err != nil {
 		return err
 	}
-	receipt, err = o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
+	receipt, err = o.avsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
 	if err != nil {
 		return utils.WrapError("failed to send createOperatorSets appointee tx with err", err)
 	}
-	o.Logger.Info(
+	o.logger.Info(
 		"tx successfully included for setAppointee for selector createOperatorSets",
 		"txHash",
 		receipt.TxHash.String(),
@@ -76,11 +76,11 @@ func (o *Operator) SetAppointee(
 	if err != nil {
 		return err
 	}
-	receipt, err = o.AvsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
+	receipt, err = o.avsWriter.TxMgr.Send(context.Background(), tx, waitForReceipt)
 	if err != nil {
 		return utils.WrapError("failed to send slashOperator appointee tx with err", err)
 	}
-	o.Logger.Info("tx successfully included for slashOperator appointee tx ", "txHash", receipt.TxHash.String())
+	o.logger.Info("tx successfully included for slashOperator appointee tx ", "txHash", receipt.TxHash.String())
 
 	return nil
 }

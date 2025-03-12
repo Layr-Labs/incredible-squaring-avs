@@ -77,35 +77,35 @@ func TestOperator(t *testing.T) {
 			BlsSignature: bls.Signature{
 				G1Point: bls.NewG1Point(X, Y),
 			},
-			OperatorId: operator.OperatorId,
+			OperatorId: operator.operatorId,
 		}
 		mockCtrl := gomock.NewController(t)
 		defer mockCtrl.Finish()
 
 		mockAggregatorRpcClient := operatormocks.NewMockAggregatorRpcClienter(mockCtrl)
 		mockAggregatorRpcClient.EXPECT().SendSignedTaskResponseToAggregator(signedTaskResponse)
-		operator.AggregatorRpcClient = mockAggregatorRpcClient
+		operator.aggregatorRpcClient = mockAggregatorRpcClient
 
 		mockSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
 		mockSubscriber.EXPECT().
-			SubscribeToNewTasks(operator.NewTaskCreatedChan).
+			SubscribeToNewTasks(operator.newTaskCreatedChan).
 			Return(event.NewSubscription(func(quit <-chan struct{}) error {
 				// loop forever
 				<-quit
 				return nil
 			}))
-		operator.AvsSubscriber = mockSubscriber
+		operator.avsSubscriber = mockSubscriber
 
 		mockReader := chainiomocks.NewMockAvsReaderer(mockCtrl)
-		mockReader.EXPECT().IsOperatorRegistered(gomock.Any(), operator.OperatorAddr).Return(true, nil)
-		operator.AvsReader = mockReader
+		mockReader.EXPECT().IsOperatorRegistered(gomock.Any(), operator.operatorAddr).Return(true, nil)
+		operator.avsReader = mockReader
 
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
 			err := operator.Start(ctx)
 			assert.Nil(t, err)
 		}()
-		operator.NewTaskCreatedChan <- newTaskCreatedEvent
+		operator.newTaskCreatedChan <- newTaskCreatedEvent
 		time.Sleep(1 * time.Second)
 
 		cancel()

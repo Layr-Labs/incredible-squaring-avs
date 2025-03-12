@@ -33,10 +33,10 @@ Start anvil in a separate terminal:
 anvil
 ```
 
-Deploy contracts:
+Deploy contracts , give UAM permissions , create quorum in single command :
 
 ```bash
-make deploy-el-and-avs-contracts
+make deploy-all
 ```
 
 Start the aggregator:

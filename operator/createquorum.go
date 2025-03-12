@@ -23,11 +23,11 @@ func (o *Operator) CreateTotalDelegatedStakeQuorum(
 	}
 	strategyParams := []regcoord.IStakeRegistryTypesStrategyParams{
 		{
-			Strategy:   common.HexToAddress(o.Config.TokenStrategyAddr),
+			Strategy:   common.HexToAddress(o.config.TokenStrategyAddr),
 			Multiplier: big.NewInt(multiplier),
 		},
 	}
-	receipt, err := o.AvsWriter.CreateTotalDelegatedStakeQuorum(
+	receipt, err := o.avsWriter.CreateTotalDelegatedStakeQuorum(
 		context.Background(),
 		operatorSetParams,
 		big.NewInt(minimumStake),
@@ -35,10 +35,10 @@ func (o *Operator) CreateTotalDelegatedStakeQuorum(
 		true,
 	)
 	if err != nil {
-		o.Logger.Error("Error creating total delegated stake quorum", "err", err)
+		o.logger.Error("Error creating total delegated stake quorum", "err", err)
 		return err
 	}
-	o.Logger.Info("CreateTotalDelegatedStakeQuorum successfully included", "txHash", receipt.TxHash.String())
+	o.logger.Info("CreateTotalDelegatedStakeQuorum successfully included", "txHash", receipt.TxHash.String())
 
 	return nil
 }

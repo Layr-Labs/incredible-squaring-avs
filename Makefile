@@ -41,6 +41,8 @@ uam-permissions:
 
 deploy-el-and-avs-contracts: deploy-eigenlayer deploy-avs
 
+deploy-all: deploy-eigenlayer deploy-avs uam-permissions create-quorum
+
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
 

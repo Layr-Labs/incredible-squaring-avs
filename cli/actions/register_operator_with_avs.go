@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -51,6 +52,9 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 		ecdsaKeyPassword,
 	)
 
+	blsKeyPassword, ok := os.LookupEnv("OPERATOR_BLS_KEY_PASSWORD")
+	blsKeyPair, err := bls.ReadPrivateKeyFromFile(nodeConfig.BlsPrivateKeyStorePath, blsKeyPassword)
+
 	operator.SetAppointee(
 		common.HexToAddress(nodeConfig.InstantSlasher),
 		common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
@@ -74,7 +78,7 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 		common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
 		operatorSetIds,
 		waitForReceipt,
-		*operator.BlsKeypair,
+		*blsKeyPair,
 		socket,
 		operatorEcdsaPrivKey,
 	)
