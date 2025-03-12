@@ -1,5 +1,12 @@
 ############################# HELP MESSAGE #############################
 # Make sure the help command stays first, so that it's printed by default when `make` is called without arguments
+
+GO_LINES_IGNORED_DIRS=contracts
+GO_PACKAGES=./aggregator/... ./challenger/... ./cli/... \
+	./common/... ./core/... ./metrics/... ./operator/... \
+	./plugin/... ./tests/... ./types/...
+GO_FOLDERS=$(shell echo ${GO_PACKAGES} | sed -e "s/\.\///g" | sed -e "s/\/\.\.\.//g")
+
 .PHONY: help tests
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -101,3 +108,12 @@ tests-contract: ## runs all forge tests
 tests-integration: ## runs all integration tests
 	go test ./tests/integration/... -v -count=1
 
+.PHONY: fmt
+fmt: ## formats all go files
+	go fmt ./...
+	make format-lines
+
+.PHONY: format-lines
+format-lines: ## formats all go files with golines
+	go install github.com/segmentio/golines@latest
+	golines -w -m 120 --ignore-generated --shorten-comments --ignored-dirs=${GO_LINES_IGNORED_DIRS} ${GO_FOLDERS}

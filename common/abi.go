@@ -29,6 +29,10 @@ type EthClientInterface interface {
 	PendingCodeAt(ctx context.Context, account common.Address) ([]byte, error)
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
 	PendingNonceAt(ctx context.Context, account common.Address) (uint64, error)
-	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
+	SubscribeFilterLogs(
+		ctx context.Context,
+		query ethereum.FilterQuery,
+		ch chan<- types.Log,
+	) (ethereum.Subscription, error)
 	SuggestGasPrice(ctx context.Context) (*big.Int, error)
 }

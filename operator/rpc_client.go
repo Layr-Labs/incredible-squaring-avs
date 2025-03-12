@@ -21,7 +21,11 @@ type AggregatorRpcClient struct {
 	aggregatorIpPortAddr string
 }
 
-func NewAggregatorRpcClient(aggregatorIpPortAddr string, logger logging.Logger, metrics metrics.Metrics) (*AggregatorRpcClient, error) {
+func NewAggregatorRpcClient(
+	aggregatorIpPortAddr string,
+	logger logging.Logger,
+	metrics metrics.Metrics,
+) (*AggregatorRpcClient, error) {
 	return &AggregatorRpcClient{
 		// set to nil so that we can create an rpc client even if the aggregator is not running
 		rpcClient:            nil,
@@ -50,17 +54,27 @@ func (c *AggregatorRpcClient) SendSignedTaskResponseToAggregator(signedTaskRespo
 		c.logger.Info("rpc client is nil. Dialing aggregator rpc client")
 		err := c.dialAggregatorRpcClient()
 		if err != nil {
-			c.logger.Error("Could not dial aggregator rpc client. Not sending signed task response header to aggregator. Is aggregator running?", "err", err)
+			c.logger.Error(
+				"Could not dial aggregator rpc client. Not sending signed task response header to aggregator. Is aggregator running?",
+				"err",
+				err,
+			)
 			return
 		}
 	}
 	// we don't check this bool. It's just needed because rpc.Call requires rpc methods to have a return value
 	var reply bool
 	// We try to send the response 5 times to the aggregator, waiting 2 times in between each attempt.
-	// This is mostly only necessary for local testing, since the aggregator sometimes is not ready to process task responses
+	// This is mostly only necessary for local testing, since the aggregator sometimes is not ready to process task
+	// responses
 	// before the operator gets the new task created log from anvil (because blocks are mined instantly)
-	// the aggregator needs to read some onchain data related to quorums before it can accept operator signed task responses.
-	c.logger.Info("Sending signed task response header to aggregator", "signedTaskResponse", fmt.Sprintf("%#v", signedTaskResponse))
+	// the aggregator needs to read some onchain data related to quorums before it can accept operator signed task
+	// responses.
+	c.logger.Info(
+		"Sending signed task response header to aggregator",
+		"signedTaskResponse",
+		fmt.Sprintf("%#v", signedTaskResponse),
+	)
 	for i := 0; i < 5; i++ {
 		err := c.rpcClient.Call("Aggregator.ProcessSignedTaskResponse", signedTaskResponse, &reply)
 		if err != nil {

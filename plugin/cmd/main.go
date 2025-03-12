@@ -149,7 +149,12 @@ func plugin(ctx *cli.Context) {
 		fmt.Println(err)
 		return
 	}
-	skWallet, err := wallet.NewPrivateKeyWallet(ethHttpClient, signerV2, common.HexToAddress(avsConfig.OperatorAddress), logger)
+	skWallet, err := wallet.NewPrivateKeyWallet(
+		ethHttpClient,
+		signerV2,
+		common.HexToAddress(avsConfig.OperatorAddress),
+		logger,
+	)
 	if err != nil {
 		fmt.Println("can't create wallet")
 		fmt.Println(err)
@@ -181,7 +186,11 @@ func plugin(ctx *cli.Context) {
 		// Register with registry coordination
 		quorumNumbers := sdktypes.QuorumNums{0}
 		socket := "Not Needed"
-		logger.Infof("Registering with registry coordination with quorum numbers %v and socket %s", quorumNumbers, socket)
+		logger.Infof(
+			"Registering with registry coordination with quorum numbers %v and socket %s",
+			quorumNumbers,
+			socket,
+		)
 		r, err := clients.AvsRegistryChainWriter.RegisterOperator(
 			goCtx,
 			operatorEcdsaPrivateKey,
