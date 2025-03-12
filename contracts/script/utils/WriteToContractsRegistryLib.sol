@@ -35,19 +35,19 @@ library WriteToContractsRegistryLib {
         ContractsRegistry contractsRegistry = ContractsRegistry(contracts_registry_addr);
 
         contractsRegistry.registerContract(
-            "incredible_squaring_task_manager",
+            "incredibleSquaringTaskManager",
             address(deploymentdata.incredibleSquaringTaskManager)
         );
         contractsRegistry.registerContract("erc20MockStrategy", address(deploymentdata.strategy));
         contractsRegistry.registerContract(
-            "incredible_squaring_registry_coordinator", address(deploymentdata.registryCoordinator)
+            "incredibleSquaringRegistryCoordinator", address(deploymentdata.registryCoordinator)
         );
         contractsRegistry.registerContract(
-            "incredible_squaring_operator_state_retriever",
+            "incredibleSquaringOperatorStateRetriever",
             address(deploymentdata.operatorStateRetriever)
         );
         contractsRegistry.registerContract(
-            "incredible_squaring_service_manager",
+            "incredibleSquaringServiceManager",
             address(deploymentdata.incredibleSquaringServiceManager)
         );
     }
