@@ -43,17 +43,22 @@ deployments:
   - name: uam_permissions
     repo: "."
     contracts_path: "contracts"
-    script: script/UAMPermissions.s.sol
+    script: script/UAMPermissions.s.sol:UAMPermissions
     env:
       PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
     input:
       script/deployments/core/: eigenlayer_addresses
       script/deployments/incredible-squaring/: avs_addresses
+    output:
+      avs_addresses: "script/deployments/incredible-squaring/3151908.json"
+    addresses:
+      serviceManager: avs_addresses:.addresses.incredibleSquaringServiceManager
+
 
   - name: create_quorum
     repo: "."
     contracts_path: "contracts"
-    script: script/CreateQuorum.s.sol
+    script: script/CreateQuorum.s.sol:CreateQuorum
     env:
       PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
     input:
