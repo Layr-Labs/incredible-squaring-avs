@@ -74,5 +74,5 @@ jobs:
         working-directory: ics
         run: |
           ./scripts/e2e_test.sh
-          export EL_REF=${{ matrix.el-contracts.ref }}
-          export EL_VERSION=${{ matrix.el-contracts.version }}
+          # export EL_REF=${{ matrix.el-contracts.ref }}
+          # export EL_VERSION=${{ matrix.el-contracts.version }}
