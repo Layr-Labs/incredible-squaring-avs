@@ -33,7 +33,7 @@ Start anvil in a separate terminal:
 anvil
 ```
 
-Deploy contracts , give UAM permissions , create quorum in single command :
+Deploy contracts, set UAM permissions, and create a quorum in a single command:
 
 ```bash
 make deploy-all
