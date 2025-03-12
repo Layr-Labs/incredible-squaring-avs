@@ -259,6 +259,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		return nil, err
 	}
 	operator.OperatorId = operatorId
+	logger.Info("Operator info",
+		"operatorId", operatorId,
+		"operatorAddr", c.OperatorAddress,
+		"operatorG1Pubkey", operator.BlsKeypair.GetPubKeyG1(),
+		"operatorG2Pubkey", operator.BlsKeypair.GetPubKeyG2(),
+	)
 	return operator, nil
 }
 
