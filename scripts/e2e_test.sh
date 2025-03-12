@@ -47,7 +47,7 @@ avs-devnet start || { echo "Failed to start the devnet" ; exit 42; }
 RPC_URL=$(avs-devnet get-ports | yq .el-1-besu-lighthouse.rpc)
 echo "Fetched RPC URL: $RPC_URL"
 
-TASK_MANAGER_ADDR=$(avs-devnet get-address avs_addresses:IncredibleSquaringTaskManager)
+TASK_MANAGER_ADDR=$(avs-devnet get-address avs_addresses:incredibleSquaringTaskManager)
 echo "Fetched TaskManager address: $TASK_MANAGER_ADDR"
 
 # Fetch the latest task number
