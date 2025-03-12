@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {HelloWorldDeploymentLib} from "./utils/HelloWorldDeploymentLib.sol";
+import {IncSquaringDeploymentLib} from "./utils/IncSquaringDeploymentLib.sol";
 import {CoreDeploymentLib, CoreDeploymentParsingLib} from "./utils/CoreDeploymentLib.sol";
 import {SetupDistributionsLib} from "./utils/SetupDistributionsLib.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
@@ -27,8 +27,8 @@ contract SetupDistributions is Script, Test {
     CoreDeploymentLib.DeploymentData coreDeployment;
     CoreDeploymentLib.DeploymentConfigData coreConfig;
 
-    HelloWorldDeploymentLib.DeploymentData helloWorldDeployment;
-    HelloWorldDeploymentLib.DeploymentConfigData helloWorldConfig;
+    IncSquaringDeploymentLib.DeploymentData helloWorldDeployment;
+    IncSquaringDeploymentLib.DeploymentConfigData helloWorldConfig;
 
     RewardsCoordinator rewardsCoordinator;
     string internal constant paymentInfofilePath = "test/mockData/scratch/payment_info.json";
@@ -62,10 +62,13 @@ contract SetupDistributions is Script, Test {
             CoreDeploymentParsingLib.readDeploymentJson("deployments/core/", block.chainid);
         coreConfig =
             CoreDeploymentParsingLib.readDeploymentConfigValues("config/core/", block.chainid);
+
         helloWorldDeployment =
-            HelloWorldDeploymentLib.readDeploymentJson("deployments/hello-world/", block.chainid);
+            IncSquaringDeploymentLib.readDeploymentJson("deployments/hello-world/", block.chainid);
         helloWorldConfig =
-            HelloWorldDeploymentLib.readDeploymentConfigValues("config/hello-world/", block.chainid);
+            IncSquaringDeploymentLib.readDeploymentConfigValues("config/hello-world/", block.chainid);
+        // strategy, token, serviceManager
+        // rewardsInitiatorKey, rewardsInitiator
 
         rewardsCoordinator = RewardsCoordinator(coreDeployment.rewardsCoordinator);
 
