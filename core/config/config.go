@@ -134,20 +134,26 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &Config{
-		EcdsaPrivateKey:            ecdsaPrivateKey,
-		Logger:                     logger,
-		EthWsRpcUrl:                configRaw.EthWsUrl,
-		EthHttpRpcUrl:              configRaw.EthRpcUrl,
-		EthHttpClient:              *ethRpcClient,
-		EthWsClient:                *ethWsClient,
-		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
-		IncredibleSquaringServiceManager:          common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
-		SignerFn:                                  signerV2,
-		TxMgr:                                     txMgr,
-		AggregatorAddress:                         aggregatorAddr,
+		EcdsaPrivateKey: ecdsaPrivateKey,
+		Logger:          logger,
+		EthWsRpcUrl:     configRaw.EthWsUrl,
+		EthHttpRpcUrl:   configRaw.EthRpcUrl,
+		EthHttpClient:   *ethRpcClient,
+		EthWsClient:     *ethWsClient,
+		OperatorStateRetrieverAddr: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr,
+		),
+		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr,
+		),
+		AggregatorServerIpPortAddr: configRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:  configRaw.RegisterOperatorOnStartup,
+		IncredibleSquaringServiceManager: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
+		),
+		SignerFn:          signerV2,
+		TxMgr:             txMgr,
+		AggregatorAddress: aggregatorAddr,
 	}
 	config.validate()
 	return config, nil

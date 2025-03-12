@@ -179,8 +179,13 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, common.HexToAddress(c.OperatorAddress))
 	avsWriter, err := chainio.BuildAvsWriter(
-		txMgr, common.HexToAddress(c.IncredibleSquaringServiceManager), common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, ethRpcClient, logger,
+		txMgr,
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		ethWsClient,
+		ethRpcClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
@@ -197,8 +202,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
 	}
-	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, logger,
+	avsSubscriber, err := chainio.BuildAvsSubscriber(
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		ethWsClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsSubscriber", "err", err)
@@ -223,33 +232,55 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	operator := &Operator{
-		Config:                             c,
-		Logger:                             logger,
-		MetricsReg:                         reg,
-		Metrics:                            avsAndEigenMetrics,
-		NodeApi:                            nodeApi,
-		EthClient:                          ethRpcClient,
-		AvsWriter:                          avsWriter,
-		AvsReader:                          avsReader,
-		AvsSubscriber:                      avsSubscriber,
-		EigenlayerReader:                   *sdkClients.ElChainReader,
-		EigenlayerWriter:                   *sdkClients.ElChainWriter,
-		BlsKeypair:                         blsKeyPair,
-		OperatorAddr:                       common.HexToAddress(c.OperatorAddress),
-		AggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
-		AggregatorRpcClient:                aggregatorRpcClient,
-		NewTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		Config:                     c,
+		Logger:                     logger,
+		MetricsReg:                 reg,
+		Metrics:                    avsAndEigenMetrics,
+		NodeApi:                    nodeApi,
+		EthClient:                  ethRpcClient,
+		AvsWriter:                  avsWriter,
+		AvsReader:                  avsReader,
+		AvsSubscriber:              avsSubscriber,
+		EigenlayerReader:           *sdkClients.ElChainReader,
+		EigenlayerWriter:           *sdkClients.ElChainWriter,
+		BlsKeypair:                 blsKeyPair,
+		OperatorAddr:               common.HexToAddress(c.OperatorAddress),
+		AggregatorServerIpPortAddr: c.AggregatorServerIpPortAddress,
+		AggregatorRpcClient:        aggregatorRpcClient,
+		NewTaskCreatedChan: make(
+			chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+		),
 		CredibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
 		OperatorId:                         [32]byte{0}, // this is set below
 		TimesFailing:                       c.TimesFailing,
 	}
 	operatorSetsIds := []uint32{c.OperatorSetId}
 	waitForReceipt := true
-	operator.SetAppointee(common.HexToAddress(c.InstantSlasher), operator.CredibleSquaringServiceManagerAddr, common.HexToAddress(c.AllocationManagerAddress), common.HexToAddress(c.AVSRegistryCoordinatorAddress))
-	operator.CreateTotalDelegatedStakeQuorum(c.MaxOperatorCount, c.KickBIPsOfOperatorStake, c.KickBIPsOfTotalStake, c.MinimumStake, c.Multiplier)
+	operator.SetAppointee(
+		common.HexToAddress(c.InstantSlasher),
+		operator.CredibleSquaringServiceManagerAddr,
+		common.HexToAddress(c.AllocationManagerAddress),
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+	)
+	operator.CreateTotalDelegatedStakeQuorum(
+		c.MaxOperatorCount,
+		c.KickBIPsOfOperatorStake,
+		c.KickBIPsOfTotalStake,
+		c.MinimumStake,
+		c.Multiplier,
+	)
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr), common.HexToAddress(c.AVSRegistryCoordinatorAddress), common.HexToAddress(c.IncredibleSquaringServiceManager), operatorSetsIds, waitForReceipt, *operator.BlsKeypair, c.Socket)
+		operator.registerOperatorOnStartup(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.TokenStrategyAddr),
+			common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+			common.HexToAddress(c.IncredibleSquaringServiceManager),
+			operatorSetsIds,
+			waitForReceipt,
+			*operator.BlsKeypair,
+			c.Socket,
+		)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
@@ -325,7 +356,9 @@ func (o *Operator) Start(ctx context.Context) error {
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
+func (o *Operator) ProcessNewTaskCreatedLog(
+	newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
 	o.Logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.Logger.Info("Received new task",
 		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
@@ -356,7 +389,11 @@ func (o *Operator) SignTaskResponse(
 ) (*aggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
-		o.Logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
+		o.Logger.Error(
+			"Error getting task response header hash. skipping task (this is not expected and should be investigated)",
+			"err",
+			err,
+		)
 		return nil, err
 	}
 	blsSignature := o.BlsKeypair.SignMessage(taskResponseHash)

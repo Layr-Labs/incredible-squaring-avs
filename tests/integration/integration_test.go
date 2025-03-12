@@ -108,19 +108,25 @@ func TestIntegration(t *testing.T) {
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
 	config := &config.Config{
-		EcdsaPrivateKey:            aggregatorEcdsaPrivateKey,
-		Logger:                     logger,
-		EthHttpRpcUrl:              aggConfigRaw.EthRpcUrl,
-		EthHttpClient:              *ethRpcClient,
-		EthWsRpcUrl:                aggConfigRaw.EthWsUrl,
-		EthWsClient:                *ethWsClient,
-		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
-		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:                aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:                 aggConfigRaw.RegisterOperatorOnStartup,
-		TxMgr:                                     txMgr,
-		AggregatorAddress:                         aggregatorAddr,
-		IncredibleSquaringServiceManager:          common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager),
+		EcdsaPrivateKey: aggregatorEcdsaPrivateKey,
+		Logger:          logger,
+		EthHttpRpcUrl:   aggConfigRaw.EthRpcUrl,
+		EthHttpClient:   *ethRpcClient,
+		EthWsRpcUrl:     aggConfigRaw.EthWsUrl,
+		EthWsClient:     *ethWsClient,
+		OperatorStateRetrieverAddr: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr,
+		),
+		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr,
+		),
+		AggregatorServerIpPortAddr: aggConfigRaw.AggregatorServerIpPortAddr,
+		RegisterOperatorOnStartup:  aggConfigRaw.RegisterOperatorOnStartup,
+		TxMgr:                      txMgr,
+		AggregatorAddress:          aggregatorAddr,
+		IncredibleSquaringServiceManager: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
+		),
 	}
 
 	/* Prepare the config file for operator */
@@ -219,7 +225,10 @@ func startAnvilTestContainer() testcontainers.Container {
 		Mounts: testcontainers.ContainerMounts{
 			testcontainers.ContainerMount{
 				Source: testcontainers.GenericBindMountSource{
-					HostPath: filepath.Join(integrationDir, "../anvil/avs-and-eigenlayer-deployed-anvil-state/state.json"),
+					HostPath: filepath.Join(
+						integrationDir,
+						"../anvil/avs-and-eigenlayer-deployed-anvil-state/state.json",
+					),
 				},
 				Target: "/state.json",
 			},

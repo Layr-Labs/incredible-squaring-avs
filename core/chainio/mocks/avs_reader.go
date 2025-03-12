@@ -12,8 +12,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	bind "github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common "github.com/ethereum/go-ethereum/common"
 	gomock "go.uber.org/mock/gomock"

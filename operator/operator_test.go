@@ -87,11 +87,13 @@ func TestOperator(t *testing.T) {
 		operator.AggregatorRpcClient = mockAggregatorRpcClient
 
 		mockSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
-		mockSubscriber.EXPECT().SubscribeToNewTasks(operator.NewTaskCreatedChan).Return(event.NewSubscription(func(quit <-chan struct{}) error {
-			// loop forever
-			<-quit
-			return nil
-		}))
+		mockSubscriber.EXPECT().
+			SubscribeToNewTasks(operator.NewTaskCreatedChan).
+			Return(event.NewSubscription(func(quit <-chan struct{}) error {
+				// loop forever
+				<-quit
+				return nil
+			}))
 		operator.AvsSubscriber = mockSubscriber
 
 		mockReader := chainiomocks.NewMockAvsReaderer(mockCtrl)

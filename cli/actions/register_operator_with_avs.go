@@ -51,14 +51,33 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 		ecdsaKeyPassword,
 	)
 
-	operator.SetAppointee(common.HexToAddress(nodeConfig.InstantSlasher), common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager), common.HexToAddress(nodeConfig.AllocationManagerAddress), common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress))
+	operator.SetAppointee(
+		common.HexToAddress(nodeConfig.InstantSlasher),
+		common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		common.HexToAddress(nodeConfig.AllocationManagerAddress),
+		common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
+	)
 	maxOperatorCount := 3
 	kickBpsOfOperatorStake := 100
 	kickBpsOfTotalStake := 1000
 	minimumStake := 0
 	multiplier := 1
-	operator.CreateTotalDelegatedStakeQuorum(uint32(maxOperatorCount), uint16(kickBpsOfOperatorStake), uint16(kickBpsOfTotalStake), int64(minimumStake), int64(multiplier))
-	err = operator.RegisterForOperatorSets(common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress), common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager), operatorSetIds, waitForReceipt, *operator.BlsKeypair, socket, operatorEcdsaPrivKey)
+	operator.CreateTotalDelegatedStakeQuorum(
+		uint32(maxOperatorCount),
+		uint16(kickBpsOfOperatorStake),
+		uint16(kickBpsOfTotalStake),
+		int64(minimumStake),
+		int64(multiplier),
+	)
+	err = operator.RegisterForOperatorSets(
+		common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		operatorSetIds,
+		waitForReceipt,
+		*operator.BlsKeypair,
+		socket,
+		operatorEcdsaPrivKey,
+	)
 	if err != nil {
 		return err
 	}

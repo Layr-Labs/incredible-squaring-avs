@@ -51,7 +51,15 @@ func (o *Operator) registerOperatorOnStartup(
 	}
 	o.Logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterForOperatorSets(registryAddr, avsAddress, operatorSetsIds, waitForReceipt, blsKeyPair, socket, operatorEcdsaPrivateKey)
+	err = o.RegisterForOperatorSets(
+		registryAddr,
+		avsAddress,
+		operatorSetsIds,
+		waitForReceipt,
+		blsKeyPair,
+		socket,
+		operatorEcdsaPrivateKey,
+	)
 	if err != nil {
 		o.Logger.Fatal("Error registering operator with avs", "err", err)
 	}
@@ -72,7 +80,7 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	
+
 	_, tokenAddr, err := o.EigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
 	if err != nil {
 		o.Logger.Error("Failed to fetch strategy contract", "err", err)
