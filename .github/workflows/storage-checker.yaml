@@ -7,39 +7,43 @@ jobs:
   check_storage:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: stable
 
-      - name: "Generate and prepare the contract artifacts"
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          path: head
+
+      - name: "Generate and prepare HEAD artifacts"
+        working-directory: head/contracts
         run: |
-          cd contracts && mkdir pr
+          mkdir storage
           for file in $(find src -name '*.sol'); do
               contract_name=$(basename "$file" .sol)
-              forge inspect "$contract_name" storage > pr/"$contract_name".md
+              forge inspect "$contract_name" storage > storage/"$contract_name".md
           done
 
-      - name: Checkout Base Branch
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-        run: |
-          git fetch origin $BASE
-          git checkout $BASE
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          submodules: recursive
+          path: base
 
-      - name: "Generate and prepare the contract artifacts"
+      - name: "Generate and prepare BASE artifacts"
+        working-directory: base/contracts
         run: |
-          cd contracts && mkdir base
+          mkdir storage
           for file in $(find src -name '*.sol'); do
               contract_name=$(basename "$file" .sol)
-              forge inspect "$contract_name" storage > base/"$contract_name".md
+              forge inspect "$contract_name" storage > storage/"$contract_name".md
           done
+
       - name: Compare outputs
         run: |
-          if ! diff --unified contracts/pr contracts/base; then
+          if ! diff --unified head/contracts/storage base/contracts/storage; then
             # Note: We are only creating a warning because storage changes might be intentional but should be looked into
             # reach out to steven if you see a warning on this workflow and need help validating if it is expected or not
             echo "::warning::Differences found between PR and base storage layouts"
