@@ -50,7 +50,12 @@ func (agg *Aggregator) ProcessSignedTaskResponse(signedTaskResponse *SignedTaskR
 	agg.logger.Infof("Received signed task response: %#v", signedTaskResponse)
 	taskIndex := signedTaskResponse.TaskResponse.ReferenceTaskIndex
 
-	taskSignature := blsagg.NewTaskSignature(taskIndex, signedTaskResponse.TaskResponse, &signedTaskResponse.BlsSignature, signedTaskResponse.OperatorId)
+	taskSignature := blsagg.NewTaskSignature(
+		taskIndex,
+		signedTaskResponse.TaskResponse,
+		&signedTaskResponse.BlsSignature,
+		signedTaskResponse.OperatorId,
+	)
 
 	err := agg.blsAggregationService.ProcessNewSignature(context.Background(), taskSignature)
 

@@ -3,7 +3,8 @@ package operator
 // OUTDATED
 // This file contains cli functions for registering an operator with the AVS and printing status
 // However, all of this functionality has been moved to the plugin/ package
-// we are just waiting for eigenlayer-cli to be open sourced so we can completely get rid of this registration functionality in the operator
+// we are just waiting for eigenlayer-cli to be open sourced so we can completely get rid of this registration
+// functionality in the operator
 
 import (
 	"context"
@@ -15,7 +16,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	eigenSdkTypes "github.com/Layr-Labs/eigensdk-go/types"
 
@@ -25,6 +28,12 @@ import (
 func (o *Operator) registerOperatorOnStartup(
 	operatorEcdsaPrivateKey *ecdsa.PrivateKey,
 	mockTokenStrategyAddr common.Address,
+	registryAddr common.Address,
+	avsAddress common.Address,
+	operatorSetsIds []uint32,
+	waitForReceipt bool,
+	blsKeyPair bls.KeyPair,
+	socket string,
 ) {
 	err := o.RegisterOperatorWithEigenlayer()
 	if err != nil {
@@ -42,7 +51,15 @@ func (o *Operator) registerOperatorOnStartup(
 	}
 	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
 
-	err = o.RegisterOperatorWithAvs(operatorEcdsaPrivateKey)
+	err = o.RegisterForOperatorSets(
+		registryAddr,
+		avsAddress,
+		operatorSetsIds,
+		waitForReceipt,
+		blsKeyPair,
+		socket,
+		operatorEcdsaPrivateKey,
+	)
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}
@@ -50,11 +67,11 @@ func (o *Operator) registerOperatorOnStartup(
 }
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
-	op := eigenSdkTypes.M2Operator{
+	op := eigenSdkTypes.Operator{
 		Address:                   o.operatorAddr.String(),
 		DelegationApproverAddress: o.operatorAddr.String(),
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperatorPreSlashing(context.Background(), op, true)
+	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
 	if err != nil {
 		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 		return err
@@ -63,11 +80,13 @@ func (o *Operator) RegisterOperatorWithEigenlayer() error {
 }
 
 func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
+
+	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch strategy contract", "err", err)
 		return err
 	}
+	o.logger.Info(tokenAddr.String())
 	contractErc20Mock, err := o.avsReader.GetErc20Mock(context.Background(), tokenAddr)
 	if err != nil {
 		o.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
@@ -98,23 +117,37 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 }
 
 // Registration specific functions
-func (o *Operator) RegisterOperatorWithAvs(
+func (o *Operator) RegisterForOperatorSets(
+	registryAddr common.Address,
+	avsAddress common.Address,
+	operatorSetIds []uint32,
+	waitForReceipt bool,
+	blsKeyPair bls.KeyPair,
+	socket string,
 	operatorEcdsaKeyPair *ecdsa.PrivateKey,
 ) error {
-	// hardcode these things for now
-	quorumNumbers := eigenSdkTypes.QuorumNums{eigenSdkTypes.QuorumNum(0)}
-	socket := "Not Needed"
-	_, err := o.avsWriter.RegisterOperator(
+	operatorAddress := crypto.PubkeyToAddress(operatorEcdsaKeyPair.PublicKey)
+
+	registrationRequest := elcontracts.RegistrationRequest{
+		OperatorAddress: operatorAddress,
+		AVSAddress:      avsAddress,
+		OperatorSetIds:  operatorSetIds,
+		WaitForReceipt:  waitForReceipt,
+		BlsKeyPair:      &blsKeyPair,
+		Socket:          socket,
+	}
+
+	_, err := o.eigenlayerWriter.RegisterForOperatorSets(
 		context.Background(),
-		operatorEcdsaKeyPair,
-		o.blsKeypair, quorumNumbers, socket, true,
+		registryAddr,
+		registrationRequest,
 	)
 
 	if err != nil {
-		o.logger.Errorf("Unable to register operator with avs registry coordinator")
+		o.logger.Errorf("Unable to register operator with the operator set")
 		return err
 	}
-	o.logger.Infof("Registered operator with avs registry coordinator.")
+	o.logger.Infof("Registered operator with operator set")
 
 	return nil
 }
@@ -123,7 +156,8 @@ func (o *Operator) RegisterOperatorWithAvs(
 // operator address: 0xa0ee7a142d267c1f36714e4a8f75612f20a79720
 // dummy token balance: 0
 // delegated shares in dummyTokenStrat: 200
-// operator pubkey hash in AVS pubkey compendium (0 if not registered): 0x4b7b8243d970ff1c90a7c775c008baad825893ec6e806dfa5d3663dc093ed17f
+// operator pubkey hash in AVS pubkey compendium (0 if not registered):
+// 0x4b7b8243d970ff1c90a7c775c008baad825893ec6e806dfa5d3663dc093ed17f
 // operator is opted in to eigenlayer: true
 // operator is opted in to playgroundAVS (aka can be slashed): true
 // operator status in AVS registry: REGISTERED

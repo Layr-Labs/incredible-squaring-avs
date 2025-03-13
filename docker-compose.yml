@@ -7,7 +7,7 @@ networks:
 
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+    image: ghcr.io/foundry-rs/foundry:latest
     container_name: anvil
     ports:
       # opening the port so we can easily cast to anvil from localhost
@@ -15,13 +15,13 @@ services:
     # changed entrypoint because the default 'bash -c' entrypoint wasn't working the intended way...
     entrypoint: anvil
     volumes:
-      - ./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json:/root/.anvil/state.json
-    command: --host 0.0.0.0 --load-state /root/.anvil/state.json
+      - ./tests/anvil/avs-and-eigenlayer-deployed-anvil-state/state.json:/state.json
+    command: --host 0.0.0.0 --load-state /state.json
     networks:
       - incredible-squaring-network
   
   anvil-advance-chain-script:
-    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+    image: ghcr.io/foundry-rs/foundry:latest
     depends_on:
       - anvil
     entrypoint: cast
@@ -44,7 +44,7 @@ services:
       - --config 
       - config-files/aggregator-docker-compose.yaml
       - --credible-squaring-deployment 
-      - contracts/script/output/31337/credible_squaring_avs_deployment_output.json
+      - contracts/script/deployments/incredible-squaring/31337.json
       - --ecdsa-private-key 
       - "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
     networks:

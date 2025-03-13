@@ -12,8 +12,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
 	contractIncredibleSquaringTaskManager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	contractERC20Mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
 	bind "github.com/ethereum/go-ethereum/accounts/abi/bind"
 	common "github.com/ethereum/go-ethereum/common"
 	gomock "go.uber.org/mock/gomock"
@@ -43,10 +43,10 @@ func (m *MockAvsReaderer) EXPECT() *MockAvsReadererMockRecorder {
 }
 
 // CheckSignatures mocks base method.
-func (m *MockAvsReaderer) CheckSignatures(arg0 context.Context, arg1 [32]byte, arg2 []byte, arg3 uint32, arg4 contractIncredibleSquaringTaskManager.IBLSSignatureCheckerNonSignerStakesAndSignature) (contractIncredibleSquaringTaskManager.IBLSSignatureCheckerQuorumStakeTotals, error) {
+func (m *MockAvsReaderer) CheckSignatures(arg0 context.Context, arg1 [32]byte, arg2 []byte, arg3 uint32, arg4 contractIncredibleSquaringTaskManager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature) (contractIncredibleSquaringTaskManager.IBLSSignatureCheckerTypesQuorumStakeTotals, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckSignatures", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].(contractIncredibleSquaringTaskManager.IBLSSignatureCheckerQuorumStakeTotals)
+	ret0, _ := ret[0].(contractIncredibleSquaringTaskManager.IBLSSignatureCheckerTypesQuorumStakeTotals)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -58,10 +58,10 @@ func (mr *MockAvsReadererMockRecorder) CheckSignatures(arg0, arg1, arg2, arg3, a
 }
 
 // GetErc20Mock mocks base method.
-func (m *MockAvsReaderer) GetErc20Mock(arg0 context.Context, arg1 common.Address) (*contractERC20Mock.ContractERC20Mock, error) {
+func (m *MockAvsReaderer) GetErc20Mock(arg0 context.Context, arg1 common.Address) (*contractERC20Mock.ContractMockERC20, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetErc20Mock", arg0, arg1)
-	ret0, _ := ret[0].(*contractERC20Mock.ContractERC20Mock)
+	ret0, _ := ret[0].(*contractERC20Mock.ContractMockERC20)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

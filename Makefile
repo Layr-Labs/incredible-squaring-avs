@@ -1,17 +1,24 @@
 ############################# HELP MESSAGE #############################
 # Make sure the help command stays first, so that it's printed by default when `make` is called without arguments
+
+GO_LINES_IGNORED_DIRS=contracts
+GO_PACKAGES=./aggregator/... ./challenger/... ./cli/... \
+	./common/... ./core/... ./metrics/... ./operator/... \
+	./plugin/... ./tests/... ./types/...
+GO_FOLDERS=$(shell echo ${GO_PACKAGES} | sed -e "s/\.\///g" | sed -e "s/\/\.\.\.//g")
+
 .PHONY: help tests
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
-CHALLENGER_ECDSA_PRIV_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
+CHALLENGER_ECDSA_PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 
 CHAINID=31337
 # Make sure to update this if the strategy address changes
 # check in contracts/script/output/${CHAINID}/credible_squaring_avs_deployment_output.json
 STRATEGY_ADDRESS=0x7a2088a1bFc9d81c55368AE168C2C02570cB814F
-DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
+DEPLOYMENT_FILE=contracts/script/deployments/incredible-squaring/${CHAINID}.json
 
 -----------------------------: ## 
 
@@ -20,16 +27,19 @@ ___CONTRACTS___: ##
 build-contracts: ## builds all contracts
 	cd contracts && forge build
 
-deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
-	./tests/anvil/deploy-eigenlayer-save-anvil-state.sh
+deploy-eigenlayer: ## Deploy eigenlayer
+	./tests/anvil/deploy-eigenlayer.sh
 
-deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
-	./tests/anvil/deploy-avs-save-anvil-state.sh
+deploy-avs: ## Deploy avs
+	./tests/anvil/deploy-avs.sh
 
-deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
+create-quorum:
+	./tests/anvil/create-quorum.sh
 
-start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
-	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
+uam-permissions:
+	./tests/anvil/uam-permissions.sh
+
+deploy-all: deploy-eigenlayer deploy-avs uam-permissions create-quorum
 
 bindings: ## generates contract bindings
 	cd contracts && ./generate-go-bindings.sh
@@ -61,7 +71,7 @@ cli-print-operator-status: ##
 	go run cli/main.go --config config-files/operator.anvil.yaml print-operator-status
 
 send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
-	cast send 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+	cast send 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --value 10ether --private-key 0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 
 -----------------------------: ## 
 # We pipe all zapper logs through https://github.com/maoueh/zap-pretty so make sure to install it
@@ -69,7 +79,7 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
 	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
+		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
@@ -79,7 +89,7 @@ start-operator: ##
 
 start-challenger: ## 
 	go run challenger/cmd/main.go --config config-files/challenger.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
+		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
@@ -101,3 +111,22 @@ tests-contract: ## runs all forge tests
 tests-integration: ## runs all integration tests
 	go test ./tests/integration/... -v -count=1
 
+
+.PHONY: copy-env
+copy-env:
+		@echo "Copying .env.example to .env..."
+		cp ./contracts/.env.example ./contracts/.env
+
+.PHONY: dump-state
+dump-state: 
+		./tests/anvil/dump-state.sh
+
+.PHONY: fmt
+fmt: ## formats all go files
+	go fmt ./...
+	make format-lines
+
+.PHONY: format-lines
+format-lines: ## formats all go files with golines
+	go install github.com/segmentio/golines@latest
+	golines -w -m 120 --ignore-generated --shorten-comments --ignored-dirs=${GO_LINES_IGNORED_DIRS} ${GO_FOLDERS}

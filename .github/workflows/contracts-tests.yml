@@ -21,7 +21,10 @@ jobs:
       - name: Install forge dependencies
         run: forge install
         working-directory: ./contracts
-
+      
+      - name: Copy .env.example to .env
+        run: cp contracts/.env.example contracts/.env
+        
       - name: Run tests
         run: forge test -vvv
         working-directory: ./contracts

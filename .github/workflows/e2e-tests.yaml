@@ -9,7 +9,7 @@ on:
 env:
   KURTOSIS_VERSION: "1.4.4"
   DEVNET_VERSION: "v0.1.0-rc.3"
-
+  
 jobs:  
   e2e:
     strategy:
@@ -73,6 +73,6 @@ jobs:
       - name: Run end-to-end test
         working-directory: ics
         run: |
-          export EL_REF=${{ matrix.el-contracts.ref }}
-          export EL_VERSION=${{ matrix.el-contracts.version }}
           ./scripts/e2e_test.sh
+          # export EL_REF=${{ matrix.el-contracts.ref }}
+          # export EL_VERSION=${{ matrix.el-contracts.version }}

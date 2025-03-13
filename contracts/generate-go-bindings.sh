@@ -28,4 +28,4 @@ for contract in $avs_service_contracts; do
     create_binding . $contract ./bindings
 done
 
-create_binding . ERC20Mock ./bindings
+create_binding . MockERC20 ./bindings

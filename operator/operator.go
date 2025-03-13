@@ -76,6 +76,7 @@ type Operator struct {
 //
 //	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
+
 	var logLevel sdklogging.LogLevel
 	if c.Production {
 		logLevel = sdklogging.Production
@@ -149,15 +150,17 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	if err != nil {
 		panic(err)
 	}
-	chainioConfig := clients.BuildAllConfig{
-		EthHttpUrl:                 c.EthRpcUrl,
-		EthWsUrl:                   c.EthWsUrl,
-		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
-		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
-		AvsName:                    AVS_NAME,
-		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
 
-		DontUseAllocationManager: true,
+	chainioConfig := clients.BuildAllConfig{
+		EthHttpUrl:                  c.EthRpcUrl,
+		EthWsUrl:                    c.EthWsUrl,
+		RegistryCoordinatorAddr:     c.AVSRegistryCoordinatorAddress,
+		OperatorStateRetrieverAddr:  c.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:       c.IncredibleSquaringServiceManager,
+		RewardsCoordinatorAddress:   c.RewardsCoordinatorAddress,
+		PermissionControllerAddress: c.PermissionControllerAddress,
+		AvsName:                     AVS_NAME,
+		PromMetricsIpPortAddress:    c.EigenMetricsIpPortAddress,
 	}
 	operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
 		c.EcdsaPrivateKeyStorePath,
@@ -175,10 +178,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		panic(err)
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, common.HexToAddress(c.OperatorAddress))
-
 	avsWriter, err := chainio.BuildAvsWriter(
-		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRpcClient, logger,
+		txMgr,
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		ethWsClient,
+		ethRpcClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
@@ -187,21 +194,28 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
 		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		sdkClients.EthWsClient,
 		ethRpcClient, logger)
 	if err != nil {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
 	}
-	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, logger,
+	avsSubscriber, err := chainio.BuildAvsSubscriber(
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		ethWsClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsSubscriber", "err", err)
 		return nil, err
 	}
 
-	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph calls)
+	// We must register the economic metrics separately because they are exported metrics (from jsonrpc or subgraph
+	// calls)
 	// and not instrumented metrics: see https://prometheus.io/docs/instrumenting/writing_clientlibs/#overall-structure
 	quorumNames := map[sdktypes.QuorumNum]string{
 		0: "quorum0",
@@ -218,29 +232,55 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	operator := &Operator{
-		config:                             c,
-		logger:                             logger,
-		metricsReg:                         reg,
-		metrics:                            avsAndEigenMetrics,
-		nodeApi:                            nodeApi,
-		ethClient:                          ethRpcClient,
-		avsWriter:                          avsWriter,
-		avsReader:                          avsReader,
-		avsSubscriber:                      avsSubscriber,
-		eigenlayerReader:                   *sdkClients.ElChainReader,
-		eigenlayerWriter:                   *sdkClients.ElChainWriter,
-		blsKeypair:                         blsKeyPair,
-		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
-		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
-		aggregatorRpcClient:                aggregatorRpcClient,
-		newTaskCreatedChan:                 make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
-		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		config:                     c,
+		logger:                     logger,
+		metricsReg:                 reg,
+		metrics:                    avsAndEigenMetrics,
+		nodeApi:                    nodeApi,
+		ethClient:                  ethRpcClient,
+		avsWriter:                  avsWriter,
+		avsReader:                  avsReader,
+		avsSubscriber:              avsSubscriber,
+		eigenlayerReader:           *sdkClients.ElChainReader,
+		eigenlayerWriter:           *sdkClients.ElChainWriter,
+		blsKeypair:                 blsKeyPair,
+		operatorAddr:               common.HexToAddress(c.OperatorAddress),
+		aggregatorServerIpPortAddr: c.AggregatorServerIpPortAddress,
+		aggregatorRpcClient:        aggregatorRpcClient,
+		newTaskCreatedChan: make(
+			chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+		),
+		credibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
 		operatorId:                         [32]byte{0}, // this is set below
 		timesFailing:                       c.TimesFailing,
 	}
+	operatorSetsIds := []uint32{c.OperatorSetId}
+	waitForReceipt := true
+	// operator.SetAppointee(
+	// 	common.HexToAddress(c.InstantSlasher),
+	// 	operator.CredibleSquaringServiceManagerAddr,
+	// 	common.HexToAddress(c.AllocationManagerAddress),
+	// 	common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+	// )
+	// operator.CreateTotalDelegatedStakeQuorum(
+	// 	c.MaxOperatorCount,
+	// 	c.KickBIPsOfOperatorStake,
+	// 	c.KickBIPsOfTotalStake,
+	// 	c.MinimumStake,
+	// 	c.Multiplier,
+	// )
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
+		operator.registerOperatorOnStartup(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.TokenStrategyAddr),
+			common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+			common.HexToAddress(c.IncredibleSquaringServiceManager),
+			operatorSetsIds,
+			waitForReceipt,
+			*operator.blsKeypair,
+			c.Socket,
+		)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
@@ -256,7 +296,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		"operatorG1Pubkey", operator.blsKeypair.GetPubKeyG1(),
 		"operatorG2Pubkey", operator.blsKeypair.GetPubKeyG2(),
 	)
-
 	return operator, nil
 }
 
@@ -267,9 +306,12 @@ func (o *Operator) Start(ctx context.Context) error {
 		return err
 	}
 	if !operatorIsRegistered {
-		// We bubble the error all the way up instead of using logger.Fatal because logger.Fatal prints a huge stack trace
-		// that hides the actual error message. This error msg is more explicit and doesn't require showing a stack trace to the user.
-		return fmt.Errorf("operator is not registered. Registering operator using the operator-cli before starting operator")
+		// We bubble the error all the way up instead of using logger.Fatal because logger.Fatal prints a huge stack
+		// trace that hides the actual error message. This error msg is more explicit and doesn't require showing a
+		// stack trace to the user.
+		return fmt.Errorf(
+			"operator is not registered. Registering operator using the operator-cli before starting operator",
+		)
 	}
 
 	o.logger.Infof("Starting operator.")
@@ -314,7 +356,9 @@ func (o *Operator) Start(ctx context.Context) error {
 
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
+func (o *Operator) ProcessNewTaskCreatedLog(
+	newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
 	o.logger.Debug("Received new task", "task", newTaskCreatedLog)
 	o.logger.Info("Received new task",
 		"numberToBeSquared", newTaskCreatedLog.Task.NumberToBeSquared,
@@ -337,12 +381,19 @@ func (o *Operator) ProcessNewTaskCreatedLog(newTaskCreatedLog *cstaskmanager.Con
 		NumberSquared:      numberSquared,
 	}
 	return taskResponse
+	// numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
 }
 
-func (o *Operator) SignTaskResponse(taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse) (*aggregator.SignedTaskResponse, error) {
+func (o *Operator) SignTaskResponse(
+	taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
+) (*aggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
-		o.logger.Error("Error getting task response header hash. skipping task (this is not expected and should be investigated)", "err", err)
+		o.logger.Error(
+			"Error getting task response header hash. skipping task (this is not expected and should be investigated)",
+			"err",
+			err,
+		)
 		return nil, err
 	}
 	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
