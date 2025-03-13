@@ -13,7 +13,7 @@ set -a
 source $parent_path/utils.sh
 # we overwrite some variables here because should always deploy to anvil (localhost)
 RPC_URL=http://localhost:8545
-PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+export PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 set +a
 
 
@@ -30,8 +30,3 @@ forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --privat
 forge script script/UAMPermissions.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
 
 forge script script/CreateQuorum.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
-
-# TODO(nova) this fails if we run all together with arithmetic underlow or overflow in createAVSRewardsSubmission
-# forge script script/SetupPayments.s.sol --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY  -vvv
-
-# forge script script/OperatorDirectedPayments.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
