@@ -3,6 +3,7 @@ package challenger
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/big"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
@@ -259,7 +260,7 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 	)
 	if err != nil {
 		c.logger.Error("Challenger failed to raise challenge:", "err", err)
-		return err
+		return fmt.Errorf("challenger failed to raise challenge: %w", err)
 	}
 	c.logger.Infof("Tx hash of the challenge tx: %v", receipt.TxHash.Hex())
 	return nil

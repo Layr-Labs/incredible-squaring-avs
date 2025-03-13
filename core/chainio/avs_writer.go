@@ -2,6 +2,7 @@ package chainio
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -183,7 +184,7 @@ func (w *AvsWriter) RaiseChallenge(
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {
 		w.logger.Errorf("Error getting tx opts")
-		return nil, err
+		return nil, fmt.Errorf("error getting tx opts: %w", err)
 	}
 	tx, err := w.AvsContractBindings.TaskManager.RaiseAndResolveChallenge(
 		txOpts,
@@ -194,12 +195,12 @@ func (w *AvsWriter) RaiseChallenge(
 	)
 	if err != nil {
 		w.logger.Errorf("Error assembling RaiseChallenge tx")
-		return nil, err
+		return nil, fmt.Errorf("error assembling RaiseChallenge tx: %w", err)
 	}
 	receipt, err := w.TxMgr.Send(ctx, tx, true)
 	if err != nil {
 		w.logger.Errorf("Error submitting RaiseChallenge tx")
-		return nil, err
+		return nil, fmt.Errorf("error submitting RaiseChallenge tx: %w", err)
 	}
 	return receipt, nil
 }

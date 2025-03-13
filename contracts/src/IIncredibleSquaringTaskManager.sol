@@ -43,7 +43,7 @@ interface IIncredibleSquaringTaskManager {
     // It thus cannot be signed by operators, so we keep it in a separate struct than TaskResponse
     // This metadata is needed by the challenger, so we emit it in the TaskResponded event
     struct TaskResponseMetadata {
-        uint32 taskResponsedBlock;
+        uint32 taskRespondedBlock;
         bytes32 hashOfNonSigners;
     }
 
