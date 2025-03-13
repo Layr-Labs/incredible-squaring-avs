@@ -75,7 +75,7 @@ type IIncredibleSquaringTaskManagerTaskResponse struct {
 
 // IIncredibleSquaringTaskManagerTaskResponseMetadata is an auto generated low-level Go binding around an user-defined struct.
 type IIncredibleSquaringTaskManagerTaskResponseMetadata struct {
-	TaskRespondedBlock uint32
+	TaskResponsedBlock uint32
 	HashOfNonSigners   [32]byte
 }
 
