@@ -84,7 +84,7 @@ func (c *AggregatorRpcClient) SendSignedTaskResponseToAggregator(signedTaskRespo
 			c.metrics.IncNumTasksAcceptedByAggregator()
 			return
 		}
-		c.logger.Infof("Retrying in 2 seconds")
+		c.logger.Info("Retrying in 2 seconds")
 		time.Sleep(2 * time.Second)
 	}
 	c.logger.Errorf("Could not send signed task response to aggregator. Tried 5 times.")

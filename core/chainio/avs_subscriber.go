@@ -48,7 +48,6 @@ func BuildAvsSubscriber(
 	ethclient sdkcommon.EthClientInterface,
 	logger sdklogging.Logger,
 ) (*AvsSubscriber, error) {
-	logger.Info(serviceManagerAddr.String())
 	avsContractBindings, err := NewAvsManagersBindings(
 		serviceManagerAddr,
 		blsOperatorStateRetrieverAddr,
@@ -78,7 +77,7 @@ func (s *AvsSubscriber) SubscribeToNewTasks(
 	if err != nil {
 		s.logger.Error("Failed to subscribe to new TaskManager tasks", "err", err)
 	}
-	s.logger.Infof("Subscribed to new TaskManager tasks")
+	s.logger.Info("Subscribed to new TaskManager tasks")
 	return sub
 }
 
@@ -91,7 +90,7 @@ func (s *AvsSubscriber) SubscribeToTaskResponses(
 	if err != nil {
 		s.logger.Error("Failed to subscribe to TaskResponded events", "err", err)
 	}
-	s.logger.Infof("Subscribed to TaskResponded events")
+	s.logger.Info("Subscribed to TaskResponded events")
 	return sub
 }
 

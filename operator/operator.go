@@ -314,7 +314,7 @@ func (o *Operator) Start(ctx context.Context) error {
 		)
 	}
 
-	o.logger.Infof("Starting operator.")
+	o.logger.Info("Starting operator.")
 
 	if o.config.EnableNodeApi {
 		o.nodeApi.Start()

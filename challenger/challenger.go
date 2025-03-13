@@ -67,13 +67,13 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 }
 
 func (c *Challenger) Start(ctx context.Context) error {
-	c.logger.Infof("Starting Challenger.")
+	c.logger.Info("Starting Challenger.")
 
 	newTaskSub := c.avsSubscriber.SubscribeToNewTasks(c.newTaskCreatedChan)
-	c.logger.Infof("Subscribed to new tasks")
+	c.logger.Info("Subscribed to new tasks")
 
 	taskResponseSub := c.avsSubscriber.SubscribeToTaskResponses(c.taskResponseChan)
-	c.logger.Infof("Subscribed to task responses")
+	c.logger.Info("Subscribed to task responses")
 
 	for {
 		select {
@@ -92,27 +92,19 @@ func (c *Challenger) Start(ctx context.Context) error {
 			taskResponseSub = c.avsSubscriber.SubscribeToTaskResponses(c.taskResponseChan)
 
 		case newTaskCreatedLog := <-c.newTaskCreatedChan:
-			c.logger.Info("New task created log received", "newTaskCreatedLog", newTaskCreatedLog)
+			c.logger.Info("New task created log received", "taskIndex", newTaskCreatedLog.TaskIndex, "task", newTaskCreatedLog.Task)
 			taskIndex := c.processNewTaskCreatedLog(newTaskCreatedLog)
 
 			if _, found := c.taskResponses[taskIndex]; found {
-				err := c.callChallengeModule(taskIndex)
-				if err != nil {
-					c.logger.Error("Error calling challenge module", "err", err)
-				}
-				continue
+				_ = c.callChallengeModule(taskIndex)
 			}
 
 		case taskResponseLog := <-c.taskResponseChan:
-			c.logger.Info("Task response log received", "taskResponseLog", taskResponseLog)
+			c.logger.Info("Task response log received", "taskResponse", taskResponseLog.TaskResponse)
 			taskIndex := c.processTaskResponseLog(taskResponseLog)
 
 			if _, found := c.tasks[taskIndex]; found {
-				err := c.callChallengeModule(taskIndex)
-				if err != nil {
-					c.logger.Info("Info:", "err", err)
-				}
-				continue
+				_ = c.callChallengeModule(taskIndex)
 			}
 		}
 	}
@@ -157,26 +149,24 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 
 	// checking if the answer in the response submitted by aggregator is correct
 	if trueAnswer.Cmp(answerInResponse) != 0 {
-		c.logger.Infof("The number squared is not correct")
+		c.logger.Info("The number squared is not correct", "expectedAnswer", trueAnswer, "gotAnswer", answerInResponse)
 
 		// raise challenge
 		c.raiseChallenge(taskIndex)
 
 		return nil
+	} else {
+		c.logger.Info("The number squared is correct")
+		return types.NoErrorInTaskResponse
 	}
-	return types.NoErrorInTaskResponse
 }
 
 func (c *Challenger) getNonSigningOperatorPubKeys(
 	vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded,
 ) []cstaskmanager.BN254G1Point {
-	c.logger.Info("vLog.Raw is", "vLog.Raw", vLog.Raw)
-
 	// get the nonSignerStakesAndSignature
 	txHash := vLog.Raw.TxHash
-	c.logger.Info("txHash", "txHash", txHash)
 	tx, _, err := c.ethClient.TransactionByHash(context.Background(), txHash)
-	_ = tx
 	if err != nil {
 		c.logger.Error("Error getting transaction by hash",
 			"txHash", txHash,
@@ -184,13 +174,11 @@ func (c *Challenger) getNonSigningOperatorPubKeys(
 		)
 	}
 	calldata := tx.Data()
-	c.logger.Info("calldata", "calldata", calldata)
 	cstmAbi, err := abi.JSON(bytes.NewReader(common.IncredibleSquaringTaskManagerAbi))
 	if err != nil {
 		c.logger.Error("Error getting Abi", "err", err)
 	}
 	methodSig := calldata[:4]
-	c.logger.Info("methodSig", "methodSig", methodSig)
 	method, err := cstmAbi.MethodById(methodSig)
 	if err != nil {
 		c.logger.Error("Error getting method", "err", err)
@@ -241,10 +229,10 @@ func (c *Challenger) getNonSigningOperatorPubKeys(
 
 func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 	c.logger.Info("Challenger raising challenge.", "taskIndex", taskIndex)
-	c.logger.Info("Task", "Task", c.tasks[taskIndex])
-	c.logger.Info("TaskResponse", "TaskResponse", c.taskResponses[taskIndex].TaskResponse)
-	c.logger.Info("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
-	c.logger.Info(
+	c.logger.Debug("Task", "Task", c.tasks[taskIndex])
+	c.logger.Debug("TaskResponse", "TaskResponse", c.taskResponses[taskIndex].TaskResponse)
+	c.logger.Debug("TaskResponseMetadata", "TaskResponseMetadata", c.taskResponses[taskIndex].TaskResponseMetadata)
+	c.logger.Debug(
 		"NonSigningOperatorPubKeys",
 		"NonSigningOperatorPubKeys",
 		c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
@@ -261,6 +249,6 @@ func (c *Challenger) raiseChallenge(taskIndex uint32) error {
 		c.logger.Error("Challenger failed to raise challenge:", "err", err)
 		return err
 	}
-	c.logger.Infof("Tx hash of the challenge tx: %v", receipt.TxHash.Hex())
+	c.logger.Info("Challenge raised", "challengeTxHash", receipt.TxHash.Hex())
 	return nil
 }

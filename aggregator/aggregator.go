@@ -177,13 +177,13 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 }
 
 func (agg *Aggregator) Start(ctx context.Context) error {
-	agg.logger.Infof("Starting aggregator.")
-	agg.logger.Infof("Starting aggregator rpc server.")
+	agg.logger.Info("Starting aggregator.")
+	agg.logger.Info("Starting aggregator rpc server.")
 	go agg.startServer(ctx)
 
 	// TODO(soubhik): refactor task generation/sending into a separate function that we can run as goroutine
 	ticker := time.NewTicker(10 * time.Second)
-	agg.logger.Infof("Aggregator set to send new task every 10 seconds...")
+	agg.logger.Info("Aggregator set to send new task every 10 seconds...")
 	defer ticker.Stop()
 	taskNum := int64(0)
 	// ticker doesn't tick immediately, so we send the first task here
