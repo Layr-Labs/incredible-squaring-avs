@@ -30,8 +30,3 @@ forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --privat
 forge script script/UAMPermissions.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
 
 forge script script/CreateQuorum.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
-
-# TODO(nova) this fails if we run all together with arithmetic underlow or overflow in createAVSRewardsSubmission
-# forge script script/SetupPayments.s.sol --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY  -vvv
-
-# forge script script/OperatorDirectedPayments.s.sol --rpc-url $RPC_URL --broadcast --slow --private-key $PRIVATE_KEY
