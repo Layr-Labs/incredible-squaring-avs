@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - dev
   workflow_dispatch:
 
 env:
@@ -46,7 +47,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Build And Push Image
-      - name: Build Docker image
-        run: docker compose -f docker-compose-build.yaml build
-      - name: Push Docker image
-        run: docker compose -f docker-compose-build.yaml push
+      - name: Build Node Docker image
+        run: docker build . -f operator.Dockerfile -t ghcr.io/layr-labs/incredible-squaring-avs/node:latest
+      - name: Push Node Docker image
+        run: docker push ghcr.io/layr-labs/incredible-squaring-avs/node:latest
+
+      - name: Build Plugin Docker image
+        run: docker build . -f plugin.Dockerfile -t ghcr.io/layr-labs/incredible-squaring-avs/nodeplugin:latest
+      - name: Push Plugin Docker image
+        run: docker push ghcr.io/layr-labs/incredible-squaring-avs/nodeplugin:latest
