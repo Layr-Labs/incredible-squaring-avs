@@ -374,6 +374,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 		num := rand.Intn(100)
 		if num < o.timesFailing {
 			numberSquared = big.NewInt(908243203843)
+			o.logger.Info("Operator computed wrong task result")
 		}
 	}
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
@@ -381,7 +382,6 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 		NumberSquared:      numberSquared,
 	}
 	return taskResponse
-	// numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
 }
 
 func (o *Operator) SignTaskResponse(
