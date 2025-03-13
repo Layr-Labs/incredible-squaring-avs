@@ -93,7 +93,13 @@ func (c *Challenger) Start(ctx context.Context) error {
 			taskResponseSub = c.avsSubscriber.SubscribeToTaskResponses(c.taskResponseChan)
 
 		case newTaskCreatedLog := <-c.newTaskCreatedChan:
-			c.logger.Info("New task created log received", "taskIndex", newTaskCreatedLog.TaskIndex, "task", newTaskCreatedLog.Task)
+			c.logger.Info(
+				"New task created log received",
+				"taskIndex",
+				newTaskCreatedLog.TaskIndex,
+				"task",
+				newTaskCreatedLog.Task,
+			)
 			taskIndex := c.processNewTaskCreatedLog(newTaskCreatedLog)
 
 			if _, found := c.taskResponses[taskIndex]; found {
