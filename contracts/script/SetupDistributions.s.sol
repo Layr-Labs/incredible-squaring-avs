@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import {Script} from "forge-std/Script.sol";
-import {IncSquaringDeploymentLib} from "./utils/IncSquaringDeploymentLib.sol";
-import {CoreDeploymentLib, CoreDeploymentParsingLib} from "./utils/CoreDeploymentLib.sol";
+import {MockERC20} from "src/MockERC20.sol";
+import {IncredibleSquaringDeploymentLib} from "./utils/IncredibleSquaringDeploymentLib.sol";
+import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {SetupDistributionsLib} from "./utils/SetupDistributionsLib.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
 import {RewardsCoordinator} from "@eigenlayer/contracts/core/RewardsCoordinator.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
-import {ERC20Mock} from "../test/ERC20Mock.sol";
 
 import "forge-std/Test.sol";
 
@@ -27,8 +27,8 @@ contract SetupDistributions is Script, Test {
     CoreDeploymentLib.DeploymentData coreDeployment;
     CoreDeploymentLib.DeploymentConfigData coreConfig;
 
-    IncSquaringDeploymentLib.DeploymentData helloWorldDeployment;
-    IncSquaringDeploymentLib.DeploymentConfigData helloWorldConfig;
+    IncredibleSquaringDeploymentLib.DeploymentData incredibleSquaringDeployment;
+    IncredibleSquaringDeploymentLib.IncredibleSquaringSetupConfig incredibleSquaringConfig;
 
     RewardsCoordinator rewardsCoordinator;
     string internal constant paymentInfofilePath = "test/mockData/scratch/payment_info.json";
@@ -58,45 +58,26 @@ contract SetupDistributions is Script, Test {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-        coreDeployment =
-            CoreDeploymentParsingLib.readDeploymentJson("deployments/core/", block.chainid);
-        coreConfig =
-            CoreDeploymentParsingLib.readDeploymentConfigValues("config/core/", block.chainid);
-
-        helloWorldDeployment =
-            IncSquaringDeploymentLib.readDeploymentJson("deployments/hello-world/", block.chainid);
-        helloWorldConfig =
-            IncSquaringDeploymentLib.readDeploymentConfigValues("config/hello-world/", block.chainid);
-        // strategy, token, serviceManager
-        // rewardsInitiatorKey, rewardsInitiator
+        coreDeployment = CoreDeploymentLib.readDeploymentJson("script/deployments/core/", block.chainid);
+        incredibleSquaringDeployment =
+            IncredibleSquaringDeploymentLib.readDeploymentJson("script/deployments/incredible-squaring/", block.chainid);
 
         rewardsCoordinator = RewardsCoordinator(coreDeployment.rewardsCoordinator);
 
         // TODO: Get the filePath from config
     }
 
-    function run() external {
-        vm.startBroadcast(helloWorldConfig.rewardsInitiatorKey);
+    function runAVSRewards() external {
+        vm.startBroadcast(deployer);
 
-        if (rewardsCoordinator.currRewardsCalculationEndTimestamp() == 0) {
-            startTimestamp =
-                uint32(block.timestamp) - (uint32(block.timestamp) % CALCULATION_INTERVAL_SECONDS);
-        } else {
-            startTimestamp = rewardsCoordinator.currRewardsCalculationEndTimestamp() - DURATION
-                + CALCULATION_INTERVAL_SECONDS;
-        }
-
-        endTimestamp = startTimestamp + 1;
-
-        if (endTimestamp > block.timestamp) {
-            revert("End timestamp must be in the future.  Please wait to generate new payments.");
-        }
+        _checkStartTimestamp();
 
         // sets a multiplier based on block number such that cumulativeEarnings increase accordingly for multiple runs of this script in the same session
         uint256 nonce = rewardsCoordinator.getDistributionRootsLength();
         amountPerPayment = uint32(amountPerPayment * (nonce + 1));
 
-        createAVSRewardsSubmissions(numPayments, amountPerPayment, startTimestamp);
+        createAVSRewardsSubmissions(uint256(numPayments), uint256(amountPerPayment), startTimestamp);
+
         vm.stopBroadcast();
         vm.startBroadcast(deployer);
         earners = _getEarners(deployer);
@@ -105,20 +86,9 @@ contract SetupDistributions is Script, Test {
     }
 
     function runOperatorDirected() external {
-        vm.startBroadcast(helloWorldConfig.rewardsInitiatorKey);
-        if (rewardsCoordinator.currRewardsCalculationEndTimestamp() == 0) {
-            startTimestamp =
-                uint32(block.timestamp) - (uint32(block.timestamp) % CALCULATION_INTERVAL_SECONDS);
-        } else {
-            startTimestamp = rewardsCoordinator.currRewardsCalculationEndTimestamp() - DURATION
-                + CALCULATION_INTERVAL_SECONDS;
-        }
+        vm.startBroadcast(deployer);
 
-        endTimestamp = startTimestamp + 1;
-
-        if (endTimestamp > block.timestamp) {
-            revert("End timestamp must be in the future.  Please wait to generate new payments.");
-        }
+        _checkStartTimestamp();
 
         // sets a multiplier based on block number such that cumulativeEarnings increase accordingly for multiple runs of this script in the same session
         uint256 nonce = rewardsCoordinator.getDistributionRootsLength();
@@ -132,34 +102,41 @@ contract SetupDistributions is Script, Test {
         vm.stopBroadcast();
     }
 
+    function _checkStartTimestamp() internal {
+        if (rewardsCoordinator.currRewardsCalculationEndTimestamp() == 0) {
+            startTimestamp = uint32(block.timestamp) - (uint32(block.timestamp) % CALCULATION_INTERVAL_SECONDS);
+        } else {
+            startTimestamp =
+                rewardsCoordinator.currRewardsCalculationEndTimestamp() - DURATION + CALCULATION_INTERVAL_SECONDS;
+        }
+
+        endTimestamp = startTimestamp + 1;
+
+        if (endTimestamp > block.timestamp) {
+            revert("End timestamp is in the future.  Please wait to generate new payments.");
+        }
+    }
+
     function executeProcessClaim() public {
         uint256 nonce = rewardsCoordinator.getDistributionRootsLength();
         amountPerPayment = uint32(amountPerPayment * nonce);
 
         vm.startBroadcast(deployer);
-        earnerLeaves =
-            _getEarnerLeaves(_getEarners(deployer), amountPerPayment, helloWorldDeployment.strategy);
-        processClaim(
-            filePath, indexToProve, recipient, earnerLeaves[indexToProve], amountPerPayment
-        );
+        earnerLeaves = _getEarnerLeaves(_getEarners(deployer), amountPerPayment, incredibleSquaringDeployment.strategy);
+        processClaim(filePath, indexToProve, recipient, earnerLeaves[indexToProve], amountPerPayment);
         vm.stopBroadcast();
     }
 
-    function createAVSRewardsSubmissions(
-        uint256 numPayments,
-        uint256 amountPerPayment,
-        uint32 startTimestamp
-    ) public {
-        ERC20Mock(helloWorldDeployment.token).mint(
-            helloWorldConfig.rewardsInitiator, amountPerPayment * numPayments
-        );
-        ERC20Mock(helloWorldDeployment.token).increaseAllowance(
-            helloWorldDeployment.helloWorldServiceManager, amountPerPayment * numPayments
+    function createAVSRewardsSubmissions(uint256 numPayments, uint256 amountPerPayment, uint32 startTimestamp) public {
+        MockERC20(incredibleSquaringDeployment.token).mint(deployer, amountPerPayment * numPayments);
+        MockERC20(incredibleSquaringDeployment.token).increaseAllowance(
+            incredibleSquaringDeployment.incredibleSquaringServiceManager, amountPerPayment * numPayments
         );
         uint32 duration = rewardsCoordinator.MAX_REWARDS_DURATION();
+
         SetupDistributionsLib.createAVSRewardsSubmissions(
-            helloWorldDeployment.helloWorldServiceManager,
-            helloWorldDeployment.strategy,
+            incredibleSquaringDeployment.incredibleSquaringServiceManager,
+            incredibleSquaringDeployment.strategy,
             numPayments,
             amountPerPayment,
             duration,
@@ -172,24 +149,19 @@ contract SetupDistributions is Script, Test {
         uint256 amountPerPayment,
         uint32 startTimestamp
     ) public {
-        ERC20Mock(helloWorldDeployment.token).mint(
-            helloWorldConfig.rewardsInitiator, amountPerPayment * numPayments
-        );
-        ERC20Mock(helloWorldDeployment.token).increaseAllowance(
-            helloWorldDeployment.helloWorldServiceManager, amountPerPayment * numPayments
+        MockERC20(incredibleSquaringDeployment.token).mint(deployer, amountPerPayment * numPayments);
+        MockERC20(incredibleSquaringDeployment.token).increaseAllowance(
+            incredibleSquaringDeployment.incredibleSquaringServiceManager, amountPerPayment * numPayments
         );
         uint32 duration = 0;
         address[] memory operators = new address[](2);
         operators[0] = operator1;
         operators[1] = operator2;
 
-        uint256 numOperators = operators.length;
-
         SetupDistributionsLib.createOperatorDirectedAVSRewardsSubmissions(
-            helloWorldDeployment.helloWorldServiceManager,
+            incredibleSquaringDeployment.incredibleSquaringServiceManager,
             operators,
-            numOperators,
-            helloWorldDeployment.strategy,
+            incredibleSquaringDeployment.strategy,
             numPayments,
             amountPerPayment,
             duration,
@@ -211,7 +183,7 @@ contract SetupDistributions is Script, Test {
             recipient,
             earnerLeaf,
             NUM_TOKEN_EARNINGS,
-            helloWorldDeployment.strategy,
+            incredibleSquaringDeployment.strategy,
             amountPerPayment
         );
     }
@@ -227,7 +199,7 @@ contract SetupDistributions is Script, Test {
             IRewardsCoordinator(coreDeployment.rewardsCoordinator),
             NUM_TOKEN_EARNINGS,
             amountPerPayment,
-            helloWorldDeployment.strategy
+            incredibleSquaringDeployment.strategy
         );
         IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory earnerLeaves =
             SetupDistributionsLib.createEarnerLeaves(earners, tokenLeaves);
@@ -238,7 +210,7 @@ contract SetupDistributions is Script, Test {
             IRewardsCoordinator(coreDeployment.rewardsCoordinator),
             tokenLeaves,
             earnerLeaves,
-            helloWorldDeployment.strategy,
+            incredibleSquaringDeployment.strategy,
             endTimestamp,
             numPayments,
             NUM_TOKEN_EARNINGS,
@@ -246,16 +218,13 @@ contract SetupDistributions is Script, Test {
         );
     }
 
-    function _getEarnerLeaves(
-        address[] memory earners,
-        uint32 amountPerPayment,
-        address strategy
-    ) internal view returns (IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory) {
+    function _getEarnerLeaves(address[] memory earners, uint32 amountPerPayment, address strategy)
+        internal
+        view
+        returns (IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory)
+    {
         bytes32[] memory tokenLeaves = SetupDistributionsLib.createTokenLeaves(
-            IRewardsCoordinator(coreDeployment.rewardsCoordinator),
-            NUM_TOKEN_EARNINGS,
-            amountPerPayment,
-            strategy
+            IRewardsCoordinator(coreDeployment.rewardsCoordinator), NUM_TOKEN_EARNINGS, amountPerPayment, strategy
         );
 
         IRewardsCoordinator.EarnerTreeMerkleLeaf[] memory earnerLeaves =
@@ -264,9 +233,7 @@ contract SetupDistributions is Script, Test {
         return earnerLeaves;
     }
 
-    function _getEarners(
-        address deployer
-    ) internal pure returns (address[] memory) {
+    function _getEarners(address deployer) internal pure returns (address[] memory) {
         address[] memory earners = new address[](NUM_EARNERS);
         for (uint256 i = 0; i < earners.length; i++) {
             earners[i] = deployer;
