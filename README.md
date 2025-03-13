@@ -51,11 +51,13 @@ Register the operator with eigenlayer and incredible-squaring, and then start th
 make start-operator
 ```
 
-> By default, the `start-operator` command will also setup the operator (see `register_operator_on_startup` flag in `config-files/operator.anvil.yaml`). To disable this, set `register_operator_on_startup` to false, and run `make cli-setup-operator` before running `start-operator`. 
+By default, the `start-operator` command will also register the operator.
+To disable this, set `register_operator_on_startup` to false in `config-files/operator.anvil.yaml`.
+The operator can be manually registered by running `make cli-setup-operator`.
 
-> The operator also will produce an invalid result 10 times every 100, as it is set in `times_failing` flag of the same config file.
-
-Start the challenger:
+The operator will produce an invalid result 10 times out of 100, as it is set in the `times_failing` field of the config.
+These failures result in slashing once they're challenged.
+To see this in action, start the challenger with:
 
 ```bash
 make start-challenger
