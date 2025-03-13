@@ -39,8 +39,6 @@ create-quorum:
 uam-permissions:
 	./tests/anvil/uam-permissions.sh
 
-deploy-el-and-avs-contracts: deploy-eigenlayer deploy-avs
-
 deploy-all: deploy-eigenlayer deploy-avs uam-permissions create-quorum
 
 bindings: ## generates contract bindings
