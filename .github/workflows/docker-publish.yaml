@@ -46,13 +46,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build And Push Image
+      - name: Select tag name
+        id: tag_name
+        run: |
+          # If the branch is master, use tag as mainnet, otherwise use latest
+          if [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "tag_name=mainnet" >> $GITHUB_OUTPUT
+          else
+            echo "tag_name=latest" >> $GITHUB_OUTPUT
+          fi
+
+      # Build And Push Images
       - name: Build Node Docker image
         run: docker build . -f operator.Dockerfile -t ghcr.io/layr-labs/incredible-squaring-avs/node:latest
       - name: Push Node Docker image
-        run: docker push ghcr.io/layr-labs/incredible-squaring-avs/node:latest
+        run: docker push ghcr.io/layr-labs/incredible-squaring-avs/node:${{ steps.tag_name.outputs.tag_name }}
 
       - name: Build Plugin Docker image
         run: docker build . -f plugin.Dockerfile -t ghcr.io/layr-labs/incredible-squaring-avs/nodeplugin:latest
       - name: Push Plugin Docker image
-        run: docker push ghcr.io/layr-labs/incredible-squaring-avs/nodeplugin:latest
+        run: docker push ghcr.io/layr-labs/incredible-squaring-avs/nodeplugin:${{ steps.tag_name.outputs.tag_name }}
