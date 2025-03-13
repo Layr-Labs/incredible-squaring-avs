@@ -132,6 +132,8 @@ contract IncredibleSquaringDeployer is Script {
         FundOperator.fund_operator(
             address(erc20Mock), incrediblSquaringDeployment.incredibleSquaringServiceManager, 1e18
         );
+        incrediblSquaringDeployment.token = address(erc20Mock);
+        
 
         IncredibleSquaringDeploymentLib.writeDeploymentJson(incrediblSquaringDeployment);
 
