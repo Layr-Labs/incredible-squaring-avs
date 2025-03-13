@@ -194,7 +194,7 @@ contract IncredibleSquaringTaskManager is
 
         require(
             uint32(block.number)
-                <= taskResponseMetadata.taskResponsedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
+                <= taskResponseMetadata.taskRespondedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
             "The challenge period for this task has already expired."
         );
 
