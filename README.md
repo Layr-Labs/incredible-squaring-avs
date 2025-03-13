@@ -58,7 +58,7 @@ make start-operator
 Start the challenger:
 
 ```bash
-make challenger
+make start-challenger
 ```
 
 ## Running via docker compose
