@@ -109,8 +109,6 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
-	println("Node config serv man addr: ", nodeConfig.IncredibleSquaringServiceManager)
-	println("deploy serv man addr: ", credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager)
 
 	config := &config.Config{
 		EcdsaPrivateKey: aggregatorEcdsaPrivateKey,
@@ -120,10 +118,10 @@ func TestIntegration(t *testing.T) {
 		EthWsRpcUrl:     aggConfigRaw.EthWsUrl,
 		EthWsClient:     *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr,
+			nodeConfig.OperatorStateRetrieverAddress,
 		),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr,
+			nodeConfig.AVSRegistryCoordinatorAddress,
 		),
 		AggregatorServerIpPortAddr: aggConfigRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:  aggConfigRaw.RegisterOperatorOnStartup,
