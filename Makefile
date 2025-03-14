@@ -137,15 +137,15 @@ SENDER_ADDR=0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
 
 create-avs-distributions-root:
 	cd contracts && \
-	forge script script/SetupDistributions.s.sol:SetupDistributions --rpc-url http://localhost:8545 \
-		--broadcast --sig "runAVSRewards()" -v --sender ${SENDER_ADDR}
+		forge script script/SetupDistributions.s.sol:SetupDistributions --rpc-url http://localhost:8545 \
+			--broadcast --sig "runAVSRewards()" -v --sender ${SENDER_ADDR}
 
 create-operator-directed-distributions-root:
 	cd contracts && \
-	forge script script/SetupDistributions.s.sol:SetupDistributions --rpc-url http://localhost:8545 \
-		--broadcast --sig "runOperatorDirected()" -v --sender ${SENDER_ADDR}
+		forge script script/SetupDistributions.s.sol:SetupDistributions --rpc-url http://localhost:8545 \
+			--broadcast --sig "runOperatorDirected()" -v --sender ${SENDER_ADDR}
 
 claim-distributions:
 	cd contracts && \
-	forge script script/SetupDistributions.s.sol:SetupDistributions --rpc-url http://localhost:8545 \
-	--broadcast --sig "executeProcessClaim()" -v --sender "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
+		forge script script/SetupDistributions.s.sol:SetupDistributions --rpc-url http://localhost:8545 \
+			--broadcast --sig "executeProcessClaim()" -v --sender "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"
