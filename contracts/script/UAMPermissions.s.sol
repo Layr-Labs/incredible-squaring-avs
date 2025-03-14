@@ -59,6 +59,13 @@ contract UAMPermissions is Script {
             AllocationManager.slashOperator.selector
         );
 
+        // This should be in another contract
+        serviceManager.setAppointee(
+            deployer, coreData.allocationManager, AllocationManager.updateAVSMetadataURI.selector
+        );
+
+        _allocationManager.updateAVSMetadataURI(deploymentData.incredibleSquaringServiceManager, "metadataURI");
+
         vm.stopBroadcast();
     }
 }
