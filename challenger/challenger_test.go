@@ -161,7 +161,7 @@ func TestCallChallengeModule(t *testing.T) {
 			NumberSquared:      big.NewInt(2),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskResponsedBlock: 1001,
+			TaskRespondedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
@@ -203,7 +203,7 @@ func TestRaiseChallenge(t *testing.T) {
 			NumberSquared:      big.NewInt(9),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskResponsedBlock: 1001,
+			TaskRespondedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
@@ -243,7 +243,7 @@ func TestProcessTaskResponseLog(t *testing.T) {
 			NumberSquared:      big.NewInt(9),
 		},
 		TaskResponseMetadata: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskResponsedBlock: 1001,
+			TaskRespondedBlock: 1001,
 			HashOfNonSigners:   [32]byte{},
 		},
 		NonSigningOperatorPubKeys: []cstaskmanager.BN254G1Point{},
