@@ -102,6 +102,16 @@ func TestIntegration(t *testing.T) {
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
+	/* Prepare the config file for operator */
+	nodeConfig := types.NodeConfig{}
+	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
+	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
+	if err != nil {
+		t.Fatalf("Failed to read yaml config: %s", err.Error())
+	}
+	println("Node config serv man addr: ", nodeConfig.IncredibleSquaringServiceManager)
+	println("deploy serv man addr: ", credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager)
+
 	config := &config.Config{
 		EcdsaPrivateKey: aggregatorEcdsaPrivateKey,
 		Logger:          logger,
@@ -120,17 +130,10 @@ func TestIntegration(t *testing.T) {
 		TxMgr:                      txMgr,
 		AggregatorAddress:          aggregatorAddr,
 		IncredibleSquaringServiceManager: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
+			nodeConfig.IncredibleSquaringServiceManager,
 		),
 	}
 
-	/* Prepare the config file for operator */
-	nodeConfig := types.NodeConfig{}
-	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
-	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
-	if err != nil {
-		t.Fatalf("Failed to read yaml config: %s", err.Error())
-	}
 	/* Register operator*/
 	// log.Println("registering operator for integration tests")
 	// we need to do this dynamically and can't just hardcode a registered operator into the anvil
