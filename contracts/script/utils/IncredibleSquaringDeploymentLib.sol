@@ -33,7 +33,7 @@ import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
-// import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol"; // todo: socket registry not available
+import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
 import {IRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
@@ -239,10 +239,11 @@ library IncredibleSquaringDeploymentLib {
             (taskmanagerupgradecall)
         );
 
-        bytes memory slasherupgradecall = abi.encodeCall(
-            InstantSlasher.initialize, (address(result.incredibleSquaringTaskManager))
-        );
-        UpgradeableProxyLib.upgradeAndCall(result.slasher, instantSlasherImpl, slasherupgradecall);
+        UpgradeableProxyLib.upgrade(result.slasher, instantSlasherImpl);
+
+        address socketRegistryImpl =
+            address(new SocketRegistry(ISlashingRegistryCoordinator(result.registryCoordinator)));
+        UpgradeableProxyLib.upgrade(result.socketRegistry, socketRegistryImpl);
 
         verify_deployment(result);
 
