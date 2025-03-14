@@ -24,11 +24,9 @@ contract OperatorDirectedPayments is Script {
         deployer = vm.rememberKey(vm.envUint("PRIVATE_KEY"));
         vm.label(deployer, "Deployer");
 
-        coreDeployment =
-            CoreDeploymentLib.readDeploymentJson("script/deployments/core/", block.chainid);
-        incredibleSquaringDeployment = IncredibleSquaringDeploymentLib.readDeploymentJson(
-            "script/deployments/incredible-squaring/", block.chainid
-        );
+        coreDeployment = CoreDeploymentLib.readDeploymentJson("script/deployments/core/", block.chainid);
+        incredibleSquaringDeployment =
+            IncredibleSquaringDeploymentLib.readDeploymentJson("script/deployments/incredible-squaring/", block.chainid);
         operatorRewardConfig = SetupPaymentsLib.readOperatorConfig("operator_reward_config");
     }
 
@@ -66,9 +64,7 @@ contract OperatorDirectedPayments is Script {
         vm.stopBroadcast();
     }
 
-    function previousDivisibleTimestamp(
-        uint256 blockTimestamp
-    ) public pure returns (uint256) {
+    function previousDivisibleTimestamp(uint256 blockTimestamp) public pure returns (uint256) {
         uint256 daySeconds = 86_400;
 
         // Calculate the remainder to check how far blockTimestamp is from the nearest multiple of daySeconds

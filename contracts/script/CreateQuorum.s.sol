@@ -5,8 +5,7 @@ import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IncredibleSquaringDeploymentLib} from "../script/utils/IncredibleSquaringDeploymentLib.sol";
 import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {ISlashingRegistryCoordinatorTypes} from
-    "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
+import {ISlashingRegistryCoordinatorTypes} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 
@@ -24,18 +23,12 @@ contract CreateQuorum is Script {
 
     function run() external {
         vm.startBroadcast(deployer);
-        ISlashingRegistryCoordinatorTypes.OperatorSetParam memory _operatorSetParam =
-        ISlashingRegistryCoordinatorTypes.OperatorSetParam({
-            maxOperatorCount: 3,
-            kickBIPsOfOperatorStake: 100,
-            kickBIPsOfTotalStake: 1000
-        });
+        ISlashingRegistryCoordinatorTypes.OperatorSetParam memory _operatorSetParam = ISlashingRegistryCoordinatorTypes
+            .OperatorSetParam({maxOperatorCount: 3, kickBIPsOfOperatorStake: 100, kickBIPsOfTotalStake: 1000});
         uint96 minimumStake = 0;
-        IStakeRegistryTypes.StrategyParams[] memory _strategyParams =
-            new IStakeRegistryTypes.StrategyParams[](1);
+        IStakeRegistryTypes.StrategyParams[] memory _strategyParams = new IStakeRegistryTypes.StrategyParams[](1);
         IStrategy istrategy = IStrategy(deploymentData.strategy);
-        _strategyParams[0] =
-            IStakeRegistryTypes.StrategyParams({strategy: istrategy, multiplier: 1});
+        _strategyParams[0] = IStakeRegistryTypes.StrategyParams({strategy: istrategy, multiplier: 1});
         RegistryCoordinator regCoord = RegistryCoordinator(deploymentData.registryCoordinator);
         regCoord.createTotalDelegatedStakeQuorum(_operatorSetParam, minimumStake, _strategyParams);
 
