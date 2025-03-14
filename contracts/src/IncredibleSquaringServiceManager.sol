@@ -54,8 +54,4 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
     function initialize(address initialOwner, address rewardsInitiator) external initializer {
         __ServiceManagerBase_init(initialOwner, rewardsInitiator);
     }
-
-    function getTaskManager() public view returns (address) {
-        return address(incredibleSquaringTaskManager);
-    }
 }
