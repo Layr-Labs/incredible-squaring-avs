@@ -42,10 +42,9 @@ type AvsReader struct {
 	logger             logging.Logger
 }
 
-//var _ AvsReaderer = (*AvsReader)(nil)
+var _ AvsReaderer = (*AvsReader)(nil)
 
 func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
-	c.Logger.Info(c.IncredibleSquaringServiceManager.String())
 	ethWsClient, err := ethclient.Dial(c.EthWsRpcUrl)
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
