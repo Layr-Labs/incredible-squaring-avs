@@ -10,7 +10,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
 import {PermissionController} from "@eigenlayer/contracts/permissions/PermissionController.sol";
-import {DelegationManager} from "@eigenlayer/contracts/core/DelegationManager.sol";
+import "@eigenlayer/contracts/core/DelegationManager.sol";
 import {AllocationManager} from "@eigenlayer/contracts/core/AllocationManager.sol";
 import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
 import {AVSDirectory} from "@eigenlayer/contracts/core/AVSDirectory.sol";
@@ -202,7 +202,6 @@ library CoreDeploymentLib {
                 GENESIS_TIME
             )
         );
-        address eigenPodBeaconImpl = address(new UpgradeableBeacon(eigenPodImpl));
         address baseStrategyImpl = address(
             new StrategyBase(
                 IStrategyManager(result.strategyManager), IPauserRegistry(result.pauserRegistry)
@@ -214,7 +213,7 @@ library CoreDeploymentLib {
         result.strategyBeacon = address(new UpgradeableBeacon(baseStrategyImpl));
 
         // Upgrade contracts
-        // / TODO: Get from config
+        /// TODO: Get from config
         bytes memory upgradeCall = abi.encodeCall(
             DelegationManager.initialize,
             (
