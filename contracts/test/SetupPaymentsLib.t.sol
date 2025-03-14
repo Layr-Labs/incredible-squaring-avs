@@ -50,7 +50,8 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
         mockToken = new MockERC20();
 
-        coreConfigData = CoreDeploymentLib.readDeploymentConfigValues("test/mockData/config/core/", 1337);
+        coreConfigData =
+            CoreDeploymentLib.readDeploymentConfigValues("test/mockData/config/core/", 1337);
         coreDeployment = CoreDeploymentLib.deployContracts(deployer, proxyAdmin, coreConfigData);
         rewardsCoordinator = IRewardsCoordinator(coreDeployment.rewardsCoordinator);
 
@@ -60,7 +61,9 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         mockToken.mint(address(rewardsCoordinator), 100_000);
     }
 
-    function addStrategy(address token) public returns (IStrategy) {
+    function addStrategy(
+        address token
+    ) public returns (IStrategy) {
         if (tokenToStrategy[token] != IStrategy(address(0))) {
             return tokenToStrategy[token];
         }
@@ -87,7 +90,14 @@ contract SetupPaymentsLibTest is Test, TestConstants {
 
         cheats.startPrank(deployer);
         SetupPaymentsLib.submitRoot(
-            rewardsCoordinator, tokenLeaves, earnerLeaves, address(strategy), endTimestamp, NUM_EARNERS, 1, filePath
+            rewardsCoordinator,
+            tokenLeaves,
+            earnerLeaves,
+            address(strategy),
+            endTimestamp,
+            NUM_EARNERS,
+            1,
+            filePath
         );
         cheats.stopPrank();
     }
@@ -113,7 +123,8 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         string memory jsonContent = '{"leaves":["0x1234"], "tokenLeaves":["0x5678"]}';
         vm.writeFile(filePath, jsonContent);
 
-        SetupPaymentsLib.PaymentLeaves memory paymentLeaves = SetupPaymentsLib.parseLeavesFromJson(filePath);
+        SetupPaymentsLib.PaymentLeaves memory paymentLeaves =
+            SetupPaymentsLib.parseLeavesFromJson(filePath);
 
         assertEq(paymentLeaves.leaves.length, 1, "Incorrect number of leaves");
         assertEq(paymentLeaves.tokenLeaves.length, 1, "Incorrect number of token leaves");
@@ -131,13 +142,21 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         proof[1] = keccak256(abi.encodePacked(leaves[2], leaves[3]));
 
         bytes memory proofBytesConstructed = abi.encodePacked(proof);
-        bytes memory proofBytesCalculated = SetupPaymentsLib.generateMerkleProof(leaves, indexToProve);
+        bytes memory proofBytesCalculated =
+            SetupPaymentsLib.generateMerkleProof(leaves, indexToProve);
 
-        require(keccak256(proofBytesConstructed) == keccak256(proofBytesCalculated), "Proofs do not match");
+        require(
+            keccak256(proofBytesConstructed) == keccak256(proofBytesCalculated),
+            "Proofs do not match"
+        );
 
         bytes32 root = SetupPaymentsLib.merkleizeKeccak(leaves);
 
-        require(Merkle.verifyInclusionKeccak(proofBytesCalculated, root, leaves[indexToProve], indexToProve));
+        require(
+            Merkle.verifyInclusionKeccak(
+                proofBytesCalculated, root, leaves[indexToProve], indexToProve
+            )
+        );
     }
 
     function testProcessClaim() public {
@@ -159,7 +178,14 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         console2.log(rewardsCoordinator.rewardsUpdater());
         cheats.startPrank(deployer);
         SetupPaymentsLib.submitRoot(
-            rewardsCoordinator, tokenLeaves, earnerLeaves, address(strategy), endTimestamp, NUM_EARNERS, 1, filePath
+            rewardsCoordinator,
+            tokenLeaves,
+            earnerLeaves,
+            address(strategy),
+            endTimestamp,
+            NUM_EARNERS,
+            1,
+            filePath
         );
         cheats.stopPrank();
 
@@ -187,7 +213,12 @@ contract SetupPaymentsLibTest is Test, TestConstants {
         mockToken.approve(address(rewardsCoordinator), amountPerPayment * numPayments);
 
         SetupPaymentsLib.createAVSRewardsSubmissions(
-            rewardsCoordinator, address(strategy), numPayments, amountPerPayment, duration, startTimestamp
+            rewardsCoordinator,
+            address(strategy),
+            numPayments,
+            amountPerPayment,
+            duration,
+            startTimestamp
         );
     }
 }

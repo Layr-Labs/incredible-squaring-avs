@@ -25,7 +25,10 @@ import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 import {SocketRegistry} from "eigenlayer-middleware/src/SocketRegistry.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
-import {IncredibleSquaringServiceManager, IServiceManager} from "../src/IncredibleSquaringServiceManager.sol";
+import {
+    IncredibleSquaringServiceManager,
+    IServiceManager
+} from "../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
 import {IIncredibleSquaringTaskManager} from "../src/IIncredibleSquaringTaskManager.sol";
 import "../src/MockERC20.sol";
@@ -104,7 +107,9 @@ contract IncredibleSquaringDeployer is Script {
         // Eigenlayer contracts
         vm.startBroadcast(deployer);
         IncredibleSquaringDeploymentLib.IncredibleSquaringSetupConfig memory isConfig =
-            IncredibleSquaringDeploymentLib.readIncredibleSquaringConfigJson("incredible_squaring_config");
+        IncredibleSquaringDeploymentLib.readIncredibleSquaringConfigJson(
+            "incredible_squaring_config"
+        );
         configData = CoreDeploymentLib.readDeploymentJson("script/deployments/core/", block.chainid);
 
         erc20Mock = new MockERC20();
@@ -112,7 +117,8 @@ contract IncredibleSquaringDeployer is Script {
         FundOperator.fund_operator(address(erc20Mock), isConfig.operator_addr, 15_000e18);
         console2.log("strategy_factory");
         console2.log(configData.strategyFactory);
-        incredibleSquaringStrategy = IStrategy(StrategyFactory(configData.strategyFactory).deployNewStrategy(erc20Mock));
+        incredibleSquaringStrategy =
+            IStrategy(StrategyFactory(configData.strategyFactory).deployNewStrategy(erc20Mock));
         rewardscoordinator = configData.rewardsCoordinator;
 
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();

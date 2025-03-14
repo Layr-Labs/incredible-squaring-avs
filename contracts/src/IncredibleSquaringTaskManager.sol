@@ -94,10 +94,11 @@ contract IncredibleSquaringTaskManager is
 
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
-    function createNewTask(uint256 numberToBeSquared, uint32 quorumThresholdPercentage, bytes calldata quorumNumbers)
-        external
-        onlyTaskGenerator
-    {
+    function createNewTask(
+        uint256 numberToBeSquared,
+        uint32 quorumThresholdPercentage,
+        bytes calldata quorumNumbers
+    ) external onlyTaskGenerator {
         // create a new task struct
         Task memory newTask;
         newTask.numberToBeSquared = numberToBeSquared;
@@ -155,9 +156,11 @@ contract IncredibleSquaringTaskManager is
             );
         }
 
-        TaskResponseMetadata memory taskResponseMetadata = TaskResponseMetadata(uint32(block.number), hashOfNonSigners);
+        TaskResponseMetadata memory taskResponseMetadata =
+            TaskResponseMetadata(uint32(block.number), hashOfNonSigners);
         // updating the storage with task responsea
-        allTaskResponses[taskResponse.referenceTaskIndex] = keccak256(abi.encode(taskResponse, taskResponseMetadata));
+        allTaskResponses[taskResponse.referenceTaskIndex] =
+            keccak256(abi.encode(taskResponse, taskResponseMetadata));
 
         // emitting event
         emit TaskResponded(taskResponse, taskResponseMetadata);
@@ -176,9 +179,12 @@ contract IncredibleSquaringTaskManager is
         uint32 referenceTaskIndex = taskResponse.referenceTaskIndex;
         uint256 numberToBeSquared = task.numberToBeSquared;
         // some logical checks
-        require(allTaskResponses[referenceTaskIndex] != bytes32(0), "Task hasn't been responded to yet");
         require(
-            allTaskResponses[referenceTaskIndex] == keccak256(abi.encode(taskResponse, taskResponseMetadata)),
+            allTaskResponses[referenceTaskIndex] != bytes32(0), "Task hasn't been responded to yet"
+        );
+        require(
+            allTaskResponses[referenceTaskIndex]
+                == keccak256(abi.encode(taskResponse, taskResponseMetadata)),
             "Task response does not match the one recorded in the contract"
         );
         require(
@@ -187,7 +193,8 @@ contract IncredibleSquaringTaskManager is
         );
 
         require(
-            uint32(block.number) <= taskResponseMetadata.taskRespondedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
+            uint32(block.number)
+                <= taskResponseMetadata.taskRespondedBlock + TASK_CHALLENGE_WINDOW_BLOCK,
             "The challenge period for this task has already expired."
         );
 
@@ -201,7 +208,8 @@ contract IncredibleSquaringTaskManager is
         }
 
         // get the list of hash of pubkeys of operators who weren't part of the task response submitted by the aggregator
-        bytes32[] memory hashesOfPubkeysOfNonSigningOperators = new bytes32[](pubkeysOfNonSigningOperators.length);
+        bytes32[] memory hashesOfPubkeysOfNonSigningOperators =
+            new bytes32[](pubkeysOfNonSigningOperators.length);
         for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
             hashesOfPubkeysOfNonSigningOperators[i] = pubkeysOfNonSigningOperators[i].hashG1Point();
         }
@@ -219,15 +227,18 @@ contract IncredibleSquaringTaskManager is
         );
 
         // get the address of operators who didn't sign
-        address[] memory addressOfNonSigningOperators = new address[](pubkeysOfNonSigningOperators.length);
+        address[] memory addressOfNonSigningOperators =
+            new address[](pubkeysOfNonSigningOperators.length);
         for (uint256 i = 0; i < pubkeysOfNonSigningOperators.length; i++) {
-            addressOfNonSigningOperators[i] =
-                BLSApkRegistry(address(blsApkRegistry)).pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
+            addressOfNonSigningOperators[i] = BLSApkRegistry(address(blsApkRegistry))
+                .pubkeyHashToOperator(hashesOfPubkeysOfNonSigningOperators[i]);
         }
 
         // get the list of all operators who were active when the task was initialized
         Operator[][] memory allOperatorInfo = getOperatorState(
-            IRegistryCoordinator(address(registryCoordinator)), task.quorumNumbers, task.taskCreatedBlock
+            IRegistryCoordinator(address(registryCoordinator)),
+            task.quorumNumbers,
+            task.taskCreatedBlock
         );
         // first for loop iterate over quorums
         for (uint256 i = 0; i < allOperatorInfo.length; i++) {
@@ -250,14 +261,14 @@ contract IncredibleSquaringTaskManager is
                 if (wasSigningOperator == true) {
                     OperatorSet memory operatorset =
                         OperatorSet({avs: serviceManager, id: uint8(task.quorumNumbers[i])});
-                    IStrategy[] memory istrategy =
-                        IAllocationManager(allocationManager).getStrategiesInOperatorSet(operatorset);
+                    IStrategy[] memory istrategy = IAllocationManager(allocationManager)
+                        .getStrategiesInOperatorSet(operatorset);
                     uint256[] memory wadsToSlash = new uint256[](istrategy.length);
                     for (uint256 z = 0; z < wadsToSlash.length; z++) {
                         wadsToSlash[z] = WADS_TO_SLASH;
                     }
-                    IAllocationManagerTypes.SlashingParams memory slashingparams = IAllocationManagerTypes
-                        .SlashingParams({
+                    IAllocationManagerTypes.SlashingParams memory slashingparams =
+                    IAllocationManagerTypes.SlashingParams({
                         operator: operatorAddress,
                         operatorSetId: uint8(task.quorumNumbers[i]),
                         strategies: istrategy,

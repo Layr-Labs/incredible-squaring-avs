@@ -6,7 +6,8 @@ import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManage
 import "@eigenlayer/contracts/permissions/PauserRegistry.sol";
 import "@eigenlayer/contracts/interfaces/IPauserRegistry.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from
+    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     incsqsm.IncredibleSquaringServiceManager sm;
@@ -39,7 +40,12 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
                     address(tmImplementation),
                     address(proxyAdmin),
                     abi.encodeWithSelector(
-                        tm.initialize.selector, initialOwner, aggregator, generator, allocationManager, slasher
+                        tm.initialize.selector,
+                        initialOwner,
+                        aggregator,
+                        generator,
+                        allocationManager,
+                        slasher
                     )
                 )
             )

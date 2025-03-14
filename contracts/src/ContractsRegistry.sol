@@ -29,14 +29,23 @@ contract ContractsRegistry {
         contractCount++;
     }
 
-    function store_test(string memory test_name, int256 index, uint256 timestamp, uint256 block_number) public {
+    function store_test(
+        string memory test_name,
+        int256 index,
+        uint256 timestamp,
+        uint256 block_number
+    ) public {
         require(anvil_test[keccak256(abi.encodePacked(test_name, index))].timestamp == 0);
         anvil_test[keccak256(abi.encodePacked(test_name))] =
             BlockAndTimestamp({timestamp: timestamp, block_number: block_number, index: index});
     }
 
-    function get_test_values(string memory test_name, int256 index) public view returns (uint256, uint256, int256) {
-        BlockAndTimestamp memory test_details = anvil_test[keccak256(abi.encodePacked(test_name, index))];
+    function get_test_values(
+        string memory test_name,
+        int256 index
+    ) public view returns (uint256, uint256, int256) {
+        BlockAndTimestamp memory test_details =
+            anvil_test[keccak256(abi.encodePacked(test_name, index))];
         return (test_details.timestamp, test_details.block_number, test_details.index);
     }
 }

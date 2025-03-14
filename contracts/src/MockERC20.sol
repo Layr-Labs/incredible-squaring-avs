@@ -9,7 +9,11 @@ contract MockERC20 is ERC20("Mock Token", "MCK") {
     }
 
     /// WARNING: Vulnerable, bypasses allowance check. Do not use in production!
-    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
         super._transfer(from, to, amount);
         return true;
     }
