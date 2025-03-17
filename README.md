@@ -67,6 +67,64 @@ make start-challenger
 
 We wrote a [docker-compose.yml](./docker-compose.yml) file to run and test everything on a single machine. It will start an anvil instance, loading a [state](./tests/anvil/avs-and-eigenlayer-deployed-anvil-state.json) where the eigenlayer and incredible-squaring contracts are deployed, start the aggregator, and finally one operator, along with prometheus and grafana servers. The grafana server will be available at http://localhost:3000, with user and password both set to `admin`. We have created a simple [grafana dashboard](./grafana/provisioning/dashboards/AVSs/incredible_squaring.json) which can be used as a starting example and expanded to include AVS specific metrics. The eigen metrics should not be added to this dashboard as they will be exposed on the main eigenlayer dashboard provided by the eigenlayer-cli.
 
+## Creating and Claiming Distributions
+
+The example exposes 3 scripts in the Makefile interface:
+- Creating a distribution root, that implies creating an AVS rewards submission and submitting a payment root.
+- Creating an operator directed distribution root, similar to previous one but with rewards to operators involved in the claim generation. Note: operators in this case are hardcoded in the script file.
+- Claiming the created distribution, giving the rewards to an specific receiver account. Note: The receiver in this case is harcoded in the script file (address 0x01).
+
+This leads to 2 possible workflows, distributing equally across all operators and using custom distribution for each operator.
+
+### Distributing equally across all operators
+
+First, start anvil in a separate terminal and deploy the contracts. To do that follow the instructions in [To run section](#to-run)
+
+Then, run the command:
+
+``` bash
+make create-avs-distributions-root
+```
+
+This creates a claimable root, a root of the merkle tree that stores cumulative earnings per ERC20 reward token for each earner.
+
+To claim against the root, use:
+``` bash
+make claim-distributions
+```
+
+If you want to check the balance of the claimer, you can run the following command:
+``` bash
+make claimer-account-token-balance
+```
+Note that the claimer address is not passed by parameter, because in the script that address is hardcoded.
+
+### Using custom distribution for each operator
+
+First, start anvil in a separate terminal and deploy the contracts. To do that follow the instructions in [To run section](#to-run)
+
+Then, run the command:
+
+``` bash
+make create-operator-directed-distributions-root
+```
+
+This creates a claimable root, that differs from the previous one in the fact that also distributes the claim to the directed operators established in the script (currently hardcoded).
+
+The payment leaves are available in `contracts/payments.json`. The payment leaves are the keccak256 hash of each earner leaf. An earner leaf is composed by the earner and the token root of the token leaves, and each token leaf is the result of hashing the token address with the token earnings.
+
+To claim against the root, use:
+
+``` bash
+make claim-distributions
+```
+
+If you want to check the balance of the claimer, you can run the following command:
+``` bash
+make claimer-account-token-balance
+```
+Note that the claimer address is not passed by parameter, because in the script that address is hardcoded.
+
 ## Avs Task Description
 
 The architecture of the AVS contains:

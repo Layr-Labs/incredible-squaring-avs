@@ -149,3 +149,9 @@ claim-distributions:
 	cd contracts && \
 		forge script script/SetupDistributions.s.sol --rpc-url http://localhost:8545 \
 			--broadcast --sig "executeProcessClaim()" -v --sender ${SENDER_ADDR}
+
+get-deployed-token-address:
+	@echo "Deployed token Address: $(TOKEN_ADDRESS)"
+
+claimer-account-token-balance:
+	cast balance --erc20 $(TOKEN_ADDRESS) 0x0000000000000000000000000000000000000001
