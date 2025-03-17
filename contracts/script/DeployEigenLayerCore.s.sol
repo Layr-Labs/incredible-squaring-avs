@@ -6,7 +6,7 @@ import {console2} from "forge-std/console2.sol";
 import {CoreDeploymentLib} from "./utils/CoreDeploymentLib.sol";
 import {UpgradeableProxyLib} from "./utils/UpgradeableProxyLib.sol";
 
-contract DeployEigenLayerCore is Script {
+contract DeployEigenlayerCore is Script {
     using CoreDeploymentLib for *;
     using UpgradeableProxyLib for address;
 
@@ -22,10 +22,12 @@ contract DeployEigenLayerCore is Script {
 
     function run() external {
         vm.startBroadcast(deployer);
+
+        configData = CoreDeploymentLib.readDeploymentConfigValues("config/core/", block.chainid);
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
         deploymentData = CoreDeploymentLib.deployContracts(deployer, proxyAdmin, configData);
+        vm.stopBroadcast();
         string memory deploymentPath = "script/deployments/core/";
         CoreDeploymentLib.writeDeploymentJson(deploymentPath, block.chainid, deploymentData);
-        vm.stopBroadcast();
     }
 }

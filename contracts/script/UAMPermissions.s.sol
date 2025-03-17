@@ -4,7 +4,8 @@ pragma solidity ^0.8.12;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IncredibleSquaringDeploymentLib} from "../script/utils/IncredibleSquaringDeploymentLib.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
+import {SlashingRegistryCoordinator} from
+    "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 import {ISlashingRegistryCoordinatorTypes} from
     "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
@@ -44,11 +45,11 @@ contract UAMPermissions is Script {
         IAllocationManager _allocationManager = IAllocationManager(coreData.allocationManager);
         _allocationManager.setAVSRegistrar(
             deploymentData.incredibleSquaringServiceManager,
-            IAVSRegistrar(deploymentData.registryCoordinator)
+            IAVSRegistrar(deploymentData.slashingRegistryCoordinator)
         );
 
         serviceManager.setAppointee(
-            deploymentData.registryCoordinator,
+            deploymentData.slashingRegistryCoordinator,
             coreData.allocationManager,
             AllocationManager.createOperatorSets.selector
         );

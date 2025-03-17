@@ -10,7 +10,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
 import {PermissionController} from "@eigenlayer/contracts/permissions/PermissionController.sol";
-import "@eigenlayer/contracts/core/DelegationManager.sol";
+import {DelegationManager} from "@eigenlayer/contracts/core/DelegationManager.sol";
 import {AllocationManager} from "@eigenlayer/contracts/core/AllocationManager.sol";
 import {StrategyManager} from "@eigenlayer/contracts/core/StrategyManager.sol";
 import {AVSDirectory} from "@eigenlayer/contracts/core/AVSDirectory.sol";
@@ -174,8 +174,8 @@ library CoreDeploymentLib {
 
         /// TODO: Get actual values
         uint32 CALCULATION_INTERVAL_SECONDS = 1 days;
-        uint32 MAX_REWARDS_DURATION = 1 days;
-        uint32 MAX_RETROACTIVE_LENGTH = 200_000;
+        uint32 MAX_REWARDS_DURATION = uint32(configData.rewardsCoordinator.maxRewardsDuration);
+        uint32 MAX_RETROACTIVE_LENGTH = uint32(configData.rewardsCoordinator.maxRetroactiveLength);
         uint32 MAX_FUTURE_LENGTH = 1 days;
         uint32 GENESIS_REWARDS_TIMESTAMP = 10 days;
         address rewardsCoordinatorImpl = address(
@@ -344,9 +344,10 @@ library CoreDeploymentLib {
         // StrategyManager config end
 
         // DelegationManager config start
-        data.delegationManager.initPausedStatus = json.readUint(".delegation.init_paused_status");
+        data.delegationManager.initPausedStatus =
+            json.readUint(".delegationManager.init_paused_status");
         data.delegationManager.withdrawalDelayBlocks =
-            json.readUint(".delegation.init_withdrawal_delay_blocks");
+            json.readUint(".delegationManager.init_withdrawal_delay_blocks");
         // DelegationManager config end
 
         // EigenPodManager config start
@@ -364,8 +365,7 @@ library CoreDeploymentLib {
             json.readUint(".rewardsCoordinator.MAX_FUTURE_LENGTH");
         data.rewardsCoordinator.genesisRewardsTimestamp =
             json.readUint(".rewardsCoordinator.GENESIS_REWARDS_TIMESTAMP");
-        data.rewardsCoordinator.updater =
-            json.readAddress(".rewardsCoordinator.rewards_updater_address");
+        data.rewardsCoordinator.updater = json.readAddress(".rewardsCoordinator.rewards_updater");
         data.rewardsCoordinator.activationDelay =
             json.readUint(".rewardsCoordinator.activation_delay");
         data.rewardsCoordinator.calculationIntervalSeconds =

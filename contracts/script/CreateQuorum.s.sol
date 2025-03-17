@@ -4,7 +4,8 @@ pragma solidity ^0.8.12;
 import {Script} from "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IncredibleSquaringDeploymentLib} from "../script/utils/IncredibleSquaringDeploymentLib.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
+import {SlashingRegistryCoordinator} from
+    "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 import {ISlashingRegistryCoordinatorTypes} from
     "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
@@ -36,7 +37,8 @@ contract CreateQuorum is Script {
         IStrategy istrategy = IStrategy(deploymentData.strategy);
         _strategyParams[0] =
             IStakeRegistryTypes.StrategyParams({strategy: istrategy, multiplier: 1});
-        RegistryCoordinator regCoord = RegistryCoordinator(deploymentData.registryCoordinator);
+        SlashingRegistryCoordinator regCoord =
+            SlashingRegistryCoordinator(deploymentData.slashingRegistryCoordinator);
         regCoord.createTotalDelegatedStakeQuorum(_operatorSetParam, minimumStake, _strategyParams);
 
         vm.stopBroadcast();

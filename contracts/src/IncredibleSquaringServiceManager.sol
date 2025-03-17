@@ -10,7 +10,7 @@ import {
 } from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 // import {IAVSRegistrar} from "@eigenlayer/contracts/interfaces/IAVSRegistrar.sol";
 import {IRewardsCoordinator} from "@eigenlayer/contracts/interfaces/IRewardsCoordinator.sol";
-import {IRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
+import {ISlashingRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 
 /**
  * @title Primary entrypoint for procuring services from IncredibleSquaring.
@@ -32,7 +32,7 @@ contract IncredibleSquaringServiceManager is ServiceManagerBase {
 
     constructor(
         IAVSDirectory _avsDirectory,
-        IRegistryCoordinator _registryCoordinator,
+        ISlashingRegistryCoordinator _registryCoordinator,
         IStakeRegistry _stakeRegistry,
         address rewards_coordinator,
         IAllocationManager allocationManager,

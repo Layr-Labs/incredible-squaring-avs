@@ -6,8 +6,8 @@ import "@openzeppelin-upgrades/contracts/access/OwnableUpgradeable.sol";
 import "@eigenlayer/contracts/permissions/Pausable.sol";
 import "@eigenlayer-middleware/src/interfaces/IServiceManager.sol";
 import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
-import {IRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
+import {SlashingRegistryCoordinator} from "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
+import {ISlashingRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {BLSSignatureChecker} from "@eigenlayer-middleware/src/BLSSignatureChecker.sol";
 import {OperatorStateRetriever} from "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
@@ -69,7 +69,7 @@ contract IncredibleSquaringTaskManager is
     }
 
     constructor(
-        IRegistryCoordinator _registryCoordinator,
+        ISlashingRegistryCoordinator _registryCoordinator,
         IPauserRegistry _pauserRegistry,
         uint32 _taskResponseWindowBlock,
         address _serviceManager
@@ -236,7 +236,7 @@ contract IncredibleSquaringTaskManager is
 
         // get the list of all operators who were active when the task was initialized
         Operator[][] memory allOperatorInfo = getOperatorState(
-            IRegistryCoordinator(address(registryCoordinator)),
+            ISlashingRegistryCoordinator(address(registryCoordinator)),
             task.quorumNumbers,
             task.taskCreatedBlock
         );
