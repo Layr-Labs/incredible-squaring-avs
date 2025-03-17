@@ -102,14 +102,6 @@ func TestIntegration(t *testing.T) {
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
 
-	/* Prepare the config file for operator */
-	nodeConfig := types.NodeConfig{}
-	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
-	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
-	if err != nil {
-		t.Fatalf("Failed to read yaml config: %s", err.Error())
-	}
-
 	config := &config.Config{
 		EcdsaPrivateKey: aggregatorEcdsaPrivateKey,
 		Logger:          logger,
@@ -118,18 +110,26 @@ func TestIntegration(t *testing.T) {
 		EthWsRpcUrl:     aggConfigRaw.EthWsUrl,
 		EthWsClient:     *ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(
-			nodeConfig.OperatorStateRetrieverAddress,
+			credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr,
 		),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(
-			nodeConfig.AVSRegistryCoordinatorAddress,
+			credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr,
 		),
 		AggregatorServerIpPortAddr: aggConfigRaw.AggregatorServerIpPortAddr,
 		RegisterOperatorOnStartup:  aggConfigRaw.RegisterOperatorOnStartup,
 		TxMgr:                      txMgr,
 		AggregatorAddress:          aggregatorAddr,
 		IncredibleSquaringServiceManager: common.HexToAddress(
-			nodeConfig.IncredibleSquaringServiceManager,
+			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
 		),
+	}
+
+	/* Prepare the config file for operator */
+	nodeConfig := types.NodeConfig{}
+	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
+	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
+	if err != nil {
+		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
 
 	/* Register operator*/
