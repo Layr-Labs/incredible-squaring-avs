@@ -89,14 +89,17 @@ make create-avs-distributions-root
 This creates a claimable root, a root of the merkle tree that stores cumulative earnings per ERC20 reward token for each earner.
 
 To claim against the root, use:
+
 ``` bash
 make claim-distributions
 ```
 
 If you want to check the balance of the claimer, you can run the following command:
+
 ``` bash
 make claimer-account-token-balance
 ```
+
 Note that the claimer address is not passed by parameter, because in the script that address is hardcoded.
 
 ### Using custom distribution for each operator
@@ -120,9 +123,11 @@ make claim-distributions
 ```
 
 If you want to check the balance of the claimer, you can run the following command:
+
 ``` bash
 make claimer-account-token-balance
 ```
+
 Note that the claimer address is not passed by parameter, because in the script that address is hardcoded.
 
 ## Avs Task Description
