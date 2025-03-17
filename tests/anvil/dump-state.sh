@@ -23,7 +23,7 @@ start_anvil_docker "" $parent_path/avs-and-eigenlayer-deployed-anvil-state
 # Deploy Contracts
 cd "$root_dir/contracts"
 
-forge script script/DeployEigenLayerCore.s.sol:DeployEigenlayerCore --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY 
+forge script script/DeployEigenLayerCore.s.sol:DeployEigenLayerCore --rpc-url $RPC_URL --broadcast --private-key $PRIVATE_KEY 
 
 forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
 
