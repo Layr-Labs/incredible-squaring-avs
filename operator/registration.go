@@ -40,7 +40,7 @@ func (o *Operator) registerOperatorOnStartup(
 		// This error might only be that the operator was already registered with eigenlayer, so we don't want to fatal
 		o.logger.Error("Error registering operator with eigenlayer", "err", err)
 	} else {
-		o.logger.Infof("Registered operator with eigenlayer")
+		o.logger.Info("Registered operator with eigenlayer")
 	}
 
 	// TODO(samlaf): shouldn't hardcode number here
@@ -63,7 +63,7 @@ func (o *Operator) registerOperatorOnStartup(
 	if err != nil {
 		o.logger.Fatal("Error registering operator with avs", "err", err)
 	}
-	o.logger.Infof("Registered operator with avs")
+	o.logger.Info("Registered operator with avs")
 }
 
 func (o *Operator) RegisterOperatorWithEigenlayer() error {
@@ -147,7 +147,7 @@ func (o *Operator) RegisterForOperatorSets(
 		o.logger.Errorf("Unable to register operator with the operator set")
 		return err
 	}
-	o.logger.Infof("Registered operator with operator set")
+	o.logger.Info("Registered operator with operator set")
 
 	return nil
 }

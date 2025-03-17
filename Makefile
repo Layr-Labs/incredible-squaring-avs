@@ -114,17 +114,17 @@ tests-integration: ## runs all integration tests
 
 .PHONY: copy-env
 copy-env:
-		@echo "Copying .env.example to .env..."
-		cp ./contracts/.env.example ./contracts/.env
+	@echo "Copying .env.example to .env..."
+	cp ./contracts/.env.example ./contracts/.env
 
 .PHONY: dump-state
 dump-state: 
-		./tests/anvil/dump-state.sh
+	./tests/anvil/dump-state.sh
 
 .PHONY: fmt
 fmt: ## formats all go files
 	go fmt ./...
-	make format-lines
+	$(MAKE) format-lines
 
 .PHONY: format-lines
 format-lines: ## formats all go files with golines
