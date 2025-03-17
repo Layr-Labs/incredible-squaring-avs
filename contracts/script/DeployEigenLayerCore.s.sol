@@ -21,9 +21,10 @@ contract DeployEigenLayerCore is Script {
     }
 
     function run() external {
+        configData = CoreDeploymentLib.readDeploymentConfigValues("config/core/", block.chainid);
+        
         vm.startBroadcast(deployer);
 
-        configData = CoreDeploymentLib.readDeploymentConfigValues("config/core/", block.chainid);
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
         deploymentData = CoreDeploymentLib.deployContracts(deployer, proxyAdmin, configData);
         vm.stopBroadcast();
