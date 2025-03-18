@@ -87,7 +87,7 @@ contract IncredibleSquaringDeployer is Script {
     IStrategy incredibleSquaringStrategy;
     address private deployer;
     MockERC20 public erc20Mock;
-    IncredibleSquaringDeploymentLib.DeploymentData incrediblSquaringDeployment;
+    IncredibleSquaringDeploymentLib.DeploymentData incredibleSquaringDeployment;
 
     using UpgradeableProxyLib for address;
 
@@ -120,17 +120,17 @@ contract IncredibleSquaringDeployer is Script {
 
         proxyAdmin = UpgradeableProxyLib.deployProxyAdmin();
         require(address(incredibleSquaringStrategy) != address(0));
-        incrediblSquaringDeployment = IncredibleSquaringDeploymentLib.deployContracts(
+        incredibleSquaringDeployment = IncredibleSquaringDeploymentLib.deployContracts(
             proxyAdmin, configData, address(incredibleSquaringStrategy), isConfig, msg.sender
         );
-        console.log("instantSlasher", incrediblSquaringDeployment.slasher);
+        console.log("instantSlasher", incredibleSquaringDeployment.slasher);
 
         FundOperator.fund_operator(
-            address(erc20Mock), incrediblSquaringDeployment.incredibleSquaringServiceManager, 1e18
+            address(erc20Mock), incredibleSquaringDeployment.incredibleSquaringServiceManager, 1e18
         );
-        incrediblSquaringDeployment.token = address(erc20Mock);
+        incredibleSquaringDeployment.token = address(erc20Mock);
 
-        IncredibleSquaringDeploymentLib.writeDeploymentJson(incrediblSquaringDeployment);
+        IncredibleSquaringDeploymentLib.writeDeploymentJson(incredibleSquaringDeployment);
 
         vm.stopBroadcast();
     }
