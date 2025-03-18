@@ -48,10 +48,10 @@ deployments:
     input:
       script/deployments/core/: eigenlayer_addresses
       script/deployments/incredible-squaring/: avs_addresses
-    output:
-      avs_addresses: "script/deployments/incredible-squaring/3151908.json"
-    addresses:
-      serviceManager: avs_addresses:.addresses.incredibleSquaringServiceManager
+#    output:
+#      avs_addresses: "script/deployments/incredible-squaring/3151908.json"
+#    addresses:
+#      serviceManager: avs_addresses:.addresses.incredibleSquaringServiceManager
 
   - name: create_quorum
     repo: "."
