@@ -4,13 +4,14 @@
 # start a devnet with any local changes
 
 deployments:
-
   - name: eigenlayer
     repo: "."
     contracts_path: "contracts"
     script: script/DeployEigenLayerCore.s.sol
     env:
       PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
+    input:
+      config/core/: eigenlayer-config
     output:
       eigenlayer_addresses: "script/deployments/core/3151908.json"
     addresses:
@@ -25,8 +26,7 @@ deployments:
     env:
       PRIVATE_KEY: "{{.keys.deployer_key.private_key}}"
     input:
-      .: 
-        - incredible-config
+      .: incredible-config
       script/deployments/core/: eigenlayer_addresses
     output:
       avs_addresses: "script/deployments/incredible-squaring/3151908.json"
@@ -38,7 +38,6 @@ deployments:
       operatorStateRetriever: avs_addresses:.addresses.operatorStateRetriever
       registryCoordinator: avs_addresses:.addresses.registryCoordinator
       instantSlasher: avs_addresses:.addresses.instantSlasher
-    cmd: ["--config", "./incredible_squaring_config.json"]
 
   - name: uam_permissions
     repo: "."
@@ -49,11 +48,6 @@ deployments:
     input:
       script/deployments/core/: eigenlayer_addresses
       script/deployments/incredible-squaring/: avs_addresses
-    output:
-      avs_addresses: "script/deployments/incredible-squaring/3151908.json"
-    addresses:
-      serviceManager: avs_addresses:.addresses.incredibleSquaringServiceManager
-
 
   - name: create_quorum
     repo: "."
@@ -78,14 +72,12 @@ services:
     input:
       /usr/src/app/config-files/:
         - operator1-config
-      /usr/src/app/keys/:  
+      /usr/src/app/keys/:
         - keys-config
     env:
       OPERATOR_ECDSA_KEY_PASSWORD: ""
       OPERATOR_BLS_KEY_PASSWORD: ""
     cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
-
-
 
   - name: aggregator
     image: "ko.local/aggregator/cmd/main.go:latest"
@@ -108,7 +100,6 @@ services:
       - "--credible-squaring-deployment"
       - "/usr/src/app/config-files/3151908.json"
 
-
 keys:
   # This generates new keypairs for each operator
   - name: deployer_key
@@ -119,7 +110,13 @@ keys:
   - name: aggregator_key
     address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
     private_key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
+
 artifacts:
+  eigenlayer-config:
+    files:
+      3151908.json:
+        static_file: "contracts/config/core/31337.json"
+
   aggregator-config:
     files:
       aggregator-config.yaml:
@@ -163,11 +160,11 @@ artifacts:
           minimum_stake: 0
           multiplier: 1
 
-
   incredible-config:
     files:
       incredible_squaring_config.json:
         static_file: "contracts/incredible_squaring_config.json"
+
   keys-config:
     files:
       test.ecdsa.key.json:

@@ -174,8 +174,8 @@ library CoreDeploymentLib {
 
         /// TODO: Get actual values
         uint32 CALCULATION_INTERVAL_SECONDS = 1 days;
-        uint32 MAX_REWARDS_DURATION = 1 days;
-        uint32 MAX_RETROACTIVE_LENGTH = 200_000;
+        uint32 MAX_REWARDS_DURATION = uint32(configData.rewardsCoordinator.maxRewardsDuration);
+        uint32 MAX_RETROACTIVE_LENGTH = uint32(configData.rewardsCoordinator.maxRetroactiveLength);
         uint32 MAX_FUTURE_LENGTH = 1 days;
         uint32 GENESIS_REWARDS_TIMESTAMP = 10 days;
         address rewardsCoordinatorImpl = address(
@@ -202,7 +202,6 @@ library CoreDeploymentLib {
                 GENESIS_TIME
             )
         );
-        address eigenPodBeaconImpl = address(new UpgradeableBeacon(eigenPodImpl));
         address baseStrategyImpl = address(
             new StrategyBase(
                 IStrategyManager(result.strategyManager), IPauserRegistry(result.pauserRegistry)
@@ -214,7 +213,6 @@ library CoreDeploymentLib {
         result.strategyBeacon = address(new UpgradeableBeacon(baseStrategyImpl));
 
         // Upgrade contracts
-        // / TODO: Get from config
         bytes memory upgradeCall = abi.encodeCall(
             DelegationManager.initialize,
             (
@@ -345,9 +343,10 @@ library CoreDeploymentLib {
         // StrategyManager config end
 
         // DelegationManager config start
-        data.delegationManager.initPausedStatus = json.readUint(".delegation.init_paused_status");
+        data.delegationManager.initPausedStatus =
+            json.readUint(".delegationManager.init_paused_status");
         data.delegationManager.withdrawalDelayBlocks =
-            json.readUint(".delegation.init_withdrawal_delay_blocks");
+            json.readUint(".delegationManager.init_withdrawal_delay_blocks");
         // DelegationManager config end
 
         // EigenPodManager config start
@@ -365,8 +364,7 @@ library CoreDeploymentLib {
             json.readUint(".rewardsCoordinator.MAX_FUTURE_LENGTH");
         data.rewardsCoordinator.genesisRewardsTimestamp =
             json.readUint(".rewardsCoordinator.GENESIS_REWARDS_TIMESTAMP");
-        data.rewardsCoordinator.updater =
-            json.readAddress(".rewardsCoordinator.rewards_updater_address");
+        data.rewardsCoordinator.updater = json.readAddress(".rewardsCoordinator.rewards_updater");
         data.rewardsCoordinator.activationDelay =
             json.readUint(".rewardsCoordinator.activation_delay");
         data.rewardsCoordinator.calculationIntervalSeconds =

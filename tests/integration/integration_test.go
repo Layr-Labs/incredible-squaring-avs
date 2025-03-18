@@ -131,6 +131,7 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
+
 	/* Register operator*/
 	// log.Println("registering operator for integration tests")
 	// we need to do this dynamically and can't just hardcode a registered operator into the anvil

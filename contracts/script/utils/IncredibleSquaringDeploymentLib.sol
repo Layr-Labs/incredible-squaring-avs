@@ -16,7 +16,6 @@ import {
 } from "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 import {SlashingRegistryCoordinator} from
     "@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
-import {RegistryCoordinator} from "@eigenlayer-middleware/src/RegistryCoordinator.sol";
 import {IPermissionController} from "@eigenlayer/contracts/interfaces/IPermissionController.sol";
 import {
     IncredibleSquaringServiceManager,
@@ -33,20 +32,18 @@ import {BLSApkRegistry} from "@eigenlayer-middleware/src/BLSApkRegistry.sol";
 import {IndexRegistry} from "@eigenlayer-middleware/src/IndexRegistry.sol";
 import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher.sol";
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
-import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol";
-import {IRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
+// import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol"; // todo: socket registry not available
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
 import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {CoreDeploymentLib} from "./CoreDeploymentLib.sol";
 
 import {
-    RegistryCoordinator,
     IBLSApkRegistry,
     IIndexRegistry,
     IStakeRegistry
 } from
 // ISocketRegistry
-"@eigenlayer-middleware/src/RegistryCoordinator.sol";
+"@eigenlayer-middleware/src/SlashingRegistryCoordinator.sol";
 import {IStakeRegistryTypes} from "@eigenlayer-middleware/src/interfaces/IStakeRegistry.sol";
 
 import {
@@ -64,7 +61,7 @@ library IncredibleSquaringDeploymentLib {
     struct DeploymentData {
         address incredibleSquaringServiceManager;
         address incredibleSquaringTaskManager;
-        address registryCoordinator;
+        address slashingRegistryCoordinator;
         address operatorStateRetriever;
         address blsapkRegistry;
         address indexRegistry;
@@ -80,17 +77,28 @@ library IncredibleSquaringDeploymentLib {
         uint256 numQuorums;
         uint256[] operatorParams;
         address operator_addr;
+        address operator_2_addr;
+        address contracts_registry_addr;
         address task_generator_addr;
         address aggregator_addr;
+        address rewardsOwner;
+        address rewardsInitiator;
+        uint256 rewardsOwnerKey;
+        uint256 rewardsInitiatorKey;
     }
 
     function deployContracts(
         address proxyAdmin,
+        CoreDeploymentLib.DeploymentData memory core,
         address strategy,
         IncredibleSquaringSetupConfig memory isConfig,
         address admin
     ) internal returns (DeploymentData memory) {
         /// read EL deployment address
+        CoreDeploymentLib.DeploymentData memory coredata =
+            readCoreDeploymentJson("script/deployments/core/", block.chainid);
+        address avsdirectory = coredata.avsDirectory;
+
         DeploymentData memory result;
 
         // First, deploy upgradeable proxy contracts that will point to the implementations.
@@ -98,46 +106,58 @@ library IncredibleSquaringDeploymentLib {
         result.incredibleSquaringServiceManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.stakeRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.incredibleSquaringTaskManager = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
-        result.registryCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
+        result.slashingRegistryCoordinator = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.blsapkRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.indexRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.socketRegistry = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.slasher = UpgradeableProxyLib.setUpEmptyProxy(proxyAdmin);
         result.strategy = strategy;
-
         result.operatorStateRetriever = address(operatorStateRetriever);
-        CoreDeploymentLib.DeploymentData memory coredata =
-            readCoreDeploymentJson("script/deployments/core/", block.chainid);
         // Deploy the implementation contracts, using the proxy contracts as inputs
-
         address stakeRegistryImpl = address(
             new StakeRegistry(
-                ISlashingRegistryCoordinator(result.registryCoordinator),
-                IDelegationManager(coredata.delegationManager),
-                IAVSDirectory(coredata.avsDirectory),
-                IAllocationManager(coredata.allocationManager)
+                ISlashingRegistryCoordinator(result.slashingRegistryCoordinator),
+                IDelegationManager(core.delegationManager),
+                IAVSDirectory(core.avsDirectory),
+                IAllocationManager(core.allocationManager)
             )
         );
 
-        address blsApkRegistryImpl =
-            address(new BLSApkRegistry(IRegistryCoordinator(result.registryCoordinator)));
-        address indexRegistryimpl =
-            address(new IndexRegistry(IRegistryCoordinator(result.registryCoordinator)));
+        address blsApkRegistryImpl = address(
+            new BLSApkRegistry(ISlashingRegistryCoordinator(result.slashingRegistryCoordinator))
+        );
+        address indexRegistryimpl = address(
+            new IndexRegistry(ISlashingRegistryCoordinator(result.slashingRegistryCoordinator))
+        );
         address instantSlasherImpl = address(
             new InstantSlasher(
-                IAllocationManager(coredata.allocationManager),
-                ISlashingRegistryCoordinator(result.registryCoordinator),
+                IAllocationManager(core.allocationManager),
+                ISlashingRegistryCoordinator(result.slashingRegistryCoordinator),
                 result.incredibleSquaringTaskManager
             )
         );
+        console2.log("pauser_registry");
+        console2.log(coredata.pauserRegistry);
+        console2.log("service_manager");
+        console2.log(result.incredibleSquaringServiceManager);
+        console2.log("stake_registry");
+        console2.log(result.stakeRegistry);
+        console2.log("bls_apk_registry");
+        console2.log(result.blsapkRegistry);
+        console2.log("index_registry");
+        console2.log(result.indexRegistry);
+        console2.log("avs_directory");
+        console2.log(core.avsDirectory);
+        console2.log("pauser_registry");
+        console2.log(coredata.pauserRegistry);
 
-        address registryCoordinatorImpl = address(
+        address slashingRegistryCoordinatorImpl = address(
             new SlashingRegistryCoordinator(
                 IStakeRegistry(result.stakeRegistry),
                 IBLSApkRegistry(result.blsapkRegistry),
                 IIndexRegistry(result.indexRegistry),
                 ISocketRegistry(result.socketRegistry),
-                IAllocationManager(coredata.allocationManager),
+                IAllocationManager(core.allocationManager),
                 IPauserRegistry(coredata.pauserRegistry)
             )
         );
@@ -152,8 +172,8 @@ library IncredibleSquaringDeploymentLib {
         uint256 numStrategies = deployedStrategyArray.length;
 
         uint256 numQuorums = isConfig.numQuorums;
-        IRegistryCoordinator.OperatorSetParam[] memory quorumsOperatorSetParams =
-            new IRegistryCoordinator.OperatorSetParam[](numQuorums);
+        ISlashingRegistryCoordinatorTypes.OperatorSetParam[] memory quorumsOperatorSetParams =
+            new ISlashingRegistryCoordinatorTypes.OperatorSetParam[](numQuorums);
         uint256[] memory operator_params = isConfig.operatorParams;
 
         for (uint256 i = 0; i < numQuorums; i++) {
@@ -164,7 +184,6 @@ library IncredibleSquaringDeploymentLib {
             });
         }
         // // set to 0 for every quorum
-        uint96[] memory quorumsMinimumStake = new uint96[](numQuorums);
         IStakeRegistryTypes.StrategyParams[][] memory quorumsStrategyParams =
             new IStakeRegistryTypes.StrategyParams[][](numQuorums);
         for (uint256 i = 0; i < numQuorums; i++) {
@@ -194,23 +213,23 @@ library IncredibleSquaringDeploymentLib {
         UpgradeableProxyLib.upgrade(result.blsapkRegistry, blsApkRegistryImpl);
         UpgradeableProxyLib.upgrade(result.indexRegistry, indexRegistryimpl);
         UpgradeableProxyLib.upgradeAndCall(
-            result.registryCoordinator, registryCoordinatorImpl, upgradeCall
+            result.slashingRegistryCoordinator, slashingRegistryCoordinatorImpl, upgradeCall
         );
-        console2.log("rewarr");
-        console2.log(coredata.rewardsCoordinator);
-        console2.log(coredata.permissionController);
-        require(coredata.permissionController != address(0));
+        console2.log("allocation_manager");
+        console2.log(core.allocationManager);
         IncredibleSquaringServiceManager incredibleSquaringServiceManagerImpl = new IncredibleSquaringServiceManager(
-            (IAVSDirectory(coredata.avsDirectory)),
-            IRegistryCoordinator(result.registryCoordinator),
+            (IAVSDirectory(avsdirectory)),
+            ISlashingRegistryCoordinator(result.slashingRegistryCoordinator),
             IStakeRegistry(result.stakeRegistry),
-            coredata.rewardsCoordinator,
-            IAllocationManager(coredata.allocationManager),
-            IPermissionController(coredata.permissionController),
+            core.rewardsCoordinator,
+            IAllocationManager(core.allocationManager),
+            IPermissionController(core.permissionController),
             IIncredibleSquaringTaskManager(result.incredibleSquaringTaskManager)
         );
+        console2.log("allocation_manager");
+        console2.log(core.allocationManager);
         IncredibleSquaringTaskManager incredibleSquaringTaskManagerImpl = new IncredibleSquaringTaskManager(
-            IRegistryCoordinator(result.registryCoordinator),
+            ISlashingRegistryCoordinator(result.slashingRegistryCoordinator),
             IPauserRegistry(address(pausercontract)),
             30,
             result.incredibleSquaringServiceManager
@@ -229,7 +248,7 @@ library IncredibleSquaringDeploymentLib {
                 admin,
                 isConfig.aggregator_addr,
                 isConfig.task_generator_addr,
-                coredata.allocationManager,
+                core.allocationManager,
                 result.slasher
             )
         );
@@ -241,8 +260,9 @@ library IncredibleSquaringDeploymentLib {
 
         UpgradeableProxyLib.upgrade(result.slasher, instantSlasherImpl);
 
-        address socketRegistryImpl =
-            address(new SocketRegistry(ISlashingRegistryCoordinator(result.registryCoordinator)));
+        address socketRegistryImpl = address(
+            new SocketRegistry(ISlashingRegistryCoordinator(result.slashingRegistryCoordinator))
+        );
         UpgradeableProxyLib.upgrade(result.socketRegistry, socketRegistryImpl);
 
         verify_deployment(result);
@@ -267,8 +287,14 @@ library IncredibleSquaringDeploymentLib {
         data.numQuorums = json.readUint(".num_quorums");
         data.operatorParams = json.readUintArray(".operator_params");
         data.aggregator_addr = json.readAddress(".aggregator_addr");
+        data.contracts_registry_addr = json.readAddress(".contracts_registry_addr");
         data.operator_addr = json.readAddress(".operator_addr");
         data.task_generator_addr = json.readAddress(".task_generator_addr");
+        data.operator_2_addr = json.readAddress(".operator_2_addr");
+        data.rewardsInitiator = json.readAddress(".rewards_initiator_addr");
+        data.rewardsOwner = json.readAddress(".rewards_owner_addr");
+        data.rewardsInitiatorKey = json.readUint(".rewards_initiator_key");
+        data.rewardsOwnerKey = json.readUint(".rewards_owner_key");
         return data;
     }
 
@@ -287,7 +313,7 @@ library IncredibleSquaringDeploymentLib {
             json.readAddress(".addresses.incredibleSquaringServiceManager");
         data.incredibleSquaringTaskManager =
             json.readAddress(".addresses.incredibleSquaringTaskManager");
-        data.registryCoordinator = json.readAddress(".addresses.registryCoordinator");
+        data.slashingRegistryCoordinator = json.readAddress(".addresses.registryCoordinator");
         data.operatorStateRetriever = json.readAddress(".addresses.operatorStateRetriever");
         data.stakeRegistry = json.readAddress(".addresses.stakeRegistry");
         data.strategy = json.readAddress(".addresses.strategy");
@@ -352,7 +378,7 @@ library IncredibleSquaringDeploymentLib {
             '","incredibleSquaringTaskManager":"',
             data.incredibleSquaringTaskManager.toHexString(),
             '","registryCoordinator":"',
-            data.registryCoordinator.toHexString(),
+            data.slashingRegistryCoordinator.toHexString(),
             '","blsapkRegistry":"',
             data.blsapkRegistry.toHexString(),
             '","indexRegistry":"',
@@ -397,9 +423,6 @@ library IncredibleSquaringDeploymentLib {
         data.delegationManager = json.readAddress(".addresses.delegation");
         data.avsDirectory = json.readAddress(".addresses.avsDirectory");
         data.pauserRegistry = json.readAddress(".addresses.pauserRegistry");
-        data.rewardsCoordinator = json.readAddress(".addresses.rewardsCoordinator");
-        data.permissionController = json.readAddress(".addresses.permissionController");
-        data.allocationManager = json.readAddress(".addresses.allocationManager");
 
         return data;
     }
@@ -408,10 +431,10 @@ library IncredibleSquaringDeploymentLib {
         DeploymentData memory result
     ) internal view {
         IBLSApkRegistry blsapkregistry =
-            IRegistryCoordinator(result.registryCoordinator).blsApkRegistry();
+            ISlashingRegistryCoordinator(result.slashingRegistryCoordinator).blsApkRegistry();
         require(address(blsapkregistry) != address(0));
         IStakeRegistry stakeregistry =
-            IRegistryCoordinator(result.registryCoordinator).stakeRegistry();
+            ISlashingRegistryCoordinator(result.slashingRegistryCoordinator).stakeRegistry();
         require(address(stakeregistry) != address(0));
         IDelegationManager delegationmanager = IStakeRegistry(address(stakeregistry)).delegation();
         require(address(delegationmanager) != address(0));

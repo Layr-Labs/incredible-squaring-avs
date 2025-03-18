@@ -27,7 +27,7 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
         _pausers[0] = pauser;
         address pauserRegistry = address(new PauserRegistry(_pausers, unpauser));
         tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)),
+            incsqsm.ISlashingRegistryCoordinator(address(registryCoordinator)),
             IPauserRegistry(pauserRegistry),
             TASK_RESPONSE_WINDOW_BLOCK,
             address(serviceManager)
