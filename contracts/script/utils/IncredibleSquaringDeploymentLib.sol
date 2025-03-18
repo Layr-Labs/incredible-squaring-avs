@@ -310,9 +310,9 @@ library IncredibleSquaringDeploymentLib {
 
         DeploymentData memory data;
         data.incredibleSquaringServiceManager =
-            json.readAddress(".addresses.IncredibleSquaringServiceManager");
+            json.readAddress(".addresses.incredibleSquaringServiceManager");
         data.incredibleSquaringTaskManager =
-            json.readAddress(".addresses.IncredibleSquaringTaskManager");
+            json.readAddress(".addresses.incredibleSquaringTaskManager");
         data.slashingRegistryCoordinator = json.readAddress(".addresses.registryCoordinator");
         data.operatorStateRetriever = json.readAddress(".addresses.operatorStateRetriever");
         data.stakeRegistry = json.readAddress(".addresses.stakeRegistry");
@@ -371,11 +371,11 @@ library IncredibleSquaringDeploymentLib {
         return string.concat(
             '{"proxyAdmin":"',
             proxyAdmin.toHexString(),
-            '","IncredibleSquaringServiceManager":"',
+            '","incredibleSquaringServiceManager":"',
             data.incredibleSquaringServiceManager.toHexString(),
             '","incredibleSquaringServiceManagerImpl":"',
             data.incredibleSquaringServiceManager.getImplementation().toHexString(),
-            '","IncredibleSquaringTaskManager":"',
+            '","incredibleSquaringTaskManager":"',
             data.incredibleSquaringTaskManager.toHexString(),
             '","registryCoordinator":"',
             data.slashingRegistryCoordinator.toHexString(),
