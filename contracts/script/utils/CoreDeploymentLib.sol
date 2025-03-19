@@ -42,7 +42,7 @@ library CoreDeploymentLib {
     using UpgradeableProxyLib for address;
 
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
-    string internal constant MIDDLEWARE_VERSION = "v1.4.0-testnet-holesky";
+    string internal constant EIGENLAYER_VERSION = "v1.4.0-testnet-holesky";
 
     struct StrategyManagerConfig {
         uint256 initPausedStatus;
@@ -122,16 +122,16 @@ library CoreDeploymentLib {
                 IPermissionController(result.permissionController),
                 // IAVSDirectory(result.avsDirectory),
                 uint32(0), // TODO: check minWithdrawalDelay
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
-        address permissionControllerImpl = address(new PermissionController(MIDDLEWARE_VERSION));
+        address permissionControllerImpl = address(new PermissionController(EIGENLAYER_VERSION));
 
         address avsDirectoryImpl = address(
             new AVSDirectory(
                 IDelegationManager(result.delegationManager),
                 IPauserRegistry(result.pauserRegistry), // _DEALLOCATION_DELAY: 17.5 days in seconds),
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
 
@@ -139,7 +139,7 @@ library CoreDeploymentLib {
             new StrategyManager(
                 IDelegationManager(result.delegationManager),
                 IPauserRegistry(result.pauserRegistry),
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
 
@@ -147,7 +147,7 @@ library CoreDeploymentLib {
             new StrategyFactory(
                 IStrategyManager(result.strategyManager),
                 IPauserRegistry(result.pauserRegistry),
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
 
@@ -159,7 +159,7 @@ library CoreDeploymentLib {
                 // IAVSDirectory(result.avsDirectory),
                 uint32(0), // _DEALLOCATION_DELAY
                 uint32(0), // _ALLOCATION_CONFIGURATION_DELAY
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
 
@@ -178,7 +178,7 @@ library CoreDeploymentLib {
                 IBeacon(result.eigenPodBeacon),
                 IDelegationManager(result.delegationManager),
                 IPauserRegistry(result.pauserRegistry),
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
 
@@ -201,7 +201,7 @@ library CoreDeploymentLib {
                     MAX_RETROACTIVE_LENGTH: MAX_RETROACTIVE_LENGTH,
                     MAX_FUTURE_LENGTH: MAX_FUTURE_LENGTH,
                     GENESIS_REWARDS_TIMESTAMP: GENESIS_REWARDS_TIMESTAMP,
-                    version: MIDDLEWARE_VERSION
+                    version: EIGENLAYER_VERSION
                 })
             )
         );
@@ -213,14 +213,14 @@ library CoreDeploymentLib {
                 IETHPOSDeposit(ethPOSDeposit),
                 IEigenPodManager(result.eigenPodManager),
                 GENESIS_TIME,
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
         address baseStrategyImpl = address(
             new StrategyBase(
                 IStrategyManager(result.strategyManager),
                 IPauserRegistry(result.pauserRegistry),
-                MIDDLEWARE_VERSION
+                EIGENLAYER_VERSION
             )
         );
         /// TODO: PauserRegistry isn't upgradeable
