@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 import {Vm} from "forge-std/Vm.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy} from
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from
     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {EmptyContract} from "@eigenlayer/test/mocks/EmptyContract.sol";
 
@@ -28,12 +28,12 @@ library UpgradeableProxyLib {
 
     function upgrade(address proxy, address impl) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
-        admin.upgrade(TransparentUpgradeableProxy(payable(proxy)), impl);
+        admin.upgrade(ITransparentUpgradeableProxy(payable(proxy)), impl);
     }
 
     function upgradeAndCall(address proxy, address impl, bytes memory initData) internal {
         ProxyAdmin admin = getProxyAdmin(proxy);
-        admin.upgradeAndCall(TransparentUpgradeableProxy(payable(proxy)), impl, initData);
+        admin.upgradeAndCall(ITransparentUpgradeableProxy(payable(proxy)), impl, initData);
     }
 
     function getImplementation(
