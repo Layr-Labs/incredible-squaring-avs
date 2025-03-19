@@ -137,13 +137,17 @@ library CoreDeploymentLib {
 
         address strategyManagerImpl = address(
             new StrategyManager(
-                IDelegationManager(result.delegationManager), IPauserRegistry(result.pauserRegistry), MIDDLEWARE_VERSION
+                IDelegationManager(result.delegationManager),
+                IPauserRegistry(result.pauserRegistry),
+                MIDDLEWARE_VERSION
             )
         );
 
         address strategyFactoryImpl = address(
             new StrategyFactory(
-                IStrategyManager(result.strategyManager), IPauserRegistry(result.pauserRegistry), MIDDLEWARE_VERSION
+                IStrategyManager(result.strategyManager),
+                IPauserRegistry(result.pauserRegistry),
+                MIDDLEWARE_VERSION
             )
         );
 
@@ -186,7 +190,7 @@ library CoreDeploymentLib {
         uint32 GENESIS_REWARDS_TIMESTAMP = 10 days;
         address rewardsCoordinatorImpl = address(
             new RewardsCoordinator(
-                IRewardsCoordinatorTypes.RewardsCoordinatorConstructorParams ({
+                IRewardsCoordinatorTypes.RewardsCoordinatorConstructorParams({
                     delegationManager: IDelegationManager(result.delegationManager),
                     strategyManager: IStrategyManager(result.strategyManager),
                     allocationManager: IAllocationManager(result.allocationManager),
@@ -214,7 +218,9 @@ library CoreDeploymentLib {
         );
         address baseStrategyImpl = address(
             new StrategyBase(
-                IStrategyManager(result.strategyManager), IPauserRegistry(result.pauserRegistry), MIDDLEWARE_VERSION
+                IStrategyManager(result.strategyManager),
+                IPauserRegistry(result.pauserRegistry),
+                MIDDLEWARE_VERSION
             )
         );
         /// TODO: PauserRegistry isn't upgradeable

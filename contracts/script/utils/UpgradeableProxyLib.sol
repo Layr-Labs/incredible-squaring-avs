@@ -3,8 +3,10 @@ pragma solidity ^0.8.12;
 
 import {Vm} from "forge-std/Vm.sol";
 import {ProxyAdmin} from "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from
-    "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {
+    TransparentUpgradeableProxy,
+    ITransparentUpgradeableProxy
+} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import {EmptyContract} from "@eigenlayer/test/mocks/EmptyContract.sol";
 
 library UpgradeableProxyLib {
