@@ -57,6 +57,7 @@ library IncredibleSquaringDeploymentLib {
     using UpgradeableProxyLib for address;
 
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+    string internal constant MIDDLEWARE_VERSION = "v1.4.0-testnet-holesky";
 
     struct DeploymentData {
         address incredibleSquaringServiceManager;
@@ -158,7 +159,8 @@ library IncredibleSquaringDeploymentLib {
                 IIndexRegistry(result.indexRegistry),
                 ISocketRegistry(result.socketRegistry),
                 IAllocationManager(core.allocationManager),
-                IPauserRegistry(coredata.pauserRegistry)
+                IPauserRegistry(coredata.pauserRegistry),
+                MIDDLEWARE_VERSION
             )
         );
 
