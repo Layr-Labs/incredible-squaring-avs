@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Supposing anvil is already running
+# Execute anvil in background
 anvil -q &
 
-# Build and deploy contracts
-# make build-contracts
+# Deploy contracts
 make deploy-all
 
 # Check that at first, claimer balance in token is zero
@@ -51,4 +50,5 @@ if [ "$balanceAfterClaim" -ne 200 ]; then
     exit 3
 fi
 
+# Kill anvil executing in background
 kill $(pgrep anvil)
