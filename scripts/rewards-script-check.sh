@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Supposing anvil is already running
+anvil &
 
 # Build and deploy contracts
 # make build-contracts
