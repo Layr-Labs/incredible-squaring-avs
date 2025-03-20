@@ -12,6 +12,7 @@ type NodeConfig struct {
 	PermissionControllerAddress      string `yaml:"permission_controller_address"`
 	AllocationManagerAddress         string `yaml:"allocation_manager_address"`
 	TokenStrategyAddr                string `yaml:"token_strategy_addr"`
+	TokenAddr                        string `yaml:"token_addr"`
 	EthRpcUrl                        string `yaml:"eth_rpc_url"`
 	EthWsUrl                         string `yaml:"eth_ws_url"`
 	BlsPrivateKeyStorePath           string `yaml:"bls_private_key_store_path"`
