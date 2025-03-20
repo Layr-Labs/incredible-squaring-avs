@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This flags makes the script exit if any command has a non-zero exit status, or 
+# if tries to use a non defined variable
 set -e -o nounset
 
 # Execute anvil in background
