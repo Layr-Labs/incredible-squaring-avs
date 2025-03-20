@@ -22,5 +22,8 @@ jobs:
         run: forge install
         working-directory: ./contracts
 
+      - name: Copy .env.example to .env
+        run: cp contracts/.env.example contracts/.env
+
       - name: Test
         run: ./scripts/rewards-script-check.sh
