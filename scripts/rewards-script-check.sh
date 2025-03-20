@@ -46,7 +46,7 @@ balanceAfterClaim=$(make claimer-account-token-balance | tail -n1 | tr -d '[:spa
 echo "Balance after second claim: '$balanceAfterClaim'"
 
 if [ "$balanceAfterClaim" -ne 200 ]; then
-    echo "After first claim, claimer balance in token should be 200"
+    echo "After second claim, claimer balance in token should be 200"
     exit 3
 fi
 
