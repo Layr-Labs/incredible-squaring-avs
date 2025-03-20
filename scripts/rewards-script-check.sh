@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e -o nounset
+
 # Execute anvil in background
 anvil -q &
 
