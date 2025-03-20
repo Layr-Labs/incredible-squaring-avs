@@ -10,8 +10,10 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	commoneth "github.com/ethereum/go-ethereum/common"
 	typeseth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -153,7 +155,16 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
 	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
-
+	ethRpcClient, _ := ethclient.Dial("http://localhost:8545")
+	// al ,_:=
+	// allocationmanager.NewContractAllocationManager(commoneth.HexToAddress("0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6"),ethRpcClient)
+	taskmanager, _ := cstaskmanager.NewContractIncredibleSquaringTaskManager(
+		commoneth.HexToAddress("0x2bdcc0de6be1f7d2ee689a0342d76f52e8efaba3"),
+		ethRpcClient,
+	)
+	ser, _ := taskmanager.ServiceManager(&bind.CallOpts{})
+	c.logger.Info("service_manager")
+	c.logger.Info(ser.String())
 	// checking if the answer in the response submitted by aggregator is correct
 	if trueAnswer.Cmp(answerInResponse) != 0 {
 		c.logger.Info("The number squared is not correct", "expectedAnswer", trueAnswer, "gotAnswer", answerInResponse)

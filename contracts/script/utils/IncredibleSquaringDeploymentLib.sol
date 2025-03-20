@@ -233,8 +233,7 @@ library IncredibleSquaringDeploymentLib {
         IncredibleSquaringTaskManager incredibleSquaringTaskManagerImpl = new IncredibleSquaringTaskManager(
             ISlashingRegistryCoordinator(result.slashingRegistryCoordinator),
             IPauserRegistry(address(pausercontract)),
-            30,
-            result.incredibleSquaringServiceManager
+            30
         );
         bytes memory servicemanagerupgradecall =
             abi.encodeCall(IncredibleSquaringServiceManager.initialize, (admin, admin));
@@ -251,7 +250,8 @@ library IncredibleSquaringDeploymentLib {
                 isConfig.aggregator_addr,
                 isConfig.task_generator_addr,
                 core.allocationManager,
-                result.slasher
+                result.slasher,
+                result.incredibleSquaringServiceManager
             )
         );
         UpgradeableProxyLib.upgradeAndCall(

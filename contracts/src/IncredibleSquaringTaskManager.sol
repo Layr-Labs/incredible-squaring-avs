@@ -73,11 +73,9 @@ contract IncredibleSquaringTaskManager is
     constructor(
         ISlashingRegistryCoordinator _registryCoordinator,
         IPauserRegistry _pauserRegistry,
-        uint32 _taskResponseWindowBlock,
-        address _serviceManager
+        uint32 _taskResponseWindowBlock
     ) BLSSignatureChecker(_registryCoordinator) Pausable(_pauserRegistry) {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
-        serviceManager = _serviceManager;
     }
 
     function initialize(
@@ -85,13 +83,15 @@ contract IncredibleSquaringTaskManager is
         address _aggregator,
         address _generator,
         address _allocationManager,
-        address _slasher
+        address _slasher,
+        address _serviceManager
     ) public initializer {
         _transferOwnership(initialOwner);
         aggregator = _aggregator;
         generator = _generator;
         allocationManager = _allocationManager;
         instantSlasher = _slasher;
+        serviceManager = _serviceManager;
     }
 
     /* FUNCTIONS */
