@@ -1,0 +1,29 @@
+name: rewards-scripts-check
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:  
+  Test:
+    name: Rewards Scripts Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install forge dependencies
+        run: forge install
+        working-directory: ./contracts
+
+      - name: Copy .env.example to .env
+        run: cp contracts/.env.example contracts/.env
+
+      - name: Test
+        run: ./scripts/rewards-script-check.sh
