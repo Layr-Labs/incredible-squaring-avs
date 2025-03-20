@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Supposing anvil is already running
-anvil &
+anvil -q &
 
 # Build and deploy contracts
 # make build-contracts
@@ -50,3 +50,5 @@ if [ "$balanceAfterClaim" -ne 200 ]; then
     echo "After first claim, claimer balance in token should be 200"
     exit 3
 fi
+
+kill $(pgrep anvil)
