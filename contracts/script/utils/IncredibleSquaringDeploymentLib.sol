@@ -24,7 +24,6 @@ import {
 } from "../../src/IncredibleSquaringServiceManager.sol";
 import {IncredibleSquaringTaskManager} from "../../src/IncredibleSquaringTaskManager.sol";
 import {IDelegationManager} from "@eigenlayer/contracts/interfaces/IDelegationManager.sol";
-// import {Quorum} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistryEventsAndErrors.sol";
 import {UpgradeableProxyLib} from "./UpgradeableProxyLib.sol";
 import {CoreDeploymentLib} from "./CoreDeploymentLib.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
@@ -93,7 +92,7 @@ library IncredibleSquaringDeploymentLib {
         CoreDeploymentLib.DeploymentData memory core,
         address strategy,
         IncredibleSquaringSetupConfig memory isConfig,
-        address admin
+        address admin // rewardsInitiator
     ) internal returns (DeploymentData memory) {
         /// read EL deployment address
         CoreDeploymentLib.DeploymentData memory coredata =
@@ -236,8 +235,10 @@ library IncredibleSquaringDeploymentLib {
             30,
             result.incredibleSquaringServiceManager
         );
+        // Nineth anvil address
+        address addr = 0xa0Ee7A142d267C1f36714E4a8F75612F20a79720;
         bytes memory servicemanagerupgradecall =
-            abi.encodeCall(IncredibleSquaringServiceManager.initialize, (admin, admin));
+            abi.encodeCall(IncredibleSquaringServiceManager.initialize, (admin, addr));
         UpgradeableProxyLib.upgradeAndCall(
             result.incredibleSquaringServiceManager,
             address(incredibleSquaringServiceManagerImpl),
