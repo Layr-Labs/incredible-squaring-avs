@@ -283,6 +283,28 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		)
 	}
 
+	operator.setAllocationDelay(
+		operatorEcdsaPrivateKey,
+		common.HexToAddress(c.AllocationManagerAddress),
+		c.EthRpcUrl,
+		txMgr,
+		0,
+	)
+	strategies := make([]common.Address, 1)
+	strategies[0] = common.HexToAddress(c.TokenStrategyAddr)
+	newMagnitudes := make([]uint64, 1)
+	newMagnitudes[0] = 100000000
+	operator.modifyAllocations(
+		operatorEcdsaPrivateKey,
+		common.HexToAddress(c.AllocationManagerAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		strategies,
+		newMagnitudes,
+		c.EthRpcUrl,
+		txMgr,
+		0,
+	)
+
 	// OperatorId is set in contract during registration so we get it after registering operator.
 	operatorId, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.operatorAddr)
 	if err != nil {

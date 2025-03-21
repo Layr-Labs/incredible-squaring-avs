@@ -78,6 +78,25 @@ services:
       OPERATOR_ECDSA_KEY_PASSWORD: ""
       OPERATOR_BLS_KEY_PASSWORD: ""
     cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
+    
+  - name: operator1
+    image: "ko.local/operator/cmd/main.go:latest"
+    build_cmd: KO_DOCKER_REPO=ko.local ko build operator/cmd/main.go --preserve-import-paths --local
+    ports:
+      node:
+        number: 8080
+        transport_protocol: "TCP"
+        application_protocol: "http"
+        wait: "3m"
+    input:
+      /usr/src/app/config-files/:
+        - operator1-config
+      /usr/src/app/keys/:
+        - keys-config
+    env:
+      OPERATOR_ECDSA_KEY_PASSWORD: ""
+      OPERATOR_BLS_KEY_PASSWORD: ""
+    cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
 
   - name: aggregator
     image: "ko.local/aggregator/cmd/main.go:latest"
