@@ -15,6 +15,7 @@ permission_controller_address: 0x59b670e9fa9d0a427751af201d676719a970857b
 service_manager_address: 0x5f3f1dbd7b74c6b46e8c44f98792a1daf8d69154
 allocation_manager_address: 0x2279b7a0a67db372996a5fab50d91eaa73d2ebe6
 instant_slasher_address: 0x922d6956c99e12dfeb3224dea977d0939758a1fe
+delegation_manager_address: 0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
 eth_ws_url: ws://localhost:8545
