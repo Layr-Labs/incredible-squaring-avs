@@ -91,6 +91,8 @@ services:
       /usr/src/app/config-files/:
         - aggregator-config
         - avs_addresses
+        - eigenlayer_addresses
+
     cmd:
       - "--config"
       - "/usr/src/app/config-files/aggregator-config.yaml"
@@ -98,6 +100,8 @@ services:
       # NOTE: aggregator key-pair is hardcoded in the deployment scripts
       - "{{.keys.aggregator_key.private_key}}"
       - "--credible-squaring-deployment"
+      - "/usr/src/app/config-files/3151908.json"
+      - "--core-deployment"
       - "/usr/src/app/config-files/3151908.json"
 
 keys:

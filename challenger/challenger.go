@@ -10,9 +10,12 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	commoneth "github.com/ethereum/go-ethereum/common"
 	typeseth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 
+	delegationmanager "github.com/Layr-Labs/eigensdk-go/contracts/bindings/DelegationManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
@@ -32,6 +35,8 @@ type Challenger struct {
 	taskResponses      map[uint32]types.TaskResponseData
 	taskResponseChan   chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded
 	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+	httpUrl            string
+	delegationManager  commoneth.Address
 }
 
 func NewChallenger(c *config.Config) (*Challenger, error) {
@@ -62,6 +67,8 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 		taskResponses:      make(map[uint32]types.TaskResponseData),
 		taskResponseChan:   make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded),
 		newTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
+		httpUrl:            c.EthHttpRpcUrl,
+		delegationManager:  c.DelegationManagerAddr,
 	}
 
 	return challenger, nil
@@ -153,14 +160,26 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
 	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
-
+	ethRpcClient, _ := ethclient.Dial(c.httpUrl)
+	delegationManagerContract, _ := delegationmanager.NewContractDelegationManager(c.delegationManager, ethRpcClient)
+	operatorSharesBeforeSlashing, _ := delegationManagerContract.OperatorShares(
+		&bind.CallOpts{},
+		commoneth.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+		commoneth.HexToAddress("0x2b961e3959b79326a8e7f64ef0d2d825707669b5"),
+	)
+	c.logger.Info("operator shares before slashing", "operatorShares", operatorSharesBeforeSlashing.String())
 	// checking if the answer in the response submitted by aggregator is correct
 	if trueAnswer.Cmp(answerInResponse) != 0 {
 		c.logger.Info("The number squared is not correct", "expectedAnswer", trueAnswer, "gotAnswer", answerInResponse)
 
 		// raise challenge
 		c.raiseChallenge(taskIndex)
-
+		operatorSharesAfter, _ := delegationManagerContract.OperatorShares(
+			&bind.CallOpts{},
+			commoneth.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
+			commoneth.HexToAddress("0x2b961e3959b79326a8e7f64ef0d2d825707669b5"),
+		)
+		c.logger.Info("operator shares after slashing", "operatorShares", operatorSharesAfter.String())
 		return nil
 	} else {
 		c.logger.Info("The number squared is correct")

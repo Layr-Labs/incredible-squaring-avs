@@ -44,7 +44,10 @@ func (o *Operator) registerOperatorOnStartup(
 	}
 
 	// TODO(samlaf): shouldn't hardcode number here
-	amount := big.NewInt(1000)
+	// Use SetString for large numbers
+	amount := new(big.Int)
+	amount.SetString("1000000000000000000000", 10) // Base 10
+
 	err = o.DepositIntoStrategy(mockTokenStrategyAddr, amount)
 	if err != nil {
 		o.logger.Fatal("Error depositing into strategy", "err", err)

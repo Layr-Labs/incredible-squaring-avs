@@ -41,9 +41,10 @@ type Config struct {
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement
 	// marshalJson
-	SignerFn          signerv2.SignerFn `json:"-"`
-	TxMgr             txmgr.TxManager
-	AggregatorAddress common.Address
+	SignerFn              signerv2.SignerFn `json:"-"`
+	TxMgr                 txmgr.TxManager
+	AggregatorAddress     common.Address
+	DelegationManagerAddr common.Address
 }
 
 // These are read from ConfigFileFlag
@@ -53,6 +54,7 @@ type ConfigRaw struct {
 	EthWsUrl                   string              `yaml:"eth_ws_url"`
 	AggregatorServerIpPortAddr string              `yaml:"aggregator_server_ip_port_address"`
 	RegisterOperatorOnStartup  bool                `yaml:"register_operator_on_startup"`
+	delegationManagerAddr      string              `yaml:"delegation_manager_address"`
 }
 
 // These are read from CredibleSquaringDeploymentFileFlag
@@ -63,6 +65,14 @@ type IncredibleSquaringContractsRaw struct {
 	RegistryCoordinatorAddr          string `json:"registryCoordinator"`
 	OperatorStateRetrieverAddr       string `json:"operatorStateRetriever"`
 	IncredibleSquaringServiceManager string `json:"IncredibleSquaringServiceManager"`
+}
+
+type EigenLayerDeploymentRaw struct {
+	Addresses EigenLayerContractsRaw `json:"addresses"`
+}
+
+type EigenLayerContractsRaw struct {
+	DelegationManagerAddr string `json:"delegation"`
 }
 
 // NewConfig parses config file to read from from flags or environment variables
@@ -78,12 +88,18 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 
 	var credibleSquaringDeploymentRaw IncredibleSquaringDeploymentRaw
 	credibleSquaringDeploymentFilePath := ctx.GlobalString(CredibleSquaringDeploymentFileFlag.Name)
+	var coreDeploymentRaw EigenLayerDeploymentRaw
+	coreDeploymentFilePath := ctx.GlobalString(CoreDeploymentFileFlag.Name)
 	logger, err := sdklogging.NewZapLogger(configRaw.Environment)
 	logger.Info(credibleSquaringDeploymentFilePath)
 	if _, err := os.Stat(credibleSquaringDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
 		panic("Path " + credibleSquaringDeploymentFilePath + " does not exist")
 	}
+	if _, err := os.Stat(coreDeploymentFilePath); errors.Is(err, os.ErrNotExist) {
+		panic("Path " + coreDeploymentFilePath + " does not exist")
+	}
 	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
+	commonincredible.ReadJsonConfig(coreDeploymentFilePath, &coreDeploymentRaw)
 
 	if err != nil {
 		return nil, err
@@ -154,6 +170,9 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		SignerFn:          signerV2,
 		TxMgr:             txMgr,
 		AggregatorAddress: aggregatorAddr,
+		DelegationManagerAddr: common.HexToAddress(
+			coreDeploymentRaw.Addresses.DelegationManagerAddr,
+		),
 	}
 	config.validate()
 	return config, nil
@@ -187,6 +206,11 @@ var (
 		Required: true,
 		EnvVar:   "ECDSA_PRIVATE_KEY",
 	}
+	CoreDeploymentFileFlag = cli.StringFlag{
+		Name:     "core-deployment",
+		Required: true,
+		Usage:    "Load core contract addresses from `FILE`",
+	}
 	/* Optional Flags */
 )
 
@@ -194,6 +218,7 @@ var requiredFlags = []cli.Flag{
 	ConfigFileFlag,
 	CredibleSquaringDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
+	CoreDeploymentFileFlag,
 }
 
 var optionalFlags = []cli.Flag{}
