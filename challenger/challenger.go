@@ -161,7 +161,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 	ethRpcClient, _ := ethclient.Dial(c.httpUrl)
-	delegationManagerContract, _ := delegationmanager.NewContractDelegationManager(c.delegationManager, ethRpcClient)
+	delegationManagerContract, _ := delegationmanager.NewContractDelegationManager(c.delegationManager, c.ethClient)
 	operatorSharesBeforeSlashing, _ := delegationManagerContract.OperatorShares(
 		&bind.CallOpts{},
 		commoneth.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),

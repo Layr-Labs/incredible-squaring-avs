@@ -41,7 +41,6 @@ contract SetAllocationDelay is Script {
         vm.startBroadcast(deployer);
 
         IAllocationManager _allocationManager = IAllocationManager(coreData.allocationManager);
-        // Call the function with the correct types
         _allocationManager.setAllocationDelay(deployer, 0);
         vm.stopBroadcast();
     }

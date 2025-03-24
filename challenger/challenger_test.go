@@ -2,6 +2,7 @@ package challenger
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
@@ -284,11 +285,17 @@ func TestProcessTaskResponseLog(t *testing.T) {
 func createMockChallenger(
 	mockCtrl *gomock.Controller,
 ) (*Challenger, *chainiomocks.MockAvsWriterer, *chainiomocks.MockAvsReaderer, *chainiomocks.MockAvsSubscriberer, *MockEthClient, error) {
+
 	logger := testutils.GetTestLogger()
 	mockAvsWriter := chainiomocks.NewMockAvsWriterer(mockCtrl)
 	mockAvsReader := chainiomocks.NewMockAvsReaderer(mockCtrl)
 	mockAvsSubscriber := chainiomocks.NewMockAvsSubscriberer(mockCtrl)
 	mockEthClient := NewMockEthClient(mockCtrl)
+
+	// ✅ Ensure `mockEthClient` is not nil before using it
+	if mockEthClient == nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("mockEthClient is nil")
+	}
 
 	challenger := &Challenger{
 		logger:             logger,

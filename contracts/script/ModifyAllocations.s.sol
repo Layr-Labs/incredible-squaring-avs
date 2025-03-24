@@ -43,13 +43,11 @@ contract ModifyAllocations is Script {
             IServiceManager(deploymentData.incredibleSquaringServiceManager);
         IAllocationManager _allocationManager = IAllocationManager(coreData.allocationManager);
 
-        // Correct type definitions
         OperatorSet memory operatorSet = OperatorSet({avs: address(serviceManager), id: 0});
 
         IStrategy[] memory istrategy = new IStrategy[](1);
         istrategy[0] = IStrategy(deploymentData.strategy);
 
-        // Use a dynamic array for uint64 values
         uint64[] memory newMagnitude = new uint64[](1);
         newMagnitude[0] = 100_000_000;
 
@@ -66,33 +64,6 @@ contract ModifyAllocations is Script {
         allocateParamsArray[0] = allocateParams;
 
         _allocationManager.modifyAllocations(deployer, allocateParamsArray);
-
-        // _allocationManager.modifyAllocations(deployer, allocateParams);
-        // _allocationManager.setAVSRegistrar(
-        //     deploymentData.incredibleSquaringServiceManager,
-        //     IAVSRegistrar(deploymentData.slashingRegistryCoordinator)
-        // );
-
-        // serviceManager.setAppointee(
-        //     deploymentData.slashingRegistryCoordinator,
-        //     coreData.allocationManager,
-        //     AllocationManager.createOperatorSets.selector
-        // );
-
-        // serviceManager.setAppointee(
-        //     deploymentData.slasher,
-        //     coreData.allocationManager,
-        //     AllocationManager.slashOperator.selector
-        // );
-
-        // // This should be in another contract
-        // serviceManager.setAppointee(
-        //     deployer, coreData.allocationManager, AllocationManager.updateAVSMetadataURI.selector
-        // );
-
-        // _allocationManager.updateAVSMetadataURI(
-        //     deploymentData.incredibleSquaringServiceManager, "metadataURI"
-        // );
 
         vm.stopBroadcast();
     }
