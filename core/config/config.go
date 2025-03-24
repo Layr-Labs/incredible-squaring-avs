@@ -45,6 +45,7 @@ type Config struct {
 	TxMgr                 txmgr.TxManager
 	AggregatorAddress     common.Address
 	DelegationManagerAddr common.Address
+	TokenStrategyAddr     common.Address
 }
 
 // These are read from ConfigFileFlag
@@ -65,6 +66,7 @@ type IncredibleSquaringContractsRaw struct {
 	RegistryCoordinatorAddr          string `json:"registryCoordinator"`
 	OperatorStateRetrieverAddr       string `json:"operatorStateRetriever"`
 	IncredibleSquaringServiceManager string `json:"IncredibleSquaringServiceManager"`
+	TokenStrategyAddr                string `json:"strategy"`
 }
 
 type EigenLayerDeploymentRaw struct {
@@ -173,6 +175,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		DelegationManagerAddr: common.HexToAddress(
 			coreDeploymentRaw.Addresses.DelegationManagerAddr,
 		),
+		TokenStrategyAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.TokenStrategyAddr),
 	}
 	config.validate()
 	return config, nil

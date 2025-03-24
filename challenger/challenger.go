@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	commoneth "github.com/ethereum/go-ethereum/common"
 	typeseth "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	delegationmanager "github.com/Layr-Labs/eigensdk-go/contracts/bindings/DelegationManager"
@@ -37,10 +38,13 @@ type Challenger struct {
 	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 	httpUrl            string
 	delegationManager  commoneth.Address
+	operatorAddr       commoneth.Address
+	tokenStrategyAddr  commoneth.Address
 }
 
 func NewChallenger(c *config.Config) (*Challenger, error) {
 
+	operatorAddr := crypto.PubkeyToAddress(c.EcdsaPrivateKey.PublicKey)
 	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
 	if err != nil {
 		c.Logger.Error("Cannot create EthWriter", "err", err)
@@ -69,6 +73,8 @@ func NewChallenger(c *config.Config) (*Challenger, error) {
 		newTaskCreatedChan: make(chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated),
 		httpUrl:            c.EthHttpRpcUrl,
 		delegationManager:  c.DelegationManagerAddr,
+		operatorAddr:       operatorAddr,
+		tokenStrategyAddr:  c.TokenStrategyAddr,
 	}
 
 	return challenger, nil
@@ -161,11 +167,11 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 	ethRpcClient, _ := ethclient.Dial(c.httpUrl)
-	delegationManagerContract, _ := delegationmanager.NewContractDelegationManager(c.delegationManager, c.ethClient)
+	delegationManagerContract, _ := delegationmanager.NewContractDelegationManager(c.delegationManager, ethRpcClient)
 	operatorSharesBeforeSlashing, _ := delegationManagerContract.OperatorShares(
 		&bind.CallOpts{},
-		commoneth.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
-		commoneth.HexToAddress("0x2b961e3959b79326a8e7f64ef0d2d825707669b5"),
+		c.operatorAddr,
+		c.tokenStrategyAddr,
 	)
 	c.logger.Info("operator shares before slashing", "operatorShares", operatorSharesBeforeSlashing.String())
 	// checking if the answer in the response submitted by aggregator is correct
@@ -176,8 +182,8 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 		c.raiseChallenge(taskIndex)
 		operatorSharesAfter, _ := delegationManagerContract.OperatorShares(
 			&bind.CallOpts{},
-			commoneth.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
-			commoneth.HexToAddress("0x2b961e3959b79326a8e7f64ef0d2d825707669b5"),
+			c.operatorAddr,
+			c.tokenStrategyAddr,
 		)
 		c.logger.Info("operator shares after slashing", "operatorShares", operatorSharesAfter.String())
 		return nil
