@@ -258,9 +258,7 @@ contract IncredibleSquaringTaskManager is
                         break;
                     }
                 }
-                require(wasSigningOperator == true, "uuu");
                 if (wasSigningOperator == true) {
-                    require(operatorAddress == 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, "ttt");
                     OperatorSet memory operatorset =
                         OperatorSet({avs: serviceManager, id: uint8(task.quorumNumbers[i])});
                     IStrategy[] memory istrategy = IAllocationManager(allocationManager)
@@ -269,8 +267,6 @@ contract IncredibleSquaringTaskManager is
                     for (uint256 z = 0; z < wadsToSlash.length; z++) {
                         wadsToSlash[z] = WADS_TO_SLASH;
                     }
-                    require(serviceManager == 0x5f3f1dBD7B74C6B46e8c44f98792A1dAf8d69154, "ooo");
-                    require(instantSlasher == 0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f, "iii");
                     IAllocationManagerTypes.SlashingParams memory slashingparams =
                     IAllocationManagerTypes.SlashingParams({
                         operator: operatorAddress,
