@@ -56,4 +56,4 @@ minimum_stake: 0
 multiplier: 1
 
 # the probability percentage the operator will fail (0 means it won't fail)
-times_failing: 50
+times_failing: 25
