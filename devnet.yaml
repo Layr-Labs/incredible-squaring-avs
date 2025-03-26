@@ -91,6 +91,8 @@ services:
       /usr/src/app/config-files/:
         - aggregator-config
         - avs_addresses
+        - eigenlayer_addresses
+
     cmd:
       - "--config"
       - "/usr/src/app/config-files/aggregator-config.yaml"
@@ -98,6 +100,8 @@ services:
       # NOTE: aggregator key-pair is hardcoded in the deployment scripts
       - "{{.keys.aggregator_key.private_key}}"
       - "--credible-squaring-deployment"
+      - "/usr/src/app/config-files/3151908.json"
+      - "--core-deployment"
       - "/usr/src/app/config-files/3151908.json"
 
 keys:
@@ -152,7 +156,7 @@ artifacts:
           enable_node_api: True
           register_operator_on_startup: True
           token_strategy_addr: {{.addresses.incredible_squaring.erc20MockStrategy}}
-          times_failing: 100
+          times_failing: 25
           operator_set_id: 0
           max_operator_count: 3
           kick_bips_of_operator_stake: 100

@@ -19,7 +19,7 @@ CHAINID=31337
 # check in contracts/script/output/${CHAINID}/credible_squaring_avs_deployment_output.json
 STRATEGY_ADDRESS=0x7a2088a1bFc9d81c55368AE168C2C02570cB814F
 DEPLOYMENT_FILE=contracts/script/deployments/incredible-squaring/${CHAINID}.json
-
+CORE_DEPLOYMENT_FILE=contracts/script/deployments/core/${CHAINID}.json
 -----------------------------: ## 
 
 ___CONTRACTS___: ## 
@@ -36,8 +36,16 @@ deploy-avs: ## Deploy avs
 create-quorum:
 	./tests/anvil/create-quorum.sh
 
+modify-allocations:
+	./tests/anvil/modify-allocations.sh
+
 uam-permissions:
 	./tests/anvil/uam-permissions.sh
+
+set-allocation-delay:
+	./tests/anvil/set-allocation-delay.sh
+
+set-allocation-delay-and-modify-allocation: set-allocation-delay modify-allocations
 
 deploy-all: deploy-eigenlayer deploy-avs uam-permissions create-quorum
 
@@ -80,6 +88,7 @@ ____OFFCHAIN_SOFTWARE___: ##
 start-aggregator: ## 
 	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
+		--core-deployment ${CORE_DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
@@ -90,6 +99,7 @@ start-operator: ##
 start-challenger: ## 
 	go run challenger/cmd/main.go --config config-files/challenger.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
+		--core-deployment ${CORE_DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 

@@ -73,11 +73,9 @@ contract IncredibleSquaringTaskManager is
     constructor(
         ISlashingRegistryCoordinator _registryCoordinator,
         IPauserRegistry _pauserRegistry,
-        uint32 _taskResponseWindowBlock,
-        address _serviceManager
+        uint32 _taskResponseWindowBlock
     ) BLSSignatureChecker(_registryCoordinator) Pausable(_pauserRegistry) {
         TASK_RESPONSE_WINDOW_BLOCK = _taskResponseWindowBlock;
-        serviceManager = _serviceManager;
     }
 
     function initialize(
@@ -85,13 +83,15 @@ contract IncredibleSquaringTaskManager is
         address _aggregator,
         address _generator,
         address _allocationManager,
-        address _slasher
+        address _slasher,
+        address _serviceManager
     ) public initializer {
         _transferOwnership(initialOwner);
         aggregator = _aggregator;
         generator = _generator;
         allocationManager = _allocationManager;
         instantSlasher = _slasher;
+        serviceManager = _serviceManager;
     }
 
     /* FUNCTIONS */
@@ -249,17 +249,15 @@ contract IncredibleSquaringTaskManager is
                 // get the operator address
                 bytes32 operatorID = allOperatorInfo[i][j].operatorId;
                 address operatorAddress = blsApkRegistry.getOperatorFromPubkeyHash(operatorID);
-
                 // check whether the operator was a signer for the task
                 bool wasSigningOperator = true;
                 for (uint256 k = 0; k < addressOfNonSigningOperators.length; k++) {
                     if (operatorAddress == addressOfNonSigningOperators[k]) {
                         // if the operator was a non-signer, then we set the flag to false
-                        wasSigningOperator == false;
+                        wasSigningOperator = false;
                         break;
                     }
                 }
-
                 if (wasSigningOperator == true) {
                     OperatorSet memory operatorset =
                         OperatorSet({avs: serviceManager, id: uint8(task.quorumNumbers[i])});

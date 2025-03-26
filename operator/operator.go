@@ -256,19 +256,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 	operatorSetsIds := []uint32{c.OperatorSetId}
 	waitForReceipt := true
-	// operator.SetAppointee(
-	// 	common.HexToAddress(c.InstantSlasher),
-	// 	operator.CredibleSquaringServiceManagerAddr,
-	// 	common.HexToAddress(c.AllocationManagerAddress),
-	// 	common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-	// )
-	// operator.CreateTotalDelegatedStakeQuorum(
-	// 	c.MaxOperatorCount,
-	// 	c.KickBIPsOfOperatorStake,
-	// 	c.KickBIPsOfTotalStake,
-	// 	c.MinimumStake,
-	// 	c.Multiplier,
-	// )
 
 	if c.RegisterOperatorOnStartup {
 		operator.registerOperatorOnStartup(
@@ -280,6 +267,28 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 			waitForReceipt,
 			*operator.blsKeypair,
 			c.Socket,
+		)
+
+		operator.setAllocationDelay(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.AllocationManagerAddress),
+			c.EthRpcUrl,
+			txMgr,
+			0,
+		)
+		strategies := make([]common.Address, 1)
+		strategies[0] = common.HexToAddress(c.TokenStrategyAddr)
+		newMagnitudes := make([]uint64, 1)
+		newMagnitudes[0] = 100000000
+		operator.modifyAllocations(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.AllocationManagerAddress),
+			common.HexToAddress(c.IncredibleSquaringServiceManager),
+			strategies,
+			newMagnitudes,
+			c.EthRpcUrl,
+			txMgr,
+			0,
 		)
 	}
 
