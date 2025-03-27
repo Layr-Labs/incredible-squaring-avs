@@ -181,7 +181,7 @@ See the integration tests [README](tests/anvil/README.md) for more details.
 This AVS has three main participants:
 
 - Operator: The operator suscribes to NewTasks Events, and in case a new task is created, completes the task, calculates the response, signs it and sends it to the bls aggregation service.
-- Aggregator: The one who creates new tasks for the operators (through the on chain Task Manager) every certain time, and collects responses from bls aggregation service (that happens if the operators responses reach a threshold or the time expires), that sends to the on chain Task Manager, who emits a TaskRespondedEvent.
+- Aggregator: The one who creates new tasks for the operators (through the on chain Task Manager) every certain time. It also collects responses from the BLS aggregation service (this happens if the operators responses reach a threshold or the time expires) and sends them to the on-chain Task Manager, who then emits a TaskRespondedEvent.
 - Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the challenger calculated response, it raises a challenge, that calls on chain Task Manager, that verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
 
 Now we will focus on each to show how each one does each thing.
