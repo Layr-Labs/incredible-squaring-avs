@@ -181,8 +181,8 @@ See the integration tests [README](tests/anvil/README.md) for more details.
 This AVS has three main participants:
 
 - Operator: The operator suscribes to NewTasks Events, and in case a new task is created, completes the task, calculates the response, signs it and sends it to the bls aggregation service.
-- Aggregator: The one who creates new tasks for the operators (through the on chain Task Manager) every certain time. It also collects responses from the BLS aggregation service (this happens if the operators responses reach a threshold or the time expires) and sends them to the on-chain Task Manager, who then emits a TaskRespondedEvent.
-- Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the challenger calculated response, it raises a challenge, that calls on chain Task Manager, that verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
+- Aggregator: The one who creates new tasks for the operators (through the on-chain Task Manager) every certain time. It also collects responses from the BLS aggregation service (this happens if the operators responses reach a threshold or the time expires) and sends them to the on-chain Task Manager, who then emits a TaskRespondedEvent.
+- Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the challenger calculated response, it raises a challenge, that calls on-chain Task Manager, that verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
 
 Now we will focus on each to show how each one does each thing.
 
@@ -244,7 +244,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 }
 ```
 
-Here is the response calculation logic, and it would be the place to change if wanted to respond the cubed number instead. Note that the Response struct includes the number square because is parte of the Task manager, that should be modified too.
+Here is the response calculation logic, and it would be the place to change if wanted to respond the cubed number instead. Note that the Response struct includes the number square because is parte of the Task Manager, that should be modified too.
 
 After the ProcessNewTaskCreatedLog function, that response is signed (in `SignTaskResponse`), and sent to the bls aggregation service in the goroutine executing the function `SendSignedTaskResponseToAggregator()`. That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the bls aggregation service.
 
@@ -314,17 +314,17 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 }
 ```
 
-That method wraps the response into a more complex Task manager type that encapsulates the response, and sends it with the completed to the on chain Task manager’s `respondToTask` method.
+That method wraps the response into a more complex Task Mnager type that encapsulates the response, and sends it with the completed to the on-chain Task Manager’s `respondToTask` method.
 
 That method makes several checks on the taskResponse, stores the responses metadata and emits a TaskResponded event, that will be catched by the challenger (see challenger section to continue).
 
-The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator `sendNewTask()` method. There the aggregator calls the `CreateNewTask()` method of the on chain Task Manager contract, that stores a hash of the new task and emits a NewTaskCreated event, that will be catched by the challenger (see challenger section to continue). After that call to the Task Manager, the aggregator will initialize a new task in the bls aggregation service, where the operators will send their signed response to the created task.
+The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator `sendNewTask()` method. There the aggregator calls the `CreateNewTask()` method of the on-chain Task Manager contract, that stores a hash of the new task and emits a NewTaskCreated event, that will be catched by the challenger (see challenger section to continue). After that call to the Task Manager, the aggregator will initialize a new task in the bls aggregation service, where the operators will send their signed response to the created task.
 
 ### Challenger
 
 The challenger code can be found on the `/challenger` folder.
 
-The main behavior of the challenger is to suscribe to the NewTaskCreated and TaskResponded events emitted by the on chain Task manager contract.
+The main behavior of the challenger is to suscribe to the NewTaskCreated and TaskResponded events emitted by the on-chain Task Manager contract.
 
 ```go
 	for {
@@ -378,7 +378,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 }
 ```
 
-In this method the challenger calculates the response and compares it with the aggregators response. If the response is not equal, a challenge is raised, what means a call to on chain Task Manager `RaiseAndResolveChallenge()` method.
+In this method the challenger calculates the response and compares it with the aggregators response. If the response is not equal, a challenge is raised, what means a call to on-chain Task Manager `RaiseAndResolveChallenge()` method.
 
 ```solidity
     function raiseAndResolveChallenge(
