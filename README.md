@@ -320,7 +320,89 @@ That method makes several checks on the taskResponse, stores the responses metad
 
 The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator `sendNewTask()` method. There the aggregator calls the `CreateNewTask()` method of the on chain Task Manager contract, that stores a hash of the new task and emits a NewTaskCreated event, that will be catched by the challenger (see challenger section to continue). After that call to the Task Manager, the aggregator will initialize a new task in the bls aggregation service, where the operators will send their signed response to the created task.
 
+### Challenger
 
+The challenger code can be found on the `/challenger` folder.
+
+The main behavior of the challenger is to suscribe to the NewTaskCreated and TaskResponded events emitted by the on chain Task manager contract.
+
+```go
+	for {
+		select {
+		case err := <-newTaskSub.Err():
+			...
+
+		case err := <-taskResponseSub.Err():
+			...
+		case newTaskCreatedLog := <-c.newTaskCreatedChan:
+			...
+			taskIndex := c.processNewTaskCreatedLog(newTaskCreatedLog)
+
+			if _, found := c.taskResponses[taskIndex]; found {
+				_ = c.callChallengeModule(taskIndex)
+			}
+
+		case taskResponseLog := <-c.taskResponseChan:
+			...
+			taskIndex := c.processTaskResponseLog(taskResponseLog)
+
+			if _, found := c.tasks[taskIndex]; found {
+				_ = c.callChallengeModule(taskIndex)
+			}
+		}
+	}
+```
+
+The first two cases are handle for errors in the subscribed event channels. The other two are the ones which listen to the event, processing the event, that in the NewTaskCreated means saving the created task for future events and in the TaskResponse generate and save the taskResponseData, that could be sent to the Task Manager in case of a challenge.
+
+After the processing, the newTaskCreated case checks if there is a task response with that index, and the task response case checks if theres a initialized task with that index, and in both cases there is a call to the callChallengeModule method.
+
+```go
+func (c *Challenger) callChallengeModule(taskIndex uint32) error {
+	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
+	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
+	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
+
+	// checking if the answer in the response submitted by aggregator is correct
+	if trueAnswer.Cmp(answerInResponse) != 0 {
+		c.logger.Info("The number squared is not correct", "expectedAnswer", trueAnswer, "gotAnswer", answerInResponse)
+
+		// raise challenge
+		c.raiseChallenge(taskIndex)
+
+		return nil
+	} else {
+		c.logger.Info("The number squared is correct")
+		return types.NoErrorInTaskResponse
+	}
+}
+```
+
+In this method the challenger calculates the response and compares it with the aggregators response. If the response is not equal, a challenge is raised, what means a call to on chain Task Manager `RaiseAndResolveChallenge()` method.
+
+```solidity
+    function raiseAndResolveChallenge(
+        Task calldata task,
+        TaskResponse calldata taskResponse,
+        TaskResponseMetadata calldata taskResponseMetadata,
+        BN254.G1Point[] memory pubkeysOfNonSigningOperators
+    ) external {
+		    ...        
+        // // logic for checking whether challenge is valid or not
+        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
+        bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
+        // // if response was correct, no slashing happens so we return
+        if (isResponseCorrect == true) {
+            emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
+            return;
+        }
+        ...
+    }
+```
+
+In that method the Task Manager calculates the response and determines if the aggregated response is correct or not. In the first case, nothing happens, but in the second case, the signer operators will be slashed. 
+
+The slashing mechanism can be found in the second part of the raiseAndResolveChallenge method, but in a simple way to explain, the Manager defines an amount of wads to slash from each operator, and calls the instant slasher’s `fulfillSlashingRequest` method, that ends up calling the `allocationManager.slashOperator()` method.
 
 ### Received error from aggregator
 
