@@ -314,7 +314,7 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 }
 ```
 
-That method wraps the response into a more complex Task Mnager type that encapsulates the response, and sends it with the completed to the on-chain Task Manager’s `respondToTask` method.
+That method wraps the response into a more complex Task Manager type that encapsulates the response, and sends it with the completed to the on-chain Task Manager’s `respondToTask` method.
 
 That method makes several checks on the taskResponse, stores the responses metadata and emits a TaskResponded event, that will be catched by the challenger (see challenger section to continue).
 
