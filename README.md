@@ -402,7 +402,7 @@ In this method the challenger calculates the response and compares it with the a
 
 In that method the Task Manager calculates the response and determines if the aggregated response is correct or not. In the first case, nothing happens, but in the second case, the signer operators will be slashed. 
 
-The slashing mechanism can be found in the second part of the raiseAndResolveChallenge method, but in a simple way to explain, the Manager defines an amount of wads to slash from each operator, and calls the instant slasher’s `fulfillSlashingRequest` method, that ends up calling the `allocationManager.slashOperator()` method.
+The slashing mechanism can be found in the second part of the raiseAndResolveChallenge method, but in a simple way to explain, the Manager defines an amount of wads to slash from each operator, and calls the `InstantSlasher.fulfillSlashingRequest()` method, that ends up calling the `allocationManager.slashOperator()` method.
 
 ### Received error from aggregator
 
