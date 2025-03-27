@@ -248,6 +248,80 @@ Here is the response calculation logic, and it would be the place to change if w
 
 After the ProcessNewTaskCreatedLog function, that response is signed (in `SignTaskResponse`), and sent to the bls aggregation service in the goroutine executing the function `SendSignedTaskResponseToAggregator()`. That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the bls aggregation service.
 
+
+### Aggregator
+
+The aggregator code can be found in `/aggregator` folder.
+
+The main aggregator logic can be found on this loop:
+
+```go
+	for {
+		select {
+		case <-ctx.Done():
+			...
+		case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
+			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
+			agg.sendAggregatedResponseToContract(blsAggServiceResp)
+		case <-ticker.C:
+			err := agg.sendNewTask(big.NewInt(taskNum))
+			taskNum++
+			if err != nil {
+				// we log the errors inside sendNewTask() so here we just continue to the next task
+				continue
+			}
+		}
+	}
+```
+
+The first case covers the context done error case. The second one the case a new response is received from the bls aggregation service. In this case the `sendAggregatedResponseToContract()` method is called. 
+
+```go
+func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
+	...
+	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
+	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
+		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
+	}
+	quorumApks := []cstaskmanager.BN254G1Point{}
+	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
+		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
+	}
+	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature{
+		NonSignerPubkeys:             nonSignerPubkeys,
+		QuorumApks:                   quorumApks,
+		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),
+		Sigma:                        core.ConvertToBN254G1Point(blsAggServiceResp.SignersAggSigG1.G1Point),
+		NonSignerQuorumBitmapIndices: blsAggServiceResp.NonSignerQuorumBitmapIndices,
+		QuorumApkIndices:             blsAggServiceResp.QuorumApkIndices,
+		TotalStakeIndices:            blsAggServiceResp.TotalStakeIndices,
+		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
+	}
+
+	agg.tasksMu.RLock()
+	task := agg.tasks[blsAggServiceResp.TaskIndex]
+	agg.tasksMu.RUnlock()
+	taskResponse, _ := blsAggServiceResp.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
+	_, err := agg.avsWriter.SendAggregatedResponse(
+		context.Background(),
+		task,
+		taskResponse,
+		nonSignerStakesAndSignature,
+	)
+	if err != nil {
+		agg.logger.Error("Aggregator failed to respond to task", "err", err)
+	}
+}
+```
+
+That method wraps the response into a more complex Task manager type that encapsulates the response, and sends it with the completed to the on chain Task manager’s `respondToTask` method.
+
+That method makes several checks on the taskResponse, stores the responses metadata and emits a TaskResponded event, that will be catched by the challenger (see challenger section to continue).
+
+The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator `sendNewTask()` method. There the aggregator calls the `CreateNewTask()` method of the on chain Task Manager contract, that stores a hash of the new task and emits a NewTaskCreated event, that will be catched by the challenger (see challenger section to continue). After that call to the Task Manager, the aggregator will initialize a new task in the bls aggregation service, where the operators will send their signed response to the created task.
+
+
+
 ### Received error from aggregator
 
 When running on anvil, a typical log for the operator is
