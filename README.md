@@ -274,7 +274,7 @@ The main aggregator logic can be found on this loop:
 	}
 ```
 
-The first case covers the context done error case. The second one the case a new response is received from the bls aggregation service. In this case the `sendAggregatedResponseToContract()` method is called. 
+The first case covers the context done error case. The second covers the case where a new response is received from the bls aggregation service.In this case the `sendAggregatedResponseToContract()` method is called. 
 
 ```go
 func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
