@@ -186,6 +186,67 @@ This AVS has three main participants:
 
 Now we will focus on each to show how each one does each thing.
 
+### Operator
+
+The operator code can be found on `/operator` folder.
+
+The operator main logic is focused on this segment:
+
+```go
+	for {
+		select {
+		case <-ctx.Done():
+			...
+		case err := <-metricsErrChan:
+			...
+		case err := <-sub.Err():
+			...
+		case newTaskCreatedLog := <-o.newTaskCreatedChan:
+			...
+		}
+	}
+```
+
+The upper three cases are handling error cases, the fourth one is the one which pops from the channel subscribed to new task creation events, and handles the response logic:
+
+```go
+			o.metrics.IncNumTasksReceived()
+			taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
+			signedTaskResponse, err := o.SignTaskResponse(taskResponse)
+			if err != nil {
+				continue
+			}
+			go o.aggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
+```
+
+The `ProcessNewTaskCreatedLog` method generates the response to the new task:
+
+```go
+func (o *Operator) ProcessNewTaskCreatedLog(
+	newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+) *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse {
+	...
+	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
+
+	if o.timesFailing > 0 {
+		rand.Seed(uint64((time.Now().UnixNano())))
+		num := rand.Intn(100)
+		if num < o.timesFailing {
+			numberSquared = big.NewInt(908243203843)
+			o.logger.Info("Operator computed wrong task result")
+		}
+	}
+	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		ReferenceTaskIndex: newTaskCreatedLog.TaskIndex,
+		NumberSquared:      numberSquared,
+	}
+	return taskResponse
+}
+```
+
+Here is the response calculation logic, and it would be the place to change if wanted to respond the cubed number instead. Note that the Response struct includes the number square because is parte of the Task manager, that should be modified too.
+
+After the ProcessNewTaskCreatedLog function, that response is signed (in `SignTaskResponse`), and sent to the bls aggregation service in the goroutine executing the function `SendSignedTaskResponseToAggregator()`. That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the bls aggregation service.
 
 ### Received error from aggregator
 
