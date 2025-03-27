@@ -353,7 +353,7 @@ The main behavior of the challenger is to suscribe to the NewTaskCreated and Tas
 	}
 ```
 
-The first two cases are handle for errors in the subscribed event channels. The other two are the ones which listen to the event, processing the event, that in the NewTaskCreated means saving the created task for future events and in the TaskResponse generate and save the taskResponseData, that could be sent to the Task Manager in case of a challenge.
+The first two cases handle errors in the subscribed event channels. The other two listen to events and process them. In the case of NewTaskCreated, it means saving the created task for future events. In the case of TaskResponse, it means generating and saving the taskResponseData, that could be sent to the Task Manager in case of a challenge.
 
 After the processing, the newTaskCreated case checks if there is a task response with that index, and the task response case checks if theres a initialized task with that index, and in both cases there is a call to the callChallengeModule method.
 
