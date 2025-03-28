@@ -175,8 +175,6 @@ AVS Registry contracts have a stale view of operator shares in the delegation ma
 
 See the integration tests [README](tests/anvil/README.md) for more details.
 
-## Troubleshooting
-
 ## Structure Documentation
 This AVS has three main participants:
 
@@ -403,6 +401,8 @@ In this method the challenger calculates the response and compares it with the a
 In that method the Task Manager calculates the response and determines if the aggregated response is correct or not. In the first case, nothing happens, but in the second case, the signer operators will be slashed. 
 
 The slashing mechanism can be found in the second part of the raiseAndResolveChallenge method, but in a simple way to explain, the Manager defines an amount of wads to slash from each operator, and calls the `InstantSlasher.fulfillSlashingRequest()` method, that ends up calling the `allocationManager.slashOperator()` method.
+
+## Troubleshooting
 
 ### Received error from aggregator
 
