@@ -191,30 +191,30 @@ The operator code can be found on [`/operator` folder](https://github.com/Layr-L
 The operator main logic is focused on this segment from [operator.go](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L340-L363):
 
 ```go
-	for {
-		select {
-		case <-ctx.Done():
-			...
-		case err := <-metricsErrChan:
-			...
-		case err := <-sub.Err():
-			...
-		case newTaskCreatedLog := <-o.newTaskCreatedChan:
-			...
-		}
+for {
+	select {
+	case <-ctx.Done():
+		...
+	case err := <-metricsErrChan:
+		...
+	case err := <-sub.Err():
+		...
+	case newTaskCreatedLog := <-o.newTaskCreatedChan:
+		...
 	}
+}
 ```
 
 The upper three cases are handling error cases, the fourth one is the one which pops from the channel subscribed to new task creation events, and handles the response logic:
 
 ```go
-			o.metrics.IncNumTasksReceived()
-			taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
-			signedTaskResponse, err := o.SignTaskResponse(taskResponse)
-			if err != nil {
-				continue
-			}
-			go o.aggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
+o.metrics.IncNumTasksReceived()
+taskResponse := o.ProcessNewTaskCreatedLog(newTaskCreatedLog)
+signedTaskResponse, err := o.SignTaskResponse(taskResponse)
+if err != nil {
+	continue
+}
+go o.aggregatorRpcClient.SendSignedTaskResponseToAggregator(signedTaskResponse)
 ```
 
 The [`ProcessNewTaskCreatedLog` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L368-L394) generates the response to the new task:
@@ -247,21 +247,21 @@ The aggregator code can be found in [`/aggregator` folder](https://github.com/La
 The main aggregator logic can be found on this loop from [aggregator.go](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L194-L209):
 
 ```go
-	for {
-		select {
-		case <-ctx.Done():
-			...
-		case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
-			agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
-			agg.sendAggregatedResponseToContract(blsAggServiceResp)
-		case <-ticker.C:
-			err := agg.sendNewTask(big.NewInt(taskNum))
-			taskNum++
-			if err != nil {
-				continue
-			}
+for {
+	select {
+	case <-ctx.Done():
+		...
+	case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
+		agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
+		agg.sendAggregatedResponseToContract(blsAggServiceResp)
+	case <-ticker.C:
+		err := agg.sendNewTask(big.NewInt(taskNum))
+		taskNum++
+		if err != nil {
+			continue
 		}
 	}
+}
 ```
 
 The first case covers the context done error case. The second covers the case where a new aggregated response is received from the bls aggregation service. Remember that this happens when the operators responses to the tasks reach a threshold or the time of the task expires. In this case the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called. 
@@ -317,30 +317,26 @@ The challenger code can be found on the [`/challenger` folder](https://github.co
 The main behavior of the challenger is to suscribe to the NewTaskCreated and TaskResponded events emitted by the on-chain Task Manager contract, and can be foun on [challenger.go](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/challenger/challenger.go#L79-L117).
 
 ```go
-	for {
-		select {
-		case err := <-newTaskSub.Err():
-			...
-
-		case err := <-taskResponseSub.Err():
-			...
-		case newTaskCreatedLog := <-c.newTaskCreatedChan:
-			...
-			taskIndex := c.processNewTaskCreatedLog(newTaskCreatedLog)
-
-			if _, found := c.taskResponses[taskIndex]; found {
-				_ = c.callChallengeModule(taskIndex)
-			}
-
-		case taskResponseLog := <-c.taskResponseChan:
-			...
-			taskIndex := c.processTaskResponseLog(taskResponseLog)
-
-			if _, found := c.tasks[taskIndex]; found {
-				_ = c.callChallengeModule(taskIndex)
-			}
+for {
+	select {
+	case err := <-newTaskSub.Err():
+		...
+	case err := <-taskResponseSub.Err():
+		...
+	case newTaskCreatedLog := <-c.newTaskCreatedChan:
+		...
+		taskIndex := c.processNewTaskCreatedLog(newTaskCreatedLog)
+		if _, found := c.taskResponses[taskIndex]; found {
+			_ = c.callChallengeModule(taskIndex)
+		}
+	case taskResponseLog := <-c.taskResponseChan:
+		...
+		taskIndex := c.processTaskResponseLog(taskResponseLog)
+		if _, found := c.tasks[taskIndex]; found {
+			_ = c.callChallengeModule(taskIndex)
 		}
 	}
+}
 ```
 
 The first two cases handle errors in the subscribed event channels. The other two listen to events and process them. In the case of NewTaskCreated, it means saving the created task for future events. In the case of TaskResponse, it means generating and saving the taskResponseData, that could be sent to the Task Manager in case of a challenge.
@@ -371,23 +367,23 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 In this method the challenger calculates the response and compares it with the aggregators response. If the response is not equal, a challenge is raised, what means a call to on-chain Task Manager [`RaiseAndResolveChallenge()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L175-L180).
 
 ```solidity
-    function raiseAndResolveChallenge(
-        Task calldata task,
-        TaskResponse calldata taskResponse,
-        TaskResponseMetadata calldata taskResponseMetadata,
-        BN254.G1Point[] memory pubkeysOfNonSigningOperators
-    ) external {
-		    ...        
-        // // logic for checking whether challenge is valid or not
-        uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
-        bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
-        // // if response was correct, no slashing happens so we return
-        if (isResponseCorrect == true) {
-            emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
-            return;
-        }
-        ...
+function raiseAndResolveChallenge(
+    Task calldata task,
+    TaskResponse calldata taskResponse,
+    TaskResponseMetadata calldata taskResponseMetadata,
+    BN254.G1Point[] memory pubkeysOfNonSigningOperators
+) external {
+  	...        
+    // // logic for checking whether challenge is valid or not
+    uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
+    bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
+    // // if response was correct, no slashing happens so we return
+    if (isResponseCorrect == true) {
+        emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
+        return;
     }
+    ...
+}
 ```
 
 In that method the Task Manager calculates the response and determines if the aggregated response is correct or not. In the first case, nothing happens, but in the second case, the signer operators will be slashed. 
