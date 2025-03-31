@@ -237,7 +237,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 
 Here is the response calculation logic, and it would be the place to change if wanted to respond, for example, the cubed number instead. Note that the Response struct includes the number square because is parte of the Task Manager, that should be modified too.
 
-After the ProcessNewTaskCreatedLog function, that response is signed (in [SignTaskResponse](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416)), and sent to the bls aggregation service in the goroutine executing the [`SendSignedTaskResponseToAggregator()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416). That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the bls aggregation service.
+After the ProcessNewTaskCreatedLog function, that response is signed (in [SignTaskResponse](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416)), and sent to the bls aggregation service in the goroutine executing the [`SendSignedTaskResponseToAggregator()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/rpc_client.go#L52). That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the bls aggregation service.
 
 
 ### Aggregator
