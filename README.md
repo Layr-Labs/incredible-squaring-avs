@@ -266,44 +266,6 @@ for {
 
 The first case covers the context done error case. The second covers the case where a new aggregated response is received from the BLS aggregation service. Remember that this happens when the operators responses to the tasks reach a threshold or the time of the task expires. In this case the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called. 
 
-```go
-func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
-	...
-	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
-	for _, nonSignerPubkey := range blsAggServiceResp.NonSignersPubkeysG1 {
-		nonSignerPubkeys = append(nonSignerPubkeys, core.ConvertToBN254G1Point(nonSignerPubkey))
-	}
-	quorumApks := []cstaskmanager.BN254G1Point{}
-	for _, quorumApk := range blsAggServiceResp.QuorumApksG1 {
-		quorumApks = append(quorumApks, core.ConvertToBN254G1Point(quorumApk))
-	}
-	nonSignerStakesAndSignature := cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature{
-		NonSignerPubkeys:             nonSignerPubkeys,
-		QuorumApks:                   quorumApks,
-		ApkG2:                        core.ConvertToBN254G2Point(blsAggServiceResp.SignersApkG2),
-		Sigma:                        core.ConvertToBN254G1Point(blsAggServiceResp.SignersAggSigG1.G1Point),
-		NonSignerQuorumBitmapIndices: blsAggServiceResp.NonSignerQuorumBitmapIndices,
-		QuorumApkIndices:             blsAggServiceResp.QuorumApkIndices,
-		TotalStakeIndices:            blsAggServiceResp.TotalStakeIndices,
-		NonSignerStakeIndices:        blsAggServiceResp.NonSignerStakeIndices,
-	}
-
-	agg.tasksMu.RLock()
-	task := agg.tasks[blsAggServiceResp.TaskIndex]
-	agg.tasksMu.RUnlock()
-	taskResponse, _ := blsAggServiceResp.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
-	_, err := agg.avsWriter.SendAggregatedResponse(
-		context.Background(),
-		task,
-		taskResponse,
-		nonSignerStakesAndSignature,
-	)
-	if err != nil {
-		agg.logger.Error("Aggregator failed to respond to task", "err", err)
-	}
-}
-```
-
 That method wraps the response into a more complex Task Manager type that encapsulates the response, and sends it with the completed to the on-chain Task Manager’s [`respondToTask` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L118-L122).
 
 That method makes several checks on the taskResponse, stores the responses metadata and emits a TaskResponded event, that will be catched by the challenger (see challenger section to continue).
