@@ -187,7 +187,7 @@ func (o *Operator) PrintOperatorStatus() error {
 		return err
 	}
 	pubkeysRegistered := operatorId != [32]byte{}
-	registeredWithAvs := o.operatorId != [32]byte{}
+	registeredWithAvs := operatorId != [32]byte{}
 	operatorStatus := OperatorStatus{
 		EcdsaAddress:      o.operatorAddr.String(),
 		PubkeysRegistered: pubkeysRegistered,
