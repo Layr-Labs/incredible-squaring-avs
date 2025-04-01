@@ -178,7 +178,7 @@ See the integration tests [README](tests/anvil/README.md) for more details.
 ## Structure Documentation
 This AVS has three main participants:
 
-- Operator: The operator suscribes to NewTasks Events, and in case a new task is created, completes the task, calculates the response, signs it and sends it to the bls aggregation service.
+- Operator: The operator suscribes to NewTasks Events, and in case a new task is created, completes the task, calculates the response, signs it and sends it to the BLS aggregation service.
 - Aggregator: The one who creates new tasks for the operators (through the on-chain Task Manager) every certain time. It also collects aggregated responses from the BLS aggregation service and sends them to the on-chain Task Manager, who then emits a TaskRespondedEvent.
 - Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the challenger calculated response, it raises a challenge, that calls on-chain Task Manager, that verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
 
@@ -237,7 +237,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 
 Here is the response calculation logic, and it would be the place to change if you wanted to compute, for example, the cubed number instead. Note that the `Response` struct includes the number square because it's part of the `TaskManager` contract bindings, which should be modified too.
 
-After the ProcessNewTaskCreatedLog function, that response is signed (in [SignTaskResponse](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416)), and sent to the bls aggregation service in the goroutine executing the [`SendSignedTaskResponseToAggregator()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/rpc_client.go#L52). That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the bls aggregation service.
+After the ProcessNewTaskCreatedLog function, that response is signed (in [SignTaskResponse](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416)), and sent to the BLS aggregation service in the goroutine executing the [`SendSignedTaskResponseToAggregator()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/rpc_client.go#L52). That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the BLS aggregation service.
 
 
 ### Aggregator
@@ -264,7 +264,7 @@ for {
 }
 ```
 
-The first case covers the context done error case. The second covers the case where a new aggregated response is received from the bls aggregation service. Remember that this happens when the operators responses to the tasks reach a threshold or the time of the task expires. In this case the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called. 
+The first case covers the context done error case. The second covers the case where a new aggregated response is received from the BLS aggregation service. Remember that this happens when the operators responses to the tasks reach a threshold or the time of the task expires. In this case the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called. 
 
 ```go
 func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg.BlsAggregationServiceResponse) {
@@ -308,7 +308,7 @@ That method wraps the response into a more complex Task Manager type that encaps
 
 That method makes several checks on the taskResponse, stores the responses metadata and emits a TaskResponded event, that will be catched by the challenger (see challenger section to continue).
 
-The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator [`sendNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L258-L297). There the aggregator calls the [`CreateNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L99-L103) of the on-chain Task Manager contract, that stores a hash of the new task and emits a NewTaskCreated event, that will be catched by the challenger (see challenger section to continue). After that call to the Task Manager, the aggregator will initialize a new task in the bls aggregation service, where the operators will send their signed response to the created task.
+The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator [`sendNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L258-L297). There the aggregator calls the [`CreateNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L99-L103) of the on-chain Task Manager contract, that stores a hash of the new task and emits a NewTaskCreated event, that will be catched by the challenger (see challenger section to continue). After that call to the Task Manager, the aggregator will initialize a new task in the BLS aggregation service, where the operators will send their signed response to the created task.
 
 ### Challenger
 
