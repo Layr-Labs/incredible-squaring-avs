@@ -184,17 +184,17 @@ See the integration tests [README](tests/anvil/README.md) for more details.
 
 This AVS has three main participants:
 
-- Operator: The operator suscribes to NewTasks Events, and in case a new task is created, completes the task, calculates the response, signs it and sends it to the BLS aggregation service.
-- Aggregator: The one who creates new tasks for the operators (through the on-chain `TaskManager`) every certain time. It also collects aggregated responses from the BLS aggregation service and sends them to the on-chain `TaskManager`, who then emits a TaskRespondedEvent.
-- Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the challenger calculated response, it raises a challenge, that calls on-chain `TaskManager`, that verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
+- Operator: The operator subscribes to NewTasks Events and, when a new task is created, completes it, calculates the response, signs it, and sends it to the BLS aggregation service.
+- Aggregator: The one who creates new tasks for the operators (through the on-chain `TaskManager`) every certain time. It also collects aggregated responses from the BLS aggregation service and sends them to the on-chain `TaskManager`, which then emits a TaskRespondedEvent.
+- Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the Challenger calculated response, it raises a challenge, that calls on-chain `TaskManager`, which verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
 
 Now we will focus on each to show how each one does each thing.
 
 ### Operator
 
-The operator code can be found on [`/operator` folder](https://github.com/Layr-Labs/incredible-squaring-avs/tree/dev/operator).
+The operator code can be found in [`/operator` folder](https://github.com/Layr-Labs/incredible-squaring-avs/tree/dev/operator).
 
-The operator main logic is focused on this segment from [operator.go](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L340-L363):
+The operator's main logic is focused on this segment from [operator.go](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L340-L363):
 
 ```go
 for {
@@ -211,7 +211,7 @@ for {
 }
 ```
 
-The upper three cases are handling error cases, the fourth one is the one which pops from the channel subscribed to new task creation events, and handles the response logic:
+The upper three cases are handling error cases, the fourth one is the one that pops from the channel subscribed to new task creation events, and handles the response logic:
 
 ```go
 o.metrics.IncNumTasksReceived()
@@ -243,7 +243,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 
 Here is the response calculation logic, and it would be the place to change if you wanted to compute, for example, the cubed number instead. Note that the `Response` struct includes the number square because it's part of the `TaskManager` contract bindings, which should be modified too.
 
-After the ProcessNewTaskCreatedLog function, that response is signed (in [SignTaskResponse](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416)), and sent to the BLS aggregation service in the goroutine executing the [`SendSignedTaskResponseToAggregator()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/rpc_client.go#L52). That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through rpc), that redirects the signed response to the BLS aggregation service.
+After the ProcessNewTaskCreatedLog function, that response is signed (in [SignTaskResponse](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/operator.go#L396-L416)), and sent to the BLS aggregation service in the goroutine executing the [`SendSignedTaskResponseToAggregator()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/operator/rpc_client.go#L52). That function makes a call to the `ProcessSignedTaskResponse` method of aggregator (through RPC), that redirects the signed response to the BLS aggregation service.
 
 ### Aggregator
 
@@ -255,7 +255,7 @@ The main aggregator logic can be found on this loop from [aggregator.go](https:/
 for {
     select {
     case <-ctx.Done():
-        ...
+         ...
     case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
         agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
         agg.sendAggregatedResponseToContract(blsAggServiceResp)
@@ -269,13 +269,13 @@ for {
 }
 ```
 
-The first case covers the context done error case. The second covers the case where a new aggregated response is received from the BLS aggregation service. Remember that this happens when the operators responses to the tasks reach a threshold or the time of the task expires. In this case the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called.
+The first case covers the context-done error case. The second covers the case where a new aggregated response is received from the BLS aggregation service. Remember that this happens when the operator responses to the tasks reach a threshold or the time of the task expires. In this case, the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called.
 
-That method wraps the response into a more complex `TaskManager` type that encapsulates the response, and sends it with the completed to the on-chain Task Manager’s [`respondToTask` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L118-L122).
+That method wraps the response into a more complex `TaskManager` type that encapsulates the response and sends it with the completed to the on-chain Task Manager’s [`respondToTask` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L118-L122).
 
-That method makes several checks on the taskResponse, stores the responses metadata and emits a `TaskResponded` event, that will be catched by the challenger (see challenger section to continue).
+That method makes several checks on the task response, stores the responses metadata and emits a `TaskResponded` event, that will be catched by the challenger (see challenger section to continue).
 
-The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators top complete, calling aggregator [`sendNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L258-L297). There the aggregator calls the [`CreateNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L99-L103) of the on-chain `TaskManager` contract, that stores a hash of the new task and emits a `NewTaskCreated` event, that will be catched by the challenger (see challenger section to continue). After that call to the `TaskManager`, the aggregator will initialize a new task in the BLS aggregation service, where the operators will send their signed response to the created task.
+The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators to complete, calling aggregator [`sendNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L258-L297). There the aggregator calls the [`CreateNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L99-L103) of the on-chain `TaskManager` contract, that stores a hash of the new task and emits a `NewTaskCreated` event, that will be caught by the challenger (see challenger section to continue). After that call to the `TaskManager`, the aggregator will initialize a new task in the BLS aggregation service, where the operators will send their signed response to the created task.
 
 ### Challenger
 
@@ -308,7 +308,7 @@ for {
 
 The first two cases handle errors in the subscribed event channels. The other two listen to events and process them. In the case of `NewTaskCreated`, it means saving the created task for future events. In the case of TaskResponse, it means generating and saving the taskResponseData, that could be sent to the `TaskManager` in case of a challenge.
 
-After the processing, the newTaskCreated case checks if there is a task response with that index, and the TaskResponse case checks if theres a initialized task with that index, and in both cases there is a call to the [callChallengeModule method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/challenger/challenger.go#L152-L169).
+After the processing, the newTaskCreated case checks if there is a task response with that index, and the TaskResponse case checks if there's an initialized task with that index, and in both cases there is a call to the [callChallengeModule method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/challenger/challenger.go#L152-L169).
 
 ```go
 func (c *Challenger) callChallengeModule(taskIndex uint32) error {
@@ -316,11 +316,11 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
     answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
     trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 
-    // checking if the answer in the response submitted by aggregator is correct
+    // Checking if the answer in the response submitted by the aggregator is correct
     if trueAnswer.Cmp(answerInResponse) != 0 {
         c.logger.Info("The number squared is not correct", "expectedAnswer", trueAnswer, "gotAnswer", answerInResponse)
 
-        // raise challenge
+        // Raise challenge
         c.raiseChallenge(taskIndex)
 
         return nil
@@ -331,7 +331,7 @@ func (c *Challenger) callChallengeModule(taskIndex uint32) error {
 }
 ```
 
-In this method the challenger calculates the response and compares it with the aggregators response. If the response is not equal, a challenge is raised, what means a call to on-chain `TaskManager` [`RaiseAndResolveChallenge()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L175-L180).
+In this method, the challenger calculates the response and compares it with the aggregators response. If the response is not equal, a challenge is raised, what means a call to on-chain `TaskManager` [`RaiseAndResolveChallenge()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L175-L180).
 
 ```solidity
 function raiseAndResolveChallenge(
@@ -341,10 +341,10 @@ function raiseAndResolveChallenge(
     BN254.G1Point[] memory pubkeysOfNonSigningOperators
 ) external {
     ...        
-    // // logic for checking whether challenge is valid or not
+    // // Logic for checking whether the challenge is valid or not
     uint256 actualSquaredOutput = numberToBeSquared * numberToBeSquared;
     bool isResponseCorrect = (actualSquaredOutput == taskResponse.numberSquared);
-    // // if response was correct, no slashing happens so we return
+    // //If the response was correct, no slashing happens so we return
     if (isResponseCorrect == true) {
         emit TaskChallengedUnsuccessfully(referenceTaskIndex, msg.sender);
         return;
