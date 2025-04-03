@@ -14,12 +14,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-
-
 type TaskGenerator struct {
-    taskManagerAddr common.Address
-	avsWriter        chainio.AvsWriterer
-	logger           logging.Logger
+	taskManagerAddr common.Address
+	avsWriter       chainio.AvsWriterer
+	logger          logging.Logger
 }
 
 func BuildTaskGenerator(c *config.Config) (*TaskGenerator, error) {
@@ -43,17 +41,16 @@ func BuildTaskGenerator(c *config.Config) (*TaskGenerator, error) {
 		return nil, err
 	}
 
-    return &TaskGenerator{
-        taskManagerAddr,
+	return &TaskGenerator{
+		taskManagerAddr,
 		avsWriter,
 		c.Logger,
-    }, nil
+	}, nil
 }
 
-
 func (taskGen *TaskGenerator) Start(ctx context.Context) error {
-	time.Sleep(time.Duration(2*time.Second))
-	
+	time.Sleep(time.Duration(2 * time.Second))
+
 	taskGen.logger.Info("Starting Task Generator.")
 	taskGen.logger.Info("Starting Task Generator rpc server.")
 
@@ -82,4 +79,3 @@ func (taskGen *TaskGenerator) Start(ctx context.Context) error {
 		}
 	}
 }
-

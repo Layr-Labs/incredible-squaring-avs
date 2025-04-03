@@ -84,8 +84,8 @@ type Aggregator struct {
 	blsAggregationService blsagg.BlsAggregationService
 	tasks                 map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask
 	tasksMu               sync.RWMutex
-	avsSubscriber    chainio.AvsSubscriberer
-	newTaskCreatedChan chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+	avsSubscriber         chainio.AvsSubscriberer
+	newTaskCreatedChan    chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
 }
 
 // NewAggregator creates a new Aggregator with the provided config.
@@ -191,8 +191,8 @@ func NewAggregator(c *config.Config) (*Aggregator, error) {
 		avsWriter:             avsWriter,
 		blsAggregationService: blsAggregationService,
 		tasks:                 make(map[types.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-		avsSubscriber: avsSubscriber,
-		newTaskCreatedChan: newTaskCreatedChan,
+		avsSubscriber:         avsSubscriber,
+		newTaskCreatedChan:    newTaskCreatedChan,
 	}, nil
 }
 
@@ -269,7 +269,9 @@ func (agg *Aggregator) sendAggregatedResponseToContract(blsAggServiceResp blsagg
 
 // sendNewTask sends a new task to the task manager contract, and updates the Task dict struct
 // with the information of operators opted into quorum 0 at the block of task creation.
-func (agg *Aggregator) processTaskGeneration(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) error {
+func (agg *Aggregator) processTaskGeneration(
+	newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
+) error {
 	agg.logger.Info("Aggregator received new task", "numberToSquare", newTaskCreatedLog.Task.NumberToBeSquared)
 
 	newTask := newTaskCreatedLog.Task
