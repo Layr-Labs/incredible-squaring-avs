@@ -399,6 +399,8 @@ func (taskGen *TaskGenerator) Start(ctx context.Context) error {
 
     taskNum := int64(0)
 
+    /// Send a new task at first and increase task number
+
     for {
         select {
         case <-ctx.Done():
