@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"context"
+	"math/big"
 	"sync"
 	"time"
 
@@ -290,6 +291,48 @@ func (agg *Aggregator) processTaskGeneration(newTaskCreatedLog *cstaskmanager.Co
 	}
 	metadata := blsagg.NewTaskMetadata(
 		newTaskCreatedLog.TaskIndex,
+		newTask.TaskCreatedBlock,
+		quorumNums,
+		quorumThresholdPercentages,
+		taskTimeToExpiry,
+	)
+	agg.blsAggregationService.InitializeNewTask(metadata)
+	return nil
+}
+
+// TODO: Remove this method and refactor TestSendNewTask. Note that whis would require to mock the task generator
+func (agg *Aggregator) sendNewTask(numToSquare *big.Int) error {
+	agg.logger.Info("Aggregator sending new task", "numberToSquare", numToSquare)
+	// Send number to square to the task manager contract
+	newTask, taskIndex, err := agg.avsWriter.SendNewTaskNumberToSquare(
+		context.Background(),
+		numToSquare,
+		types.QUORUM_THRESHOLD_NUMERATOR,
+		types.QUORUM_NUMBERS,
+	)
+	if err != nil {
+		agg.logger.Error("Aggregator failed to send number to square", "err", err)
+		return err
+	}
+
+	agg.tasksMu.Lock()
+	agg.tasks[taskIndex] = newTask
+	agg.tasksMu.Unlock()
+
+	quorumThresholdPercentages := make(sdktypes.QuorumThresholdPercentages, len(newTask.QuorumNumbers))
+	for i := range newTask.QuorumNumbers {
+		quorumThresholdPercentages[i] = sdktypes.QuorumThresholdPercentage(newTask.QuorumThresholdPercentage)
+	}
+	// TODO(samlaf): we use seconds for now, but we should ideally pass a blocknumber to the blsAggregationService
+	// and it should monitor the chain and only expire the task aggregation once the chain has reached that block
+	// number.
+	taskTimeToExpiry := taskChallengeWindowBlock * blockTimeSeconds
+	var quorumNums sdktypes.QuorumNums
+	for _, quorumNum := range newTask.QuorumNumbers {
+		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
+	}
+	metadata := blsagg.NewTaskMetadata(
+		taskIndex,
 		newTask.TaskCreatedBlock,
 		quorumNums,
 		quorumThresholdPercentages,
