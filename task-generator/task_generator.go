@@ -59,18 +59,26 @@ func (taskGen *TaskGenerator) Start(ctx context.Context) error {
 	defer ticker.Stop()
 	taskNum := int64(0)
 
+	thresholdNumerator := types.QUORUM_THRESHOLD_NUMERATOR
+	quorumNumbers := types.QUORUM_NUMBERS
+
+	// Send a task before looping
+	_, _, err := taskGen.avsWriter.SendNewTaskNumberToSquare(context.Background(), big.NewInt(taskNum),
+		thresholdNumerator, quorumNumbers)
+	if err != nil {
+		taskGen.logger.Error("Aggregator failed to send number to square", "err", err)
+		return err
+	}
+	taskNum++
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
 			taskGen.logger.Infof("Task Generator sending new task, number to square: %v", taskNum)
-			_, _, err := taskGen.avsWriter.SendNewTaskNumberToSquare(
-				context.Background(),
-				big.NewInt(taskNum),
-				types.QUORUM_THRESHOLD_NUMERATOR,
-				types.QUORUM_NUMBERS,
-			)
+			_, _, err := taskGen.avsWriter.SendNewTaskNumberToSquare(context.Background(), big.NewInt(taskNum),
+				thresholdNumerator, quorumNumbers)
 			if err != nil {
 				taskGen.logger.Error("Aggregator failed to send number to square", "err", err)
 				return err

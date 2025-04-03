@@ -21,6 +21,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
+	taskgenerator "github.com/Layr-Labs/incredible-squaring-avs/task-generator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -132,6 +133,11 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
 
+	taskGenerator, err := taskgenerator.BuildTaskGenerator(config)
+	if err != nil {
+		t.Fatalf("Failed to create task generator: %s", err.Error())
+	}
+
 	/* Register operator*/
 	// log.Println("registering operator for integration tests")
 	// we need to do this dynamically and can't just hardcode a registered operator into the anvil
@@ -170,7 +176,9 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create aggregator: %s", err.Error())
 	}
 	go agg.Start(ctx)
-	log.Println("Started aggregator. Sleeping 20 seconds to give operator time to answer task 1...")
+	go taskGenerator.Start(ctx)
+
+	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")
 	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
