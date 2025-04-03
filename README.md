@@ -50,6 +50,12 @@ Start the aggregator:
 make start-aggregator
 ```
 
+Start the task generator:
+
+``` bash
+make start-task-generator
+```
+
 Register the operator with eigenlayer and incredible-squaring, and then start the process:
 
 ```bash
@@ -147,7 +153,7 @@ The architecture of the AVS contains:
   - The [challenge](contracts/src/IncredibleSquaringTaskManager.sol#L176) logic could be separated into its own contract, but we have decided to include it in the TaskManager for this simple task.
   - Set of [registry contracts](https://github.com/Layr-Labs/eigenlayer-middleware) to manage operators opted in to this avs
 - Task Generator
-  - in a real world scenario, this could be a separate entity, but for this simple demo, the aggregator also acts as the task generator
+  - Generates a new tasks and sends it to the Task Manager every 10 seconds
 - Aggregator
   - aggregates BLS signatures from operators and posts the aggregated response to the task manager
   - For this simple demo, the aggregator is not an operator, and thus does not need to register with eigenlayer or the AVS contract. It's IP address is simply hardcoded into the operators' config.
@@ -156,7 +162,7 @@ The architecture of the AVS contains:
 
 ![](./diagrams/architecture.png)
 
-1. A task generator (in our case, same as the aggregator) publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the IncredibleSquaringTaskManager contract's [createNewTask](contracts/src/IncredibleSquaringTaskManager.sol#L83) function. Each task specifies an integer `numberToBeSquared` for which it wants the currently opted-in operators to determine its square `numberToBeSquared^2`. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in incredible-squaring) needs to reach at least thresholdPercentage of operator signatures.
+1. A task generator publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the IncredibleSquaringTaskManager contract's [createNewTask](contracts/src/IncredibleSquaringTaskManager.sol#L83) function. Each task specifies an integer `numberToBeSquared` for which it wants the currently opted-in operators to determine its square `numberToBeSquared^2`. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in incredible-squaring) needs to reach at least thresholdPercentage of operator signatures.
 
 2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 
@@ -182,11 +188,12 @@ See the integration tests [README](tests/anvil/README.md) for more details.
 
 ## Structure Documentation
 
-This AVS has three main participants:
+This AVS has four main participants:
 
 - Operator: The operator subscribes to NewTasks Events and, when a new task is created, completes it, calculates the response, signs it, and sends it to the BLS aggregation service.
-- Aggregator: The one who creates new tasks for the operators (through the on-chain `TaskManager`) every certain time. It also collects aggregated responses from the BLS aggregation service and sends them to the on-chain `TaskManager`, which then emits a TaskRespondedEvent.
+- Aggregator: The aggregator listens to NewTasks Events and, when a new task is created, initializes a new task in the BLS aggregation service. It also collects aggregated responses from the BLS aggregation service and sends them to the on-chain `TaskManager`, which then emits a TaskRespondedEvent.
 - Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the Challenger calculated response, it raises a challenge, that calls on-chain `TaskManager`, which verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
+- Task generator: The one who creates new tasks for the operators (through the on-chain `TaskManager`) every certain time (10 seconds).
 
 Now we will focus on each to show how each one does each thing.
 
@@ -255,13 +262,14 @@ The main aggregator logic can be found on this loop from [aggregator.go](https:/
 for {
     select {
     case <-ctx.Done():
-         ...
+        ...
+    case err := <-sub.Err():
+        ...
     case blsAggServiceResp := <-agg.blsAggregationService.GetResponseChannel():
         agg.logger.Info("Received response from blsAggregationService", "blsAggServiceResp", blsAggServiceResp)
         agg.sendAggregatedResponseToContract(blsAggServiceResp)
-    case <-ticker.C:
-        err := agg.sendNewTask(big.NewInt(taskNum))
-        taskNum++
+    case newTaskCreatedLog := <-agg.newTaskCreatedChan:
+        err := agg.processTaskGeneration(newTaskCreatedLog)
         if err != nil {
             continue
         }
@@ -269,13 +277,36 @@ for {
 }
 ```
 
-The first case covers the context-done error case. The second covers the case where a new aggregated response is received from the BLS aggregation service. Remember that this happens when the operator responses to the tasks reach a threshold or the time of the task expires. In this case, the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called.
+The first case covers the context-done error case and the second an error on the subscription to new tasks creation events. The third covers the case where a new aggregated response is received from the BLS aggregation service. Remember that this happens when the operator responses to the tasks reach a threshold or the time of the task expires. In this case, the [`sendAggregatedResponseToContract()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L212-L254) is called.
 
 That method wraps the response into a more complex `TaskManager` type that encapsulates the response and sends it with the completed to the on-chain Task Manager’s [`respondToTask` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L118-L122).
 
 That method makes several checks on the task response, stores the responses metadata and emits a `TaskResponded` event, that will be catched by the challenger (see challenger section to continue).
 
-The third case of the main loop is the one which spawns new tasks every 10 seconds for the operators to complete, calling aggregator [`sendNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/aggregator/aggregator.go#L258-L297). There the aggregator calls the [`CreateNewTask()` method](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L99-L103) of the on-chain `TaskManager` contract, that stores a hash of the new task and emits a `NewTaskCreated` event, that will be caught by the challenger (see challenger section to continue). After that call to the `TaskManager`, the aggregator will initialize a new task in the BLS aggregation service, where the operators will send their signed response to the created task.
+The fourth case of the main loop is the one which receives new task creation events, calling `processTaskGeneration()` method:
+
+``` Go
+func (agg *Aggregator) processTaskGeneration(newTaskCreatedLog *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated) error {
+    newTask := newTaskCreatedLog.Task
+    agg.tasksMu.Lock()
+    agg.tasks[newTaskCreatedLog.TaskIndex] = newTask
+    agg.tasksMu.Unlock()
+
+    // Get quorumThresholdPercentages, taskTimeToExpiry and quorumNums from newTaskCreatedLog
+
+    metadata := blsagg.NewTaskMetadata(
+        newTaskCreatedLog.TaskIndex,
+        newTask.TaskCreatedBlock,
+        quorumNums,
+        quorumThresholdPercentages,
+        taskTimeToExpiry,
+    )
+    agg.blsAggregationService.InitializeNewTask(metadata)
+    return nil
+}
+```
+
+Here the aggregator creates the task metadata from the NewTaskCreated event Log. That metadata will be sent to the BLS aggregation service, ad a parameter to the task initialization. For that task, in the BLS aggregation service the operators will send their signed response to the created task.
 
 ### Challenger
 
@@ -356,6 +387,41 @@ function raiseAndResolveChallenge(
 In that method the `TaskManager` calculates the response and determines if the aggregated response is correct or not. In the first case, nothing happens, but in the second case, the signer operators will be slashed.
 
 The slashing mechanism can be found in the [second part](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L261-L279) of the raiseAndResolveChallenge method, but in a simple way to explain, the Manager defines an amount of wads to slash from each operator, and calls the [`InstantSlasher.fulfillSlashingRequest()` method](https://github.com/Layr-Labs/eigenlayer-middleware/blob/4d63f27247587607beb67f96fdabec4b2c1321ef/src/slashers/InstantSlasher.sol#L22-L31), that ends up calling the [`allocationManager.slashOperator()` method](https://github.com/Layr-Labs/eigenlayer-contracts/blob/aa84b7a1d801510a9b893be2f2a91e8ef093faf6/src/contracts/core/AllocationManager.sol#L64-L67).
+
+### Task Generator
+
+The task Generator has this `Start()` method:
+
+``` Go
+func (taskGen *TaskGenerator) Start(ctx context.Context) error {
+    ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
+
+    taskNum := int64(0)
+
+    for {
+        select {
+        case <-ctx.Done():
+            return nil
+        case <-ticker.C:
+            taskGen.logger.Infof("Task Generator sending new task, number to square: %v", taskNum)
+            _, _, err := taskGen.avsWriter.SendNewTaskNumberToSquare(
+                context.Background(),
+                big.NewInt(taskNum),
+                types.QUORUM_THRESHOLD_NUMERATOR,
+                types.QUORUM_NUMBERS,
+            )
+            if err != nil {
+                taskGen.logger.Error("Aggregator failed to send number to square", "err", err)
+                return err
+            }
+            taskNum++
+        }
+    }
+}
+```
+
+In this method we can see the only thing task generator does, generating tasks each 10 seconds. That consists on calling the `CreateNewTask()` method of the on-chain `TaskManager` contract, that stores a hash of the new task and emits a `NewTaskCreated` event, that will be caught by the challenger, the operator and the aggregator.
 
 ## Troubleshooting
 
