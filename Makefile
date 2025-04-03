@@ -104,7 +104,7 @@ start-challenger: ##
 		2>&1 | zap-pretty
 
 start-task-generator: ## 
-	go run task-generator/cmd/main.go --config config-files/aggregator.yaml \
+	go run task-generator/cmd/main.go --config config-files/task-generator.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
 		--core-deployment ${CORE_DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
