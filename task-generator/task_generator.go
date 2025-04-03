@@ -52,7 +52,7 @@ func BuildTaskGenerator(c *config.Config) (*TaskGenerator, error) {
 
 
 func (taskGen *TaskGenerator) Start(ctx context.Context) error {
-	time.Sleep(time.Duration(10*time.Second)) // wait for 10 seconds first
+	time.Sleep(time.Duration(2*time.Second))
 	
 	taskGen.logger.Info("Starting Task Generator.")
 	taskGen.logger.Info("Starting Task Generator rpc server.")
@@ -67,6 +67,7 @@ func (taskGen *TaskGenerator) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
+			taskGen.logger.Infof("Task Generator sending new task, number to square: %v", taskNum)
 			_, _, err := taskGen.avsWriter.SendNewTaskNumberToSquare(
 				context.Background(),
 				big.NewInt(taskNum),
