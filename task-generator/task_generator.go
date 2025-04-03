@@ -7,8 +7,10 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
+	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -16,21 +18,33 @@ import (
 
 type TaskGenerator struct {
     taskManagerAddr common.Address
-    rpcUrl string
 	avsWriter        chainio.AvsWriterer
 	logger           logging.Logger
 }
 
-func BuildTaskGenerator(c *config.Config, taskManagerAddr common.Address, rpcUrl string) (TaskGenerator, error) {
+func BuildTaskGenerator(c *config.Config) (*TaskGenerator, error) {
 	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
 	if err != nil {
 		c.Logger.Errorf("Cannot create avsWriter", "err", err)
-		return TaskGenerator{}, err
+		return nil, err
 	}
 
-    return TaskGenerator{
+	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
+		c.IncredibleSquaringServiceManager,
+		&c.EthHttpClient,
+	)
+	if err != nil {
+		c.Logger.Error("Failed to fetch IServiceManager contract", "err", err)
+		return nil, err
+	}
+	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	if err != nil {
+		c.Logger.Error("Failed to fetch TaskManager address", "err", err)
+		return nil, err
+	}
+
+    return &TaskGenerator{
         taskManagerAddr,
-        rpcUrl,
 		avsWriter,
 		c.Logger,
     }, nil

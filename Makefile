@@ -103,6 +103,13 @@ start-challenger: ##
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
+start-task-generator: ## 
+	go run task-generator/cmd/main.go --config config-files/aggregator.yaml \
+		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
+		--core-deployment ${CORE_DEPLOYMENT_FILE} \
+		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
+		2>&1 | zap-pretty
+
 run-plugin: ## 
 	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml
 -----------------------------: ## 
