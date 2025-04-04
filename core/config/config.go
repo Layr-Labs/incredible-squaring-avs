@@ -65,7 +65,7 @@ type IncredibleSquaringDeploymentRaw struct {
 type IncredibleSquaringContractsRaw struct {
 	RegistryCoordinatorAddr          string `json:"registryCoordinator"`
 	OperatorStateRetrieverAddr       string `json:"operatorStateRetriever"`
-	IncredibleSquaringServiceManager string `json:"IncredibleSquaringServiceManager"`
+	IncredibleSquaringServiceManager string `json:"incredibleSquaringServiceManager"`
 	TokenStrategyAddr                string `json:"strategy"`
 }
 

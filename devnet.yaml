@@ -83,20 +83,19 @@ services:
     image: "ko.local/task-generator/cmd/main.go:latest"
     build_cmd: KO_DOCKER_REPO=ko.local ko build task-generator/cmd/main.go --preserve-import-paths --local
     input:
-      /usr/src/app/config-files/:
-        - task-generator-config
-        - avs_addresses
-        - eigenlayer_addresses
+      /usr/src/app/config-files/generator/: task-generator-config
+      /usr/src/app/config-files/core/: eigenlayer_addresses
+      /usr/src/app/config-files/avs/: avs_addresses
     cmd:
       - "--config"
-      - "/usr/src/app/config-files/task-generator-config.yaml"
+      - "/usr/src/app/config-files/generator/task-generator-config.yaml"
       - "--ecdsa-private-key"
       # NOTE: aggregator key-pair is hardcoded in the deployment scripts
       - "{{.keys.aggregator_key.private_key}}"
       - "--credible-squaring-deployment"
-      - "/usr/src/app/config-files/3151908.json"
+      - "/usr/src/app/config-files/avs/3151908.json"
       - "--core-deployment"
-      - "/usr/src/app/config-files/3151908.json"
+      - "/usr/src/app/config-files/core/3151908.json"
 
   - name: aggregator
     image: "ko.local/aggregator/cmd/main.go:latest"
@@ -107,21 +106,20 @@ services:
         transport_protocol: "TCP"
         application_protocol: "http"
     input:
-      /usr/src/app/config-files/:
-        - aggregator-config
-        - avs_addresses
-        - eigenlayer_addresses
+      /usr/src/app/config-files/aggregator/: aggregator-config
+      /usr/src/app/config-files/core/: eigenlayer_addresses
+      /usr/src/app/config-files/avs/: avs_addresses
 
     cmd:
       - "--config"
-      - "/usr/src/app/config-files/aggregator-config.yaml"
+      - "/usr/src/app/config-files/aggregator/aggregator-config.yaml"
       - "--ecdsa-private-key"
       # NOTE: aggregator key-pair is hardcoded in the deployment scripts
       - "{{.keys.aggregator_key.private_key}}"
       - "--credible-squaring-deployment"
-      - "/usr/src/app/config-files/3151908.json"
+      - "/usr/src/app/config-files/avs/3151908.json"
       - "--core-deployment"
-      - "/usr/src/app/config-files/3151908.json"
+      - "/usr/src/app/config-files/core/3151908.json"
 
 keys:
   # This generates new keypairs for each operator
@@ -145,7 +143,7 @@ artifacts:
       aggregator-config.yaml:
         template: |
           # 'production' only prints info and above. 'development' also prints debug
-          environment: development
+          environment: production
           eth_rpc_url: {{.http_rpc_url}}
           eth_ws_url: {{.ws_rpc_url}}
           # address which the aggregator listens on for operator signed messages
