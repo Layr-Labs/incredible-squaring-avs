@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
@@ -95,8 +96,9 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 	return metadata, nil
 }
 
-// func (tp *IncredibleTaskProcessor) ProcessTaskResponse(ctx context.Context, event any) (B256, error) {
-// }
+func (tp *IncredibleTaskProcessor) ProcessTaskResponse(ctx context.Context, event sdkaggregator.TPTaskResponse) ([256]byte, error) {
+	return event.Digest(), nil
+}
 
 func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(ctx context.Context, response blsagg.BlsAggregationServiceResponse) error {
 	if response.Err != nil {
