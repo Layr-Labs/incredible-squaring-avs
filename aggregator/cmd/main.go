@@ -61,6 +61,7 @@ func aggregatorMain(ctx *cli.Context) error {
 		EthHttpUrl: config.EthHttpRpcUrl,
 		EthWsUrl: config.EthWsRpcUrl,
 		EcdsaPrivateKey: config.EcdsaPrivateKey,
+		AggregatorServerIpPortAddr: config.AggregatorServerIpPortAddr,
 	}
 
 	taskProcessor, err := aggregator.NewTaskProcessor(config)
