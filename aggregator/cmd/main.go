@@ -57,6 +57,10 @@ func aggregatorMain(ctx *cli.Context) error {
 		ServiceManagerAddress: config.IncredibleSquaringServiceManager,
 		EthHttpClient: &config.EthHttpClient,
 		TxMgr: config.TxMgr,
+		Logger: config.Logger,
+		EthHttpUrl: config.EthHttpRpcUrl,
+		EthWsUrl: config.EthWsRpcUrl,
+		EcdsaPrivateKey: config.EcdsaPrivateKey,
 	}
 
 	taskProcessor, err := aggregator.NewTaskProcessor(config)

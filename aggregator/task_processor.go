@@ -3,6 +3,7 @@ package aggregator
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
@@ -14,6 +15,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type IncredibleTaskProcessor struct {
@@ -42,16 +44,32 @@ func NewTaskProcessor(c *config.Config) (*IncredibleTaskProcessor, error) {
 }
 
 func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any) (blsagg.TaskMetadata, error) {
-	newTaskCreatedLog, validConversion := event.(*cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated)
-	if !validConversion {
-		tp.logger.Error("Log cannot not be converted into a New task created log")
-		return blsagg.TaskMetadata{}, errors.New("Log cannot not be converted into a New task created log")
+	var newTaskCreatedLog cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+
+	log, ok := event.(types.Log)
+	if !ok {
+		tp.logger.Errorf("Event was not a types.Log. Event: %v", event)
+		return blsagg.TaskMetadata{}, errors.New("invalid type event, expected types.Log")
 	}
-	tp.logger.Info("Aggregator received new task", "numberToSquare", newTaskCreatedLog.Task.NumberToBeSquared)
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		tp.logger.Fatalf("Error obtaining task manager ABI: %v", err)
+	}
+
+	err = taskManagerAbi.UnpackIntoInterface(&newTaskCreatedLog, "NewTaskCreated", log.Data)
+	if err != nil {
+		return blsagg.TaskMetadata{}, fmt.Errorf("error unpacking the log: %w", err)
+	}
+
+	// Note: this is a temporal fix taking advantage that NumberToBeSquared is equal to task index
+	newTaskIndex := sdktypes.TaskIndex(newTaskCreatedLog.Task.NumberToBeSquared.Uint64())
+
+	tp.logger.Infof("Aggregator received new task: %v: ", newTaskCreatedLog)
 
 	newTask := newTaskCreatedLog.Task
 	tp.tasksMu.Lock()
-	tp.tasks[newTaskCreatedLog.TaskIndex] = newTask
+	tp.tasks[newTaskIndex] = newTask
 	tp.tasksMu.Unlock()
 
 	quorumThresholdPercentages := make(sdktypes.QuorumThresholdPercentages, len(newTask.QuorumNumbers))
@@ -67,7 +85,7 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 		quorumNums = append(quorumNums, sdktypes.QuorumNum(quorumNum))
 	}
 	metadata := blsagg.NewTaskMetadata(
-		newTaskCreatedLog.TaskIndex,
+		newTaskIndex,
 		newTask.TaskCreatedBlock,
 		quorumNums,
 		quorumThresholdPercentages,
@@ -78,7 +96,6 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 }
 
 // func (tp *IncredibleTaskProcessor) ProcessTaskResponse(ctx context.Context, event any) (B256, error) {
-
 // }
 
 func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(ctx context.Context, response blsagg.BlsAggregationServiceResponse) error {
