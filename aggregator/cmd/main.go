@@ -9,7 +9,9 @@ import (
 
 	"github.com/urfave/cli"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
 
@@ -49,14 +51,33 @@ func aggregatorMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
-	agg, err := aggregator.NewAggregator(config)
+	cfg := sdkaggregator.AggregatorConfig{
+		RegistryCoordinatorAddress: config.IncredibleSquaringRegistryCoordinatorAddr,
+		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
+		ServiceManagerAddress: config.IncredibleSquaringServiceManager,
+		EthHttpClient: &config.EthHttpClient,
+		TxMgr: config.TxMgr,
+	}
+
+	taskProcessor, err := aggregator.NewTaskProcessor(config)
 	if err != nil {
-		return err
+		config.Logger.Fatalf(err.Error())
+	}
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
 	}
 
 	err = agg.Start(context.Background())
 	if err != nil {
-		return err
+		config.Logger.Fatalf(err.Error())
 	}
 
 	return nil
