@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -73,8 +74,8 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 		return blsagg.TaskMetadata{}, fmt.Errorf("error unpacking the log: %w", err)
 	}
 
-	// Note: this is a temporal fix taking advantage that NumberToBeSquared is equal to task index
-	newTaskIndex := sdktypes.TaskIndex(newTaskCreatedLog.Task.NumberToBeSquared.Uint64())
+	// This is done this way because the taskIndex value in this event is indexed, so we take it from the log
+	newTaskIndex := uint32(new(big.Int).SetBytes(log.Topics[1].Bytes()).Uint64())
 
 	tp.logger.Infof("Aggregator received new task: %v: ", newTaskCreatedLog)
 
