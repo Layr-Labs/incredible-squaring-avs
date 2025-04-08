@@ -13,7 +13,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/rand"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
@@ -21,6 +20,7 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
@@ -395,7 +395,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 
 func (o *Operator) SignTaskResponse(
 	taskResponse *cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-) (*aggregator.SignedTaskResponse, error) {
+) (*sdkaggregator.SignedTaskResponse, error) {
 	taskResponseHash, err := core.GetTaskResponseDigest(taskResponse)
 	if err != nil {
 		o.logger.Error(
@@ -405,9 +405,14 @@ func (o *Operator) SignTaskResponse(
 		)
 		return nil, err
 	}
+
+	taskResp := sdkaggregator.TaskResponse{
+		ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
+		NumberSquared: taskResponse.NumberSquared,
+	}
 	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
-	signedTaskResponse := &aggregator.SignedTaskResponse{
-		TaskResponse: *taskResponse,
+	signedTaskResponse := &sdkaggregator.SignedTaskResponse{
+		TaskResponse: taskResp,
 		BlsSignature: *blsSignature,
 		OperatorId:   o.operatorId,
 	}
