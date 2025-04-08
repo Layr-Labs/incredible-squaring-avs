@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/logging"
@@ -105,7 +106,7 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 	return metadata, nil
 }
 
-func (tp *IncredibleTaskProcessor) ProcessTaskResponse(ctx context.Context, event sdkaggregator.TPTaskResponse) ([256]byte, error) {
+func (tp *IncredibleTaskProcessor) ProcessTaskResponse(ctx context.Context, event sdkaggregator.TaskResponse) ([256]byte, error) {
 	return event.Digest(), nil
 }
 
@@ -137,7 +138,15 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(ctx context.Context
 	tp.tasksMu.RLock()
 	task := tp.tasks[response.TaskIndex]
 	tp.tasksMu.RUnlock()
-	taskResponse, _ := response.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
+
+
+	taskResponseAgg, ok := response.TaskResponse.(sdkaggregator.TaskResponse)
+	if !ok {
+		tp.logger.Error("task Response could not be converted to sdk aggregator's Task Response type")
+	}
+
+	taskResponse:= cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(taskResponseAgg)
+
 	_, err := tp.avsWriter.SendAggregatedResponse(
 		context.Background(),
 		task,
