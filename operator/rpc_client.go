@@ -44,8 +44,8 @@ func (c *AggregatorRpcClient) dialAggregatorRpcClient() error {
 	}
 	c.rpcClient = client
 
-	gob.Register(&aggregator.IncredibleSquaringTaskResponse{}) 
-	
+	gob.Register(&aggregator.IncredibleSquaringTaskResponse{})
+
 	return nil
 }
 
