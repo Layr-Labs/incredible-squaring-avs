@@ -408,7 +408,7 @@ func (o *Operator) SignTaskResponse(
 
 	taskResp := sdkaggregator.TaskResponse{
 		ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
-		NumberSquared: taskResponse.NumberSquared,
+		NumberSquared:      taskResponse.NumberSquared,
 	}
 	blsSignature := o.blsKeypair.SignMessage(taskResponseHash)
 	signedTaskResponse := &sdkaggregator.SignedTaskResponse{

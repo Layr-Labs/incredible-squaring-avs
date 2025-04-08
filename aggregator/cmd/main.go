@@ -52,16 +52,16 @@ func aggregatorMain(ctx *cli.Context) error {
 	fmt.Println("Config:", string(configJson))
 
 	cfg := sdkaggregator.AggregatorConfig{
-		RegistryCoordinatorAddress: config.IncredibleSquaringRegistryCoordinatorAddr,
+		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
-		ServiceManagerAddress: config.IncredibleSquaringServiceManager,
-		EthHttpClient: &config.EthHttpClient,
-		TxMgr: config.TxMgr,
-		Logger: config.Logger,
-		EthHttpUrl: config.EthHttpRpcUrl,
-		EthWsUrl: config.EthWsRpcUrl,
-		EcdsaPrivateKey: config.EcdsaPrivateKey,
-		AggregatorServerIpPortAddr: config.AggregatorServerIpPortAddr,
+		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
+		EthHttpClient:                 &config.EthHttpClient,
+		TxMgr:                         config.TxMgr,
+		Logger:                        config.Logger,
+		EthHttpUrl:                    config.EthHttpRpcUrl,
+		EthWsUrl:                      config.EthWsRpcUrl,
+		EcdsaPrivateKey:               config.EcdsaPrivateKey,
+		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
 	}
 
 	taskProcessor, err := aggregator.NewTaskProcessor(config)

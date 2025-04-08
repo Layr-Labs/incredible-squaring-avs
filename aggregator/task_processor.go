@@ -31,14 +31,12 @@ const (
 )
 
 type IncredibleTaskProcessor struct {
-	logger           logging.Logger
-	avsWriter        chainio.AvsWriterer
-	tasks                 map[sdktypes.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask
-	tasksMu               sync.RWMutex
-	taskResponses      map[uint32]chtypes.TaskResponseData
+	logger        logging.Logger
+	avsWriter     chainio.AvsWriterer
+	tasks         map[sdktypes.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask
+	tasksMu       sync.RWMutex
+	taskResponses map[uint32]chtypes.TaskResponseData
 }
-
-
 
 func NewTaskProcessor(c *config.Config) (*IncredibleTaskProcessor, error) {
 	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
@@ -48,10 +46,10 @@ func NewTaskProcessor(c *config.Config) (*IncredibleTaskProcessor, error) {
 	}
 
 	return &IncredibleTaskProcessor{
-		logger:                c.Logger,
-		avsWriter:             avsWriter,
-		tasks:                 make(map[sdktypes.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-		taskResponses:		   make(map[uint32]chtypes.TaskResponseData),
+		logger:        c.Logger,
+		avsWriter:     avsWriter,
+		tasks:         make(map[sdktypes.TaskIndex]cstaskmanager.IIncredibleSquaringTaskManagerTask),
+		taskResponses: make(map[uint32]chtypes.TaskResponseData),
 	}, nil
 }
 
@@ -107,11 +105,17 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 	return metadata, nil
 }
 
-func (tp *IncredibleTaskProcessor) ProcessTaskResponse(ctx context.Context, event sdkaggregator.TaskResponse) ([256]byte, error) {
+func (tp *IncredibleTaskProcessor) ProcessTaskResponse(
+	ctx context.Context,
+	event sdkaggregator.TaskResponse,
+) ([256]byte, error) {
 	return event.Digest(), nil
 }
 
-func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(ctx context.Context, response blsagg.BlsAggregationServiceResponse) error {
+func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
+	ctx context.Context,
+	response blsagg.BlsAggregationServiceResponse,
+) error {
 	if response.Err != nil {
 		return utils.WrapError("BlsAggregationServiceResponse contains an error", response.Err)
 	}
@@ -134,19 +138,18 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(ctx context.Context
 		NonSignerStakeIndices:        response.NonSignerStakeIndices,
 	}
 
-	tp.logger.Info("Threshold reached. Sending aggregated response onchain.","taskIndex", response.TaskIndex)
+	tp.logger.Info("Threshold reached. Sending aggregated response onchain.", "taskIndex", response.TaskIndex)
 
 	tp.tasksMu.RLock()
 	task := tp.tasks[response.TaskIndex]
 	tp.tasksMu.RUnlock()
-
 
 	taskResponseAgg, ok := response.TaskResponse.(sdkaggregator.TaskResponse)
 	if !ok {
 		tp.logger.Error("task Response could not be converted to sdk aggregator's Task Response type")
 	}
 
-	taskResponse:= cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(taskResponseAgg)
+	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(taskResponseAgg)
 
 	_, err := tp.avsWriter.SendAggregatedResponse(
 		context.Background(),
