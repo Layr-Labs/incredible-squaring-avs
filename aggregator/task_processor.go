@@ -19,6 +19,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+const (
+	// number of blocks after which a task is considered expired
+	// this hardcoded here because it's also hardcoded in the contracts, but should
+	// ideally be fetched from the contracts
+	taskChallengeWindowBlock = 100
+	blockTimeSeconds         = 12 * time.Second
+	avsName                  = "incredible-squaring"
+)
+
 type IncredibleTaskProcessor struct {
 	logger           logging.Logger
 	avsWriter        chainio.AvsWriterer
