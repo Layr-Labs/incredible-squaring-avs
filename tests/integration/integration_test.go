@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
@@ -18,6 +19,7 @@ import (
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
@@ -171,11 +173,36 @@ func TestIntegration(t *testing.T) {
 
 	/* start aggregator */
 	log.Println("starting aggregator for integration tests")
-	agg, err := aggregator.NewAggregator(config)
+	cfg := sdkaggregator.AggregatorConfig{
+		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
+		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
+		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
+		EthHttpClient:                 &config.EthHttpClient,
+		TxMgr:                         config.TxMgr,
+		Logger:                        config.Logger,
+		EthHttpUrl:                    config.EthHttpRpcUrl,
+		EthWsUrl:                      config.EthWsRpcUrl,
+		EcdsaPrivateKey:               config.EcdsaPrivateKey,
+		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
+	}
+
+	taskProcessor, err := aggregator.NewTaskProcessor(config)
 	if err != nil {
-		t.Fatalf("Failed to create aggregator: %s", err.Error())
+		config.Logger.Fatalf(err.Error())
+	}
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
 	}
 	go agg.Start(ctx)
+
 	go taskGenerator.Start(ctx)
 
 	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")
