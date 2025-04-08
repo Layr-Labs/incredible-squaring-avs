@@ -144,12 +144,12 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 	task := tp.tasks[response.TaskIndex]
 	tp.tasksMu.RUnlock()
 
-	taskResponseAgg, ok := response.TaskResponse.(sdkaggregator.TaskResponse)
+	taskResponseAgg, ok := response.TaskResponse.(*IncredibleSquaringTaskResponse)
 	if !ok {
 		tp.logger.Error("task Response could not be converted to sdk aggregator's Task Response type")
 	}
 
-	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(taskResponseAgg)
+	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(*taskResponseAgg)
 
 	_, err := tp.avsWriter.SendAggregatedResponse(
 		context.Background(),
@@ -161,4 +161,17 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 		return utils.WrapError("Aggregator failed to respond to task", err)
 	}
 	return nil
+}
+
+type IncredibleSquaringTaskResponse struct {
+	ReferenceTaskIndex uint32
+	NumberSquared      *big.Int
+}
+
+func (tr IncredibleSquaringTaskResponse) TaskIndex() sdktypes.TaskIndex {
+	return tr.ReferenceTaskIndex
+}
+
+func (tr IncredibleSquaringTaskResponse) Digest() [256]byte {
+	return [256]byte(tr.NumberSquared.Bytes())
 }

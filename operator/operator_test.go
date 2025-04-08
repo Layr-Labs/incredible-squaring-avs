@@ -15,6 +15,7 @@ import (
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 
+	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
@@ -70,7 +71,7 @@ func TestOperator(t *testing.T) {
 		assert.True(t, ok)
 
 		signedTaskResponse := &sdkaggregator.SignedTaskResponse{
-			TaskResponse: sdkaggregator.TaskResponse{
+			TaskResponse: aggregator.IncredibleSquaringTaskResponse{
 				ReferenceTaskIndex: taskIndex,
 				NumberSquared:      big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared),
 			},

@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/exp/rand"
 
+	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
@@ -406,7 +407,7 @@ func (o *Operator) SignTaskResponse(
 		return nil, err
 	}
 
-	taskResp := sdkaggregator.TaskResponse{
+	taskResp := aggregator.IncredibleSquaringTaskResponse{
 		ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
 		NumberSquared:      taskResponse.NumberSquared,
 	}

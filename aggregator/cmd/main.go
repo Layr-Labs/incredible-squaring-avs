@@ -80,7 +80,7 @@ func aggregatorMain(ctx *cli.Context) error {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	err = agg.Start(context.Background())
+	err = agg.Start(context.Background(), &aggregator.IncredibleSquaringTaskResponse{})
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}

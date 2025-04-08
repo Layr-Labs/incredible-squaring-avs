@@ -1,10 +1,12 @@
 package operator
 
 import (
+	"encoding/gob"
 	"fmt"
 	"net/rpc"
 	"time"
 
+	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
@@ -41,6 +43,9 @@ func (c *AggregatorRpcClient) dialAggregatorRpcClient() error {
 		return err
 	}
 	c.rpcClient = client
+
+	gob.Register(&aggregator.IncredibleSquaringTaskResponse{}) 
+	
 	return nil
 }
 
