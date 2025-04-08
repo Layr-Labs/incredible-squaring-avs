@@ -12,9 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	aggtypes "github.com/Layr-Labs/incredible-squaring-avs/aggregator/types"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	chainiomocks "github.com/Layr-Labs/incredible-squaring-avs/core/chainio/mocks"
@@ -69,8 +69,8 @@ func TestOperator(t *testing.T) {
 			SetString("15243507701692917330954619280683582177901049846125926696838777109165913318327", 10)
 		assert.True(t, ok)
 
-		signedTaskResponse := &aggregator.SignedTaskResponse{
-			TaskResponse: cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		signedTaskResponse := &sdkaggregator.SignedTaskResponse{
+			TaskResponse: sdkaggregator.TaskResponse{
 				ReferenceTaskIndex: taskIndex,
 				NumberSquared:      big.NewInt(0).Mul(numberToBeSquared, numberToBeSquared),
 			},
