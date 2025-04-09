@@ -108,7 +108,7 @@ func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any
 func (tp *IncredibleTaskProcessor) ProcessTaskResponse(
 	ctx context.Context,
 	event sdkaggregator.TaskResponse,
-) ([256]byte, error) {
+) ([32]byte, error) {
 	return event.Digest(), nil
 }
 
@@ -172,6 +172,6 @@ func (tr IncredibleSquaringTaskResponse) TaskIndex() sdktypes.TaskIndex {
 	return tr.ReferenceTaskIndex
 }
 
-func (tr IncredibleSquaringTaskResponse) Digest() [256]byte {
-	return [256]byte(tr.NumberSquared.Bytes())
+func (tr IncredibleSquaringTaskResponse) Digest() [32]byte {
+	return [32]byte(tr.NumberSquared.Bytes())
 }
