@@ -7,9 +7,15 @@ import (
 	"log"
 	"os"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/urfave/cli"
+	"golang.org/x/crypto/sha3"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
+	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
 
@@ -49,14 +55,74 @@ func aggregatorMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
-	agg, err := aggregator.NewAggregator(config)
-	if err != nil {
-		return err
+	cfg := sdkaggregator.AggregatorConfig{
+		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
+		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
+		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
+		EthHttpClient:                 &config.EthHttpClient,
+		TxMgr:                         config.TxMgr,
+		Logger:                        config.Logger,
+		EthHttpUrl:                    config.EthHttpRpcUrl,
+		EthWsUrl:                      config.EthWsRpcUrl,
+		EcdsaPrivateKey:               config.EcdsaPrivateKey,
+		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
 	}
 
-	err = agg.Start(context.Background())
+	taskProcessor, err := aggregator.NewTaskProcessor(config)
 	if err != nil {
-		return err
+		config.Logger.Fatalf(err.Error())
+	}
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	// This is the same hash function used by the operator to hash the task response before signing it.
+	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
+		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
+			{
+				Name: "referenceTaskIndex",
+				Type: "uint32",
+			},
+			{
+				Name: "numberSquared",
+				Type: "uint256",
+			},
+		})
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error creating taskResponseType", err)
+		}
+		arguments := abi.Arguments{
+			{
+				Type: taskResponseType,
+			},
+		}
+
+		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error Packing taskResponse", err)
+		}
+
+		var taskResponseDigest [32]byte
+		hasher := sha3.NewLegacyKeccak256()
+		hasher.Write(encodeTaskResponseByte)
+		copy(taskResponseDigest[:], hasher.Sum(nil)[:32])
+
+		return taskResponseDigest, nil
+	}
+	cfg.TaskResponseHashFn = hashFunction
+
+	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	err = agg.Start(context.Background(), &aggregator.IncredibleSquaringTaskResponse{})
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
 	}
 
 	return nil

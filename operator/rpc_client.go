@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"encoding/gob"
 	"fmt"
 	"net/rpc"
 	"time"
@@ -8,11 +9,12 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 )
 
 type AggregatorRpcClienter interface {
-	SendSignedTaskResponseToAggregator(signedTaskResponse *aggregator.SignedTaskResponse)
+	SendSignedTaskResponseToAggregator(signedTaskResponse *sdkaggregator.SignedTaskResponse)
 }
 type AggregatorRpcClient struct {
 	rpcClient            *rpc.Client
@@ -41,6 +43,9 @@ func (c *AggregatorRpcClient) dialAggregatorRpcClient() error {
 		return err
 	}
 	c.rpcClient = client
+
+	gob.Register(&aggregator.IncredibleSquaringTaskResponse{})
+
 	return nil
 }
 
@@ -49,7 +54,7 @@ func (c *AggregatorRpcClient) dialAggregatorRpcClient() error {
 // this is because sending the signed task response to the aggregator is time sensitive,
 // so there is no point in retrying if it fails for a few times.
 // Currently hardcoded to retry sending the signed task response 5 times, waiting 2 seconds in between each attempt.
-func (c *AggregatorRpcClient) SendSignedTaskResponseToAggregator(signedTaskResponse *aggregator.SignedTaskResponse) {
+func (c *AggregatorRpcClient) SendSignedTaskResponseToAggregator(signedTaskResponse *sdkaggregator.SignedTaskResponse) {
 	if c.rpcClient == nil {
 		c.logger.Info("rpc client is nil. Dialing aggregator rpc client")
 		err := c.dialAggregatorRpcClient()

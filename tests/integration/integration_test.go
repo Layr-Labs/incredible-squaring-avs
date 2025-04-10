@@ -10,25 +10,31 @@ import (
 	"testing"
 	"time"
 
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/Layr-Labs/eigensdk-go/utils"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	taskgenerator "github.com/Layr-Labs/incredible-squaring-avs/task-generator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"golang.org/x/crypto/sha3"
 )
 
 type IntegrationClients struct {
@@ -171,11 +177,72 @@ func TestIntegration(t *testing.T) {
 
 	/* start aggregator */
 	log.Println("starting aggregator for integration tests")
-	agg, err := aggregator.NewAggregator(config)
-	if err != nil {
-		t.Fatalf("Failed to create aggregator: %s", err.Error())
+	cfg := sdkaggregator.AggregatorConfig{
+		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
+		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
+		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
+		EthHttpClient:                 &config.EthHttpClient,
+		TxMgr:                         config.TxMgr,
+		Logger:                        config.Logger,
+		EthHttpUrl:                    config.EthHttpRpcUrl,
+		EthWsUrl:                      config.EthWsRpcUrl,
+		EcdsaPrivateKey:               config.EcdsaPrivateKey,
+		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
 	}
-	go agg.Start(ctx)
+
+	taskProcessor, err := aggregator.NewTaskProcessor(config)
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	// This is the same hash function used by the operator to hash the task response before signing it.
+	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
+		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
+			{
+				Name: "referenceTaskIndex",
+				Type: "uint32",
+			},
+			{
+				Name: "numberSquared",
+				Type: "uint256",
+			},
+		})
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error creating taskResponseType", err)
+		}
+		arguments := abi.Arguments{
+			{
+				Type: taskResponseType,
+			},
+		}
+
+		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
+		if err != nil {
+			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error Packing taskResponse", err)
+		}
+
+		var taskResponseDigest [32]byte
+		hasher := sha3.NewLegacyKeccak256()
+		hasher.Write(encodeTaskResponseByte)
+		copy(taskResponseDigest[:], hasher.Sum(nil)[:32])
+
+		return taskResponseDigest, nil
+	}
+	cfg.TaskResponseHashFn = hashFunction
+
+	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+	go agg.Start(ctx, &aggregator.IncredibleSquaringTaskResponse{})
+
 	go taskGenerator.Start(ctx)
 
 	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")

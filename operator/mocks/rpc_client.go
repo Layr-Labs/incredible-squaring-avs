@@ -11,7 +11,7 @@ package mocks
 import (
 	reflect "reflect"
 
-	aggregator "github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -39,7 +39,7 @@ func (m *MockAggregatorRpcClienter) EXPECT() *MockAggregatorRpcClienterMockRecor
 }
 
 // SendSignedTaskResponseToAggregator mocks base method.
-func (m *MockAggregatorRpcClienter) SendSignedTaskResponseToAggregator(arg0 *aggregator.SignedTaskResponse) {
+func (m *MockAggregatorRpcClienter) SendSignedTaskResponseToAggregator(arg0 *sdkaggregator.SignedTaskResponse) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SendSignedTaskResponseToAggregator", arg0)
 }
