@@ -173,8 +173,10 @@ func (tr IncredibleSquaringTaskResponse) TaskIndex() sdktypes.TaskIndex {
 }
 
 func (tr IncredibleSquaringTaskResponse) Digest() [32]byte {
-	returnValue := [32]byte{}
-	squaredBytes := tr.NumberSquared.Bytes()
-	copy(returnValue[32-len(squaredBytes):], squaredBytes)
-	return returnValue
+	tmresponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(tr)
+	taskResponseHash, err := core.GetTaskResponseDigest(&tmresponse)
+	if err != nil {
+		return [32]byte{}
+	}
+	return taskResponseHash
 }
