@@ -37,7 +37,7 @@ func DepositIntoStrategy(ctx *cli.Context) error {
 	nodeConfig.RegisterOperatorOnStartup = false
 	configJson, err := json.MarshalIndent(nodeConfig, "", "  ")
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 	log.Println("Config:", string(configJson))
 
