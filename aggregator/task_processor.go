@@ -173,5 +173,8 @@ func (tr IncredibleSquaringTaskResponse) TaskIndex() sdktypes.TaskIndex {
 }
 
 func (tr IncredibleSquaringTaskResponse) Digest() [32]byte {
-	return [32]byte(tr.NumberSquared.Bytes())
+	returnValue := [32]byte{}
+	squaredBytes := tr.NumberSquared.Bytes()
+	copy(returnValue[32-len(squaredBytes):],squaredBytes)
+	return returnValue
 }
