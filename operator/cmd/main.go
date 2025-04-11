@@ -75,8 +75,8 @@ func operatorMain(ctx *cli.Context) error {
 		}
 
 		elcontractsConfig := elcontracts.Config{
-			DelegationManagerAddress: common.HexToAddress(nodeConfig.DelegationManagerAddress),
-			RewardsCoordinatorAddress: common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
+			DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
+			RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
 			PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
 		}
 
@@ -107,12 +107,12 @@ func operatorMain(ctx *cli.Context) error {
 		if err != nil {
 			panic(err)
 		}
-		
+
 		pkWallet, err := wallet.NewPrivateKeyWallet(ethRpcClient, signerV2, senderAddr, logger)
 		if err != nil {
 			return err
 		}
-		
+
 		txMgr := txmgr.NewSimpleTxManager(pkWallet, ethRpcClient, logger, senderAddr)
 
 		err = sdkoperator.RegisterOperatorWithEigenlayer(
@@ -150,10 +150,10 @@ func operatorMain(ctx *cli.Context) error {
 
 		err = sdkoperator.RegisterForOperatorSets(
 			common.HexToAddress(nodeConfig.OperatorAddress),
-			logger, 
-			elcontractsConfig, 
-			ethRpcClient, 
-			txMgr, 
+			logger,
+			elcontractsConfig,
+			ethRpcClient,
+			txMgr,
 			common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
 			common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
 			[]uint32{0},
@@ -166,10 +166,10 @@ func operatorMain(ctx *cli.Context) error {
 
 		err = sdkoperator.SetAllocationDelay(
 			logger,
-			common.HexToAddress(nodeConfig.OperatorAddress), 
-			ethRpcClient, 
-			common.HexToAddress(nodeConfig.AllocationManagerAddress), 
-			txMgr, 
+			common.HexToAddress(nodeConfig.OperatorAddress),
+			ethRpcClient,
+			common.HexToAddress(nodeConfig.AllocationManagerAddress),
+			txMgr,
 			0,
 		)
 		if err != nil {
@@ -230,12 +230,18 @@ func DepositIntoStrategyForOperator(
 		return err
 	}
 
-	elWriter, err := elcontracts.NewWriterFromConfig(elcontractsConfig, ethClient, logger, &metrics.EigenMetrics{}, txMgr)
+	elWriter, err := elcontracts.NewWriterFromConfig(
+		elcontractsConfig,
+		ethClient,
+		logger,
+		&metrics.EigenMetrics{},
+		txMgr,
+	)
 	if err != nil {
 		logger.Error("Error creating eigenlayer chain writer", "err", err)
 		return err
 	}
-	
+
 	_, tokenAddr, err := elReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
 	if err != nil {
 		logger.Error("Failed to fetch strategy contract", "err", err)
@@ -243,7 +249,6 @@ func DepositIntoStrategyForOperator(
 	}
 	logger.Info(tokenAddr.String())
 
-	
 	contractErc20Mock, err := erc20mock.NewContractMockERC20(tokenAddr, ethClient)
 	if err != nil {
 		logger.Error("Failed to fetch ERC20Mock contract", "err", err)

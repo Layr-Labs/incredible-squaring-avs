@@ -175,6 +175,6 @@ func (tr IncredibleSquaringTaskResponse) TaskIndex() sdktypes.TaskIndex {
 func (tr IncredibleSquaringTaskResponse) Digest() [32]byte {
 	returnValue := [32]byte{}
 	squaredBytes := tr.NumberSquared.Bytes()
-	copy(returnValue[32-len(squaredBytes):],squaredBytes)
+	copy(returnValue[32-len(squaredBytes):], squaredBytes)
 	return returnValue
 }
