@@ -80,6 +80,8 @@ func RegisterOperatorOnStartup(nodeConfig types.NodeConfig, logger logging.Logge
 		logger.Fatalf("Failed to register operator with EigenLayer on startup: %v", err.Error())
 	}
 
+	amount := new(big.Int)
+	amount.SetString("1000000000000000000000", 10)
 	err = DepositIntoStrategyForOperator(
 		logger,
 		elcontractsConfig,
@@ -87,6 +89,7 @@ func RegisterOperatorOnStartup(nodeConfig types.NodeConfig, logger logging.Logge
 		common.HexToAddress(nodeConfig.TokenStrategyAddr),
 		txMgr,
 		common.HexToAddress(nodeConfig.OperatorAddress),
+		amount,
 	)
 	if err != nil {
 		logger.Fatalf("Failed to deposit into strategy for operator on startup: %v", err.Error())
@@ -140,7 +143,7 @@ func DepositIntoStrategyForOperator(
 	strategyAddr common.Address,
 	txMgr txmgr.TxManager,
 	operatorAddr common.Address,
-
+	amount *big.Int,
 ) error {
 	elReader, err := elcontracts.NewReaderFromConfig(elcontractsConfig, ethClient, logger)
 	if err != nil {
@@ -178,8 +181,6 @@ func DepositIntoStrategyForOperator(
 		return err
 	}
 
-	amount := new(big.Int)
-	amount.SetString("1000000000000000000000", 10)
 	tx, err := contractErc20Mock.Mint(txOpts, operatorAddr, amount)
 	if err != nil {
 		logger.Errorf("Error assembling Mint tx")

@@ -38,7 +38,6 @@ func PrintOperatorStatus(ctx *cli.Context) error {
 	}
 	log.Println("Config:", string(configJson))
 
-
 	avsConfig := avsregistry.Config{
 		RegistryCoordinatorAddress: common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
 	}
@@ -47,14 +46,20 @@ func PrintOperatorStatus(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	
+
 	ethRpcClient, err := ethclient.Dial(nodeConfig.EthRpcUrl)
 	if err != nil {
 		logger.Errorf("Cannot create http ethclient", "err", err)
 		return err
 	}
 
-	err = printOperatorStatus(avsConfig, ethRpcClient, logger, common.HexToAddress(nodeConfig.OperatorAddress), nodeConfig.BlsPrivateKeyStorePath)
+	err = printOperatorStatus(
+		avsConfig,
+		ethRpcClient,
+		logger,
+		common.HexToAddress(nodeConfig.OperatorAddress),
+		nodeConfig.BlsPrivateKeyStorePath,
+	)
 	if err != nil {
 		return err
 	}
@@ -74,9 +79,9 @@ type OperatorStatus struct {
 }
 
 func printOperatorStatus(
-	avsConfig avsregistry.Config, 
-	ethClient eth.HttpBackend, 
-	logger logging.Logger, 
+	avsConfig avsregistry.Config,
+	ethClient eth.HttpBackend,
+	logger logging.Logger,
 	operatorAddr common.Address,
 	blsPrivateKeyStorePath string,
 ) error {

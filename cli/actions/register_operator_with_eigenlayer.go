@@ -90,7 +90,7 @@ func RegisterOperatorWithEigenlayer(ctx *cli.Context) error {
 	}
 
 	txMgr := txmgr.NewSimpleTxManager(pkWallet, ethRpcClient, logger, senderAddr)
-	
+
 	err = sdkoperator.RegisterOperatorWithEigenlayer(
 		common.HexToAddress(nodeConfig.OperatorAddress),
 		elcontractsConfig,
