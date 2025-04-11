@@ -15,6 +15,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
@@ -167,11 +168,37 @@ func TestIntegration(t *testing.T) {
 	nodeConfig.RegisterOperatorOnStartup = true
 	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
 	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint
-	operator, err := operator.NewOperatorFromConfig(nodeConfig)
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		t.Fatalf("Failed to create operator: %s", err.Error())
+		logger.Fatalf(err.Error())
 	}
-	go operator.Start(ctx)
+
+	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+
+	err = operator.RegisterOperatorOnStartup(nodeConfig, logger)
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	operatorConfig := sdkoperator.OperatorConfig{
+		OperatorAddress:               nodeConfig.OperatorAddress,
+		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:         nodeConfig.IncredibleSquaringServiceManager,
+		AVSRegistryCoordinatorAddress: nodeConfig.AVSRegistryCoordinatorAddress,
+		EthRpcUrl:                     nodeConfig.EthRpcUrl,
+		EthWsUrl:                      nodeConfig.EthWsUrl,
+		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
+		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
+		RegisterOnStartup:             true,
+	}
+	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
+	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger)
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	go operator.Start(ctx, &aggregator.IncredibleSquaringTaskResponse{})
 	log.Println("Started operator. Sleeping 15 seconds to give it time to register...")
 	time.Sleep(15 * time.Second)
 
@@ -195,10 +222,10 @@ func TestIntegration(t *testing.T) {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
-	if err != nil {
-		config.Logger.Fatalf(err.Error())
-	}
+	// taskManagerAbi, err = cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	// if err != nil {
+	// 	config.Logger.Fatalf(err.Error())
+	// }
 
 	// This is the same hash function used by the operator to hash the task response before signing it.
 	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
@@ -236,7 +263,7 @@ func TestIntegration(t *testing.T) {
 	}
 	cfg.TaskResponseHashFn = hashFunction
 
-	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	blockHash = taskManagerAbi.Events["NewTaskCreated"].ID
 	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
