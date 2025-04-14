@@ -17,6 +17,7 @@ import (
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
@@ -140,7 +141,18 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
 
-	taskGenerator, err := taskgenerator.BuildTaskGenerator(config)
+	avsConfig := taskgenerator.AvsConfig{
+		Logger: config.Logger,
+		IncredibleSquaringServiceManager: config.IncredibleSquaringServiceManager,
+		TxMgr: config.TxMgr,
+		EthHttpClient: &config.EthHttpClient,
+	}
+
+	thresholdNumerator := uint8(100)
+	quorumNumbers := []uint8{0}
+	taskGenLogic, err := taskgenerator.NewTaskGenLogic(&avsConfig, thresholdNumerator, quorumNumbers)
+
+	taskGenerator, err := sdktaskgenerator.BuildTaskGenerator(config.Logger, taskGenLogic, 10)
 	if err != nil {
 		t.Fatalf("Failed to create task generator: %s", err.Error())
 	}
