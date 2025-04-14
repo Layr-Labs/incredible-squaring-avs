@@ -47,9 +47,15 @@ func NewChallengerLogicImpl(c *config.Config) (*ChallengerLogicImpl, error) {
 }
 
 func (c *ChallengerLogicImpl) ProcessNewTaskCreatedLog(
-	log types.Log,
+	newTaskCreatedEvent any,
 ) error {
 	var newTaskCreatedLog cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+
+	log, ok := newTaskCreatedEvent.(types.Log)
+	if !ok {
+		c.logger.Errorf("Event was not a types.Log. Event: %v", newTaskCreatedEvent)
+		return errors.New("invalid type event, expected types.Log")
+	}
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
@@ -74,9 +80,15 @@ func (c *ChallengerLogicImpl) ProcessNewTaskCreatedLog(
 }
 
 func (c *ChallengerLogicImpl) ProcessTaskResponseLog(
-	log types.Log,
+	taskResponseEvent any,
 ) error {
 	var taskRespondedLog cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded
+
+	log, ok := taskResponseEvent.(types.Log)
+	if !ok {
+		c.logger.Errorf("Event was not a types.Log. Event: %v", taskResponseEvent)
+		return errors.New("invalid type event, expected types.Log")
+	}
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
