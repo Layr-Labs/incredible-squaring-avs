@@ -11,6 +11,7 @@ import (
 
 	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
 
+	"github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	taskgenerator "github.com/Layr-Labs/incredible-squaring-avs/task-generator"
 )
@@ -51,16 +52,9 @@ func taskGeneratorMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
-	avsConfig := taskgenerator.AvsConfig{
-		Logger: config.Logger,
-		IncredibleSquaringServiceManager: config.IncredibleSquaringServiceManager,
-		TxMgr: config.TxMgr,
-		EthHttpClient: &config.EthHttpClient,
-	}
-
-	thresholdNumerator := uint8(100)
-	quorumNumbers := []uint8{0}
-	taskGenLogic, err := taskgenerator.NewTaskGenLogic(&avsConfig, thresholdNumerator, quorumNumbers)
+	thresholdNumerator := types.QuorumThresholdPercentage(100)
+	quorumNumbers := types.QuorumNums{0}
+	taskGenLogic, err := taskgenerator.NewTaskGenLogic(config, thresholdNumerator, quorumNumbers)
 
 	taskGen, err := sdktaskgenerator.BuildTaskGenerator(config.Logger, taskGenLogic, 10)
 	if err != nil {

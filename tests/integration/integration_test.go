@@ -141,16 +141,9 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
 
-	avsConfig := taskgenerator.AvsConfig{
-		Logger: config.Logger,
-		IncredibleSquaringServiceManager: config.IncredibleSquaringServiceManager,
-		TxMgr: config.TxMgr,
-		EthHttpClient: &config.EthHttpClient,
-	}
-
-	thresholdNumerator := uint8(100)
-	quorumNumbers := []uint8{0}
-	taskGenLogic, err := taskgenerator.NewTaskGenLogic(&avsConfig, thresholdNumerator, quorumNumbers)
+	thresholdNumerator := sdktypes.QuorumThresholdPercentage(100)
+	quorumNumbers := sdktypes.QuorumNums{0}
+	taskGenLogic, err := taskgenerator.NewTaskGenLogic(config, thresholdNumerator, quorumNumbers)
 
 	taskGenerator, err := sdktaskgenerator.BuildTaskGenerator(config.Logger, taskGenLogic, 10)
 	if err != nil {
