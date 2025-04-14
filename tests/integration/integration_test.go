@@ -12,13 +12,13 @@ import (
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
-	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
