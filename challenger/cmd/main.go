@@ -9,7 +9,9 @@ import (
 
 	"github.com/urfave/cli"
 
+	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
 
@@ -49,12 +51,32 @@ func challengerMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
-	chal, err := challenger.NewChallenger(config)
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	newTaskEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	taskRespondedEventHash := taskManagerAbi.Events["TaskResponded"].ID
+
+	cfg := sdkchallenger.ChallengerConfig{
+		EthWsUrl: "ws://localhost:8545",
+		Logger:   config.Logger,
+	}
+
+	challengerLogicImpl, err := challenger.NewChallengerLogicImpl(config)
+	if err != nil {
+		config.Logger.Errorf("Failed to create challenger logic from config: %v", err)
 		return err
 	}
 
-	err = chal.Start(context.Background())
+	challenger, err := sdkchallenger.NewChallenger(cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash)
+	if err != nil {
+		config.Logger.Errorf("Failed to create challenger from config: %v", err)
+		return err
+	}
+
+	err = challenger.Start(context.Background())
 	if err != nil {
 		return err
 	}
