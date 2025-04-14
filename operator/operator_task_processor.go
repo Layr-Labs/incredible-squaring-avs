@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -26,15 +25,9 @@ func NewOperatorTaskProcessor(c sdkoperator.OperatorConfig, logger logging.Logge
 // Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
 // The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
 func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
-	event any,
+	log types.Log,
 ) (sdkaggregator.TaskResponse, error) {
 	var newTaskCreatedLog cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
-
-	log, ok := event.(types.Log)
-	if !ok {
-		otp.logger.Errorf("Event was not a types.Log. Event: %v", event)
-		return nil, errors.New("invalid type event, expected types.Log")
-	}
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {

@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"sync"
@@ -53,14 +52,8 @@ func NewTaskProcessor(c *config.Config) (*IncredibleTaskProcessor, error) {
 	}, nil
 }
 
-func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, event any) (blsagg.TaskMetadata, error) {
+func (tp *IncredibleTaskProcessor) ProcessNewTask(ctx context.Context, log types.Log) (blsagg.TaskMetadata, error) {
 	var newTaskCreatedLog cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
-
-	log, ok := event.(types.Log)
-	if !ok {
-		tp.logger.Errorf("Event was not a types.Log. Event: %v", event)
-		return blsagg.TaskMetadata{}, errors.New("invalid type event, expected types.Log")
-	}
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
