@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.0
 
 require (
-	github.com/Layr-Labs/eigensdk-go v1.15.3
+	github.com/Layr-Labs/eigensdk-go v0.3.1-0.20250411221246-0928aa093e43
 	github.com/ethereum/go-ethereum v1.15.3
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
@@ -15,8 +15,6 @@ require (
 	golang.org/x/crypto v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 )
-
-replace github.com/Layr-Labs/eigensdk-go v1.15.3 => ../../go-sdk/eigensdk-go/
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
