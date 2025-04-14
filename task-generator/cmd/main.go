@@ -9,6 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 
+	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
+
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	taskgenerator "github.com/Layr-Labs/incredible-squaring-avs/task-generator"
 )
@@ -49,7 +51,18 @@ func taskGeneratorMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
-	taskGen, err := taskgenerator.BuildTaskGenerator(config)
+	avsConfig := taskgenerator.AvsConfig{
+		Logger: config.Logger,
+		IncredibleSquaringServiceManager: config.IncredibleSquaringServiceManager,
+		TxMgr: config.TxMgr,
+		EthHttpClient: &config.EthHttpClient,
+	}
+
+	thresholdNumerator := uint8(100)
+	quorumNumbers := []uint8{0}
+	taskGenLogic, err := taskgenerator.NewTaskGenLogic(&avsConfig, thresholdNumerator, quorumNumbers)
+
+	taskGen, err := sdktaskgenerator.BuildTaskGenerator(config.Logger, taskGenLogic, 10)
 	if err != nil {
 		return err
 	}
