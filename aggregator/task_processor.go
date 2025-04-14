@@ -37,6 +37,8 @@ type IncredibleTaskProcessor struct {
 	taskResponses map[uint32]chtypes.TaskResponseData
 }
 
+var _ sdkaggregator.TaskProcessor = (*IncredibleTaskProcessor)(nil)
+
 func NewTaskProcessor(c *config.Config) (*IncredibleTaskProcessor, error) {
 	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
 	if err != nil {

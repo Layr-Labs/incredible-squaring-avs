@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"time"
 
+	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
+
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/logging"
@@ -16,13 +18,14 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// Task generator logic code
 type TaskGenLogic struct {
 	avsWriter          chainio.AvsWriterer
 	thresholdNumerator types.QuorumThresholdPercentage
 	quorumNumbers      types.QuorumNums
 	logger             logging.Logger
 }
+
+var _ sdktaskgenerator.TaskGeneratorLogic = (*TaskGenLogic)(nil)
 
 func NewTaskGenLogic(c *config.Config, thresholdNumerator types.QuorumThresholdPercentage, quorumNumbers types.QuorumNums) (*TaskGenLogic, error) {
 	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)

@@ -16,6 +16,8 @@ type OperatorTaskProcessor struct {
 	logger logging.Logger
 }
 
+var _ sdkoperator.OperatorTaskProcessor = (*OperatorTaskProcessor)(nil)
+
 func NewOperatorTaskProcessor(c sdkoperator.OperatorConfig, logger logging.Logger) OperatorTaskProcessor {
 	return OperatorTaskProcessor{
 		logger: logger,

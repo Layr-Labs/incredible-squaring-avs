@@ -13,8 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
+	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-)
+)	
+
 
 type ChallengerLogicImpl struct {
 	logger        logging.Logger
@@ -23,6 +25,8 @@ type ChallengerLogicImpl struct {
 	tasks         map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask
 	taskResponses map[uint32]TaskResponseData
 }
+
+var _ sdkchallenger.ChallengerLogic = (*ChallengerLogicImpl)(nil)
 
 type TaskResponseData struct {
 	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
