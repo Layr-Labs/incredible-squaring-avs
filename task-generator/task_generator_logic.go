@@ -48,54 +48,6 @@ func (tgl *TaskGenLogic) SendNewTask(taskNumber int64) error {
 	return nil
 }
 
-// func main() {
-// 	logger, err := logging.NewZapLogger(logging.Development)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	thresholdNumerator := uint8(100)
-// 	quorumNumbers := []uint8{0}
-
-// 	// This pk should be related to the address passed to TaskManager as task_generator_addr when initialized
-// 	taskgeneratorPk := "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356"
-
-// 	ethHttpUrl := "http://localhost:8545"
-// 	ethHttpClient, err := ethclient.Dial(ethHttpUrl)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	txMgr, err := GetTxManager(logger, ethHttpClient, taskgeneratorPk)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	// The values from this config are extracted from an incredible squaring config file and also the deployment output files
-// 	avsConfig := AvsConfig{
-// 		Logger:                        logger,
-// 		IncredibleSquaringTaskManager: common.HexToAddress("0x2bdcc0de6be1f7d2ee689a0342d76f52e8efaba3"),
-// 		TxMgr:                         txMgr,
-// 		EthHttpClient:                 ethHttpClient,
-// 	}
-
-// 	logic, err := NewTaskGenLogic(&avsConfig, thresholdNumerator, quorumNumbers)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	secondsInterval := 10 // This means TaskGenerator will send tasks every 10 seconds
-// 	taskGen, err := taskgenerator.BuildTaskGenerator(logger, logic, secondsInterval)
-// 	if err != nil {
-// 		return
-// 	}
-
-// 	err = taskGen.Start(context.Background())
-// 	if err != nil {
-// 		return
-// 	}
-// }
-
 func GetTxManager(logger logging.Logger, ethHttpClient *ethclient.Client, taskgeneratorPk string) (*txmgr.SimpleTxManager, error) {
 	ecdsaPrivateKey, err := crypto.HexToECDSA(taskgeneratorPk)
 	if err != nil {
