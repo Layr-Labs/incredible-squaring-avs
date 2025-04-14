@@ -9,6 +9,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
@@ -66,13 +67,13 @@ func (c *ChallengerLogicImpl) ProcessNewTaskCreatedLog(
 		return fmt.Errorf("error unpacking the log: %w", err)
 	}
 
-	taskIndex := newTaskCreatedLog.TaskIndex
-	c.tasks[taskIndex] = newTaskCreatedLog.Task
+	newTaskIndex := uint32(new(big.Int).SetBytes(log.Topics[1].Bytes()).Uint64())
+	c.tasks[newTaskIndex] = newTaskCreatedLog.Task
 
 	// Note: This verification is strange, and is not in Rust version. If removing it breaks something,
 	// probably its a bug on challenger implementation
-	if _, found := c.taskResponses[taskIndex]; found {
-		_ = c.verifyChallenge(taskIndex)
+	if _, found := c.taskResponses[newTaskIndex]; found {
+		_ = c.verifyChallenge(newTaskIndex)
 	}
 
 	return nil
@@ -102,7 +103,7 @@ func (c *ChallengerLogicImpl) ProcessTaskResponseLog(
 	taskIndex := taskRespondedLog.TaskResponse.ReferenceTaskIndex
 
 	// get the inputs necessary for raising a challenge
-	nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(&taskRespondedLog)
+	nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(log.TxHash)
 	taskResponseData := TaskResponseData{
 		TaskResponse:              taskRespondedLog.TaskResponse,
 		TaskResponseMetadata:      taskRespondedLog.TaskResponseMetadata,
@@ -119,14 +120,13 @@ func (c *ChallengerLogicImpl) ProcessTaskResponseLog(
 }
 
 func (c *ChallengerLogicImpl) getNonSigningOperatorPubKeys(
-	vLog *cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded,
+	transactionHash common.Hash,
 ) []cstaskmanager.BN254G1Point {
 	// get the nonSignerStakesAndSignature
-	txHash := vLog.Raw.TxHash
-	tx, _, err := c.ethClient.TransactionByHash(context.Background(), txHash)
+	tx, _, err := c.ethClient.TransactionByHash(context.Background(), transactionHash)
 	if err != nil {
 		c.logger.Error("Error getting transaction by hash",
-			"txHash", txHash,
+			"txHash", transactionHash,
 			"err", err,
 		)
 	}
