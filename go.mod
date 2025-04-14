@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.0
 
 require (
-	github.com/Layr-Labs/eigensdk-go v0.3.1-0.20250408184933-d8d909b638e9
+	github.com/Layr-Labs/eigensdk-go v0.3.1-0.20250411221246-0928aa093e43
 	github.com/ethereum/go-ethereum v1.15.3
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
@@ -13,7 +13,6 @@ require (
 	github.com/urfave/cli v1.22.16
 	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.36.0
-	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -110,6 +109,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
+	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect

@@ -1,212 +1,202 @@
 package operator
 
-// OUTDATED
-// This file contains cli functions for registering an operator with the AVS and printing status
-// However, all of this functionality has been moved to the plugin/ package
-// we are just waiting for eigenlayer-cli to be open sourced so we can completely get rid of this registration
-// functionality in the operator
-
 import (
 	"context"
-	"crypto/ecdsa"
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
+	"os"
+	"time"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
-	eigenSdkTypes "github.com/Layr-Labs/eigensdk-go/types"
-
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
+	"github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
+	"github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/Layr-Labs/eigensdk-go/metrics"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	"github.com/Layr-Labs/eigensdk-go/signerv2"
+	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
+	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func (o *Operator) registerOperatorOnStartup(
-	operatorEcdsaPrivateKey *ecdsa.PrivateKey,
-	mockTokenStrategyAddr common.Address,
-	registryAddr common.Address,
-	avsAddress common.Address,
-	operatorSetsIds []uint32,
-	waitForReceipt bool,
-	blsKeyPair bls.KeyPair,
-	socket string,
-) {
-	err := o.RegisterOperatorWithEigenlayer()
+func RegisterOperatorOnStartup(nodeConfig types.NodeConfig, logger logging.Logger) error {
+	ethRpcClient, err := ethclient.Dial(nodeConfig.EthRpcUrl)
 	if err != nil {
-		// This error might only be that the operator was already registered with eigenlayer, so we don't want to fatal
-		o.logger.Error("Error registering operator with eigenlayer", "err", err)
-	} else {
-		o.logger.Info("Registered operator with eigenlayer")
+		logger.Errorf("Cannot create http ethclient", "err", err)
+		return err
 	}
 
-	// TODO(samlaf): shouldn't hardcode number here
-	// Use SetString for large numbers
+	elcontractsConfig := elcontracts.Config{
+		DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
+		RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
+		PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
+	}
+
+	rpcCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	chainid, err := ethRpcClient.ChainID(rpcCtx)
+	if err != nil {
+		logger.Error("Cannot get chain id", "err", err)
+		return err
+	}
+
+	ecdsaKeyPassword, ok := os.LookupEnv("OPERATOR_ECDSA_KEY_PASSWORD")
+	if !ok {
+		logger.Warnf("OPERATOR_ECDSA_KEY_PASSWORD env var not set. using empty string")
+	}
+
+	operatorEcdsaPrivateKey, err := ecdsa.ReadKey(
+		nodeConfig.EcdsaPrivateKeyStorePath,
+		ecdsaKeyPassword,
+	)
+	if err != nil {
+		return err
+	}
+
+	signerV2, senderAddr, err := signerv2.SignerFromConfig(signerv2.Config{
+		PrivateKey: operatorEcdsaPrivateKey,
+	}, chainid)
+	if err != nil {
+		panic(err)
+	}
+
+	pkWallet, err := wallet.NewPrivateKeyWallet(ethRpcClient, signerV2, senderAddr, logger)
+	if err != nil {
+		return err
+	}
+
+	txMgr := txmgr.NewSimpleTxManager(pkWallet, ethRpcClient, logger, senderAddr)
+
+	err = sdkoperator.RegisterOperatorWithEigenlayer(
+		common.HexToAddress(nodeConfig.OperatorAddress),
+		elcontractsConfig,
+		ethRpcClient,
+		logger,
+		txMgr,
+	)
+	if err != nil {
+		logger.Fatalf("Failed to register operator with EigenLayer on startup: %v", err.Error())
+	}
+
 	amount := new(big.Int)
-	amount.SetString("1000000000000000000000", 10) // Base 10
-
-	err = o.DepositIntoStrategy(mockTokenStrategyAddr, amount)
-	if err != nil {
-		o.logger.Fatal("Error depositing into strategy", "err", err)
-	}
-	o.logger.Infof("Deposited %s into strategy %s", amount, mockTokenStrategyAddr)
-
-	err = o.RegisterForOperatorSets(
-		registryAddr,
-		avsAddress,
-		operatorSetsIds,
-		waitForReceipt,
-		blsKeyPair,
-		socket,
-		operatorEcdsaPrivateKey,
+	amount.SetString("1000000000000000000000", 10)
+	err = DepositIntoStrategyForOperator(
+		logger,
+		elcontractsConfig,
+		ethRpcClient,
+		common.HexToAddress(nodeConfig.TokenStrategyAddr),
+		txMgr,
+		common.HexToAddress(nodeConfig.OperatorAddress),
+		amount,
 	)
 	if err != nil {
-		o.logger.Fatal("Error registering operator with avs", "err", err)
+		logger.Fatalf("Failed to deposit into strategy for operator on startup: %v", err.Error())
 	}
-	o.logger.Info("Registered operator with avs")
-}
 
-func (o *Operator) RegisterOperatorWithEigenlayer() error {
-	op := eigenSdkTypes.Operator{
-		Address:                   o.operatorAddr.String(),
-		DelegationApproverAddress: o.operatorAddr.String(),
+	blsKeyPassword, ok := os.LookupEnv("OPERATOR_BLS_KEY_PASSWORD")
+	if !ok {
+		logger.Warnf("OPERATOR_BLS_KEY_PASSWORD env var not set. using empty string")
 	}
-	_, err := o.eigenlayerWriter.RegisterAsOperator(context.Background(), op, true)
+	blsKeyPair, err := bls.ReadPrivateKeyFromFile(nodeConfig.BlsPrivateKeyStorePath, blsKeyPassword)
 	if err != nil {
-		o.logger.Error("Error registering operator with eigenlayer", "err", err)
+		logger.Errorf("Cannot parse bls private key", "err", err)
 		return err
 	}
+
+	err = sdkoperator.RegisterForOperatorSets(
+		common.HexToAddress(nodeConfig.OperatorAddress),
+		logger,
+		elcontractsConfig,
+		ethRpcClient,
+		txMgr,
+		common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		[]uint32{0},
+		*blsKeyPair,
+		"",
+	)
+	if err != nil {
+		logger.Fatalf("Failed to register operator for operator sets on startup: %v", err.Error())
+	}
+
+	err = sdkoperator.SetAllocationDelay(
+		logger,
+		common.HexToAddress(nodeConfig.OperatorAddress),
+		ethRpcClient,
+		common.HexToAddress(nodeConfig.AllocationManagerAddress),
+		txMgr,
+		0,
+	)
+	if err != nil {
+		logger.Fatalf("Failed to set allocation delay: %v", err.Error())
+	}
+
 	return nil
 }
 
-func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.Int) error {
-
-	_, tokenAddr, err := o.eigenlayerReader.GetStrategyAndUnderlyingToken(context.TODO(), strategyAddr)
-	if err != nil {
-		o.logger.Error("Failed to fetch strategy contract", "err", err)
-		return err
-	}
-	o.logger.Info(tokenAddr.String())
-	contractErc20Mock, err := o.avsReader.GetErc20Mock(context.Background(), tokenAddr)
-	if err != nil {
-		o.logger.Error("Failed to fetch ERC20Mock contract", "err", err)
-		return err
-	}
-	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
-	if err != nil {
-		o.logger.Errorf("Error in GetNoSendTxOpts")
-		return err
-	}
-	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
-	if err != nil {
-		o.logger.Errorf("Error assembling Mint tx")
-		return err
-	}
-	_, err = o.avsWriter.TxMgr.Send(context.Background(), tx, true)
-	if err != nil {
-		o.logger.Errorf("Error submitting Mint tx")
-		return err
-	}
-
-	_, err = o.eigenlayerWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
-	if err != nil {
-		o.logger.Errorf("Error depositing into strategy", "err", err)
-		return err
-	}
-	return nil
-}
-
-// Registration specific functions
-func (o *Operator) RegisterForOperatorSets(
-	registryAddr common.Address,
-	avsAddress common.Address,
-	operatorSetIds []uint32,
-	waitForReceipt bool,
-	blsKeyPair bls.KeyPair,
-	socket string,
-	operatorEcdsaKeyPair *ecdsa.PrivateKey,
+func DepositIntoStrategyForOperator(
+	logger logging.Logger,
+	elcontractsConfig elcontracts.Config,
+	ethClient *ethclient.Client,
+	strategyAddr common.Address,
+	txMgr txmgr.TxManager,
+	operatorAddr common.Address,
+	amount *big.Int,
 ) error {
-	operatorAddress := crypto.PubkeyToAddress(operatorEcdsaKeyPair.PublicKey)
-
-	registrationRequest := elcontracts.RegistrationRequest{
-		OperatorAddress: operatorAddress,
-		AVSAddress:      avsAddress,
-		OperatorSetIds:  operatorSetIds,
-		WaitForReceipt:  waitForReceipt,
-		BlsKeyPair:      &blsKeyPair,
-		Socket:          socket,
+	elReader, err := elcontracts.NewReaderFromConfig(elcontractsConfig, ethClient, logger)
+	if err != nil {
+		logger.Error("Error creating eigenlayer chain writer", "err", err)
+		return err
 	}
 
-	_, err := o.eigenlayerWriter.RegisterForOperatorSets(
-		context.Background(),
-		registryAddr,
-		registrationRequest,
+	elWriter, err := elcontracts.NewWriterFromConfig(
+		elcontractsConfig,
+		ethClient,
+		logger,
+		&metrics.EigenMetrics{},
+		txMgr,
 	)
-
 	if err != nil {
-		o.logger.Errorf("Unable to register operator with the operator set")
+		logger.Error("Error creating eigenlayer chain writer", "err", err)
 		return err
 	}
-	o.logger.Info("Registered operator with operator set")
+
+	_, tokenAddr, err := elReader.GetStrategyAndUnderlyingToken(context.Background(), strategyAddr)
+	if err != nil {
+		logger.Error("Failed to fetch strategy contract", "err", err)
+		return err
+	}
+	logger.Info(tokenAddr.String())
+
+	contractErc20Mock, err := erc20mock.NewContractMockERC20(tokenAddr, ethClient)
+	if err != nil {
+		logger.Error("Failed to fetch ERC20Mock contract", "err", err)
+		return err
+	}
+	txOpts, err := txMgr.GetNoSendTxOpts()
+	if err != nil {
+		logger.Errorf("Error in GetNoSendTxOpts")
+		return err
+	}
+
+	tx, err := contractErc20Mock.Mint(txOpts, operatorAddr, amount)
+	if err != nil {
+		logger.Errorf("Error assembling Mint tx")
+		return err
+	}
+	_, err = txMgr.Send(context.Background(), tx, true)
+	if err != nil {
+		logger.Errorf("Error submitting Mint tx")
+		return err
+	}
+
+	_, err = elWriter.DepositERC20IntoStrategy(context.Background(), strategyAddr, amount, true)
+	if err != nil {
+		logger.Errorf("Error depositing into strategy", "err", err)
+		return err
+	}
 
 	return nil
-}
-
-// PRINTING STATUS OF OPERATOR: 1
-// operator address: 0xa0ee7a142d267c1f36714e4a8f75612f20a79720
-// dummy token balance: 0
-// delegated shares in dummyTokenStrat: 200
-// operator pubkey hash in AVS pubkey compendium (0 if not registered):
-// 0x4b7b8243d970ff1c90a7c775c008baad825893ec6e806dfa5d3663dc093ed17f
-// operator is opted in to eigenlayer: true
-// operator is opted in to playgroundAVS (aka can be slashed): true
-// operator status in AVS registry: REGISTERED
-//
-//	operatorId: 0x4b7b8243d970ff1c90a7c775c008baad825893ec6e806dfa5d3663dc093ed17f
-//	middlewareTimesLen (# of stake updates): 0
-//
-// operator is frozen: false
-type OperatorStatus struct {
-	EcdsaAddress string
-	// pubkey compendium related
-	PubkeysRegistered bool
-	G1Pubkey          string
-	G2Pubkey          string
-	// avs related
-	RegisteredWithAvs bool
-	OperatorId        string
-}
-
-func (o *Operator) PrintOperatorStatus() error {
-	fmt.Println("Printing operator status")
-	operatorId, err := o.avsReader.GetOperatorId(&bind.CallOpts{}, o.operatorAddr)
-	if err != nil {
-		return err
-	}
-	pubkeysRegistered := operatorId != [32]byte{}
-	registeredWithAvs := o.operatorId != [32]byte{}
-	operatorStatus := OperatorStatus{
-		EcdsaAddress:      o.operatorAddr.String(),
-		PubkeysRegistered: pubkeysRegistered,
-		G1Pubkey:          o.blsKeypair.GetPubKeyG1().String(),
-		G2Pubkey:          o.blsKeypair.GetPubKeyG2().String(),
-		RegisteredWithAvs: registeredWithAvs,
-		OperatorId:        hex.EncodeToString(o.operatorId[:]),
-	}
-	operatorStatusJson, err := json.MarshalIndent(operatorStatus, "", " ")
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(operatorStatusJson))
-	return nil
-}
-
-func pubKeyG1ToBN254G1Point(p *bls.G1Point) regcoord.BN254G1Point {
-	return regcoord.BN254G1Point{
-		X: p.X.BigInt(new(big.Int)),
-		Y: p.Y.BigInt(new(big.Int)),
-	}
 }

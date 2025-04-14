@@ -8,7 +8,11 @@ import (
 
 	"github.com/urfave/cli"
 
+	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
@@ -39,19 +43,53 @@ func operatorMain(ctx *cli.Context) error {
 	}
 	configJson, err := json.MarshalIndent(nodeConfig, "", "  ")
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 	log.Println("Config:", string(configJson))
 
-	log.Println("initializing operator")
-	operator, err := operator.NewOperatorFromConfig(nodeConfig)
+	logger, err := sdklogging.NewZapLogger(sdklogging.Production) // Change here if want to change logging level
+	if err != nil {
+		return err
+	}
+
+	if nodeConfig.RegisterOperatorOnStartup {
+		log.Println("Registering operator on startup")
+
+		err = operator.RegisterOperatorOnStartup(nodeConfig, logger)
+		if err != nil {
+			logger.Fatalf(err.Error())
+		}
+	}
+
+	logger.Info("initializing operator")
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
+
+	operatorConfig := sdkoperator.OperatorConfig{
+		OperatorAddress:               nodeConfig.OperatorAddress,
+		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:         nodeConfig.IncredibleSquaringServiceManager,
+		AVSRegistryCoordinatorAddress: nodeConfig.AVSRegistryCoordinatorAddress,
+		EthRpcUrl:                     nodeConfig.EthRpcUrl,
+		EthWsUrl:                      nodeConfig.EthWsUrl,
+		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
+		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
+		RegisterOnStartup:             true,
+	}
+	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
+	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger)
 	if err != nil {
 		return err
 	}
 	log.Println("initialized operator")
 
 	log.Println("starting operator")
-	err = operator.Start(context.Background())
+	err = operator.Start(context.Background(), &aggregator.IncredibleSquaringTaskResponse{})
 	if err != nil {
 		return err
 	}

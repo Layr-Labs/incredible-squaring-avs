@@ -8,6 +8,7 @@ type NodeConfig struct {
 	IncredibleSquaringServiceManager string `yaml:"service_manager_address"`
 	InstantSlasher                   string `yaml:"instant_slasher_address"`
 	AVSRegistryCoordinatorAddress    string `yaml:"avs_registry_coordinator_address"`
+	DelegationManagerAddress         string `yaml:"delegation_manager_address"`
 	RewardsCoordinatorAddress        string `yaml:"rewards_coordinator_address"`
 	PermissionControllerAddress      string `yaml:"permission_controller_address"`
 	AllocationManagerAddress         string `yaml:"allocation_manager_address"`
