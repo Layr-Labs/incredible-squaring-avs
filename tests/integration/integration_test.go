@@ -11,17 +11,20 @@ import (
 	"time"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
+	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
+
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
-	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
-	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
@@ -150,6 +153,34 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create task generator: %s", err.Error())
 	}
 
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	newTaskEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
+	taskRespondedEventHash := taskManagerAbi.Events["TaskResponded"].ID
+
+	challenferCfg := sdkchallenger.ChallengerConfig{
+		EthWsUrl: config.EthWsRpcUrl,
+		Logger:   config.Logger,
+	}
+
+	challengerLogicImpl, err := challenger.NewChallengerLogicImpl(config)
+	if err != nil {
+		config.Logger.Fatalf("Failed to create challenger logic from config: %v", err)
+	}
+
+	challenger, err := sdkchallenger.NewChallenger(
+		challenferCfg,
+		challengerLogicImpl,
+		newTaskEventHash,
+		taskRespondedEventHash,
+	)
+	if err != nil {
+		config.Logger.Fatalf("Failed to create challenger from config: %v", err)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	/* start operator */
@@ -161,11 +192,6 @@ func TestIntegration(t *testing.T) {
 	nodeConfig.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
 	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
 	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint
-
-	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
-	if err != nil {
-		logger.Fatalf(err.Error())
-	}
 
 	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
 
@@ -197,7 +223,7 @@ func TestIntegration(t *testing.T) {
 
 	/* start aggregator */
 	log.Println("starting aggregator for integration tests")
-	cfg := sdkaggregator.AggregatorConfig{
+	aggConfig := sdkaggregator.AggregatorConfig{
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
@@ -214,6 +240,8 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
+
+	go challenger.Start(ctx)
 
 	// This is the same hash function used by the operator to hash the task response before signing it.
 	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
@@ -249,9 +277,9 @@ func TestIntegration(t *testing.T) {
 
 		return taskResponseDigest, nil
 	}
-	cfg.TaskResponseHashFn = hashFunction
+	aggConfig.TaskResponseHashFn = hashFunction
 
-	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
+	agg, err := sdkaggregator.NewAggregator(aggConfig, taskProcessor, blockHash)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}

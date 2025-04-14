@@ -60,7 +60,7 @@ func challengerMain(ctx *cli.Context) error {
 	taskRespondedEventHash := taskManagerAbi.Events["TaskResponded"].ID
 
 	cfg := sdkchallenger.ChallengerConfig{
-		EthWsUrl: "ws://localhost:8545",
+		EthWsUrl: config.EthWsRpcUrl,
 		Logger:   config.Logger,
 	}
 
