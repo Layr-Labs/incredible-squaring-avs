@@ -263,7 +263,6 @@ func TestIntegration(t *testing.T) {
 	}
 	cfg.TaskResponseHashFn = hashFunction
 
-	blockHash = taskManagerAbi.Events["NewTaskCreated"].ID
 	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
