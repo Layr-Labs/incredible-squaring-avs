@@ -150,17 +150,6 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create task generator: %s", err.Error())
 	}
 
-	/* Register operator*/
-	// log.Println("registering operator for integration tests")
-	// we need to do this dynamically and can't just hardcode a registered operator into the anvil
-	// state because the anvil state dump doesn't also dump the receipts tree so we lose events,
-	// and the aggregator thus can't get the operator's pubkey
-	// operatorRegistrationCmd := exec.Command("bash", "./operator-registration.sh")
-	// err = operatorRegistrationCmd.Run()
-	// if err != nil {
-	// 	t.Fatalf("Failed to register operator: %s", err.Error())
-	// }
-
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
 	/* start operator */
@@ -170,7 +159,6 @@ func TestIntegration(t *testing.T) {
 	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
 	nodeConfig.BlsPrivateKeyStorePath = "../keys/test.bls.key.json"
 	nodeConfig.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
-	nodeConfig.RegisterOperatorOnStartup = true
 	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
 	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint
 
@@ -226,11 +214,6 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
-
-	// taskManagerAbi, err = cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
-	// if err != nil {
-	// 	config.Logger.Fatalf(err.Error())
-	// }
 
 	// This is the same hash function used by the operator to hash the task response before signing it.
 	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {

@@ -18,7 +18,7 @@ import (
 
 // Task generator logic code
 type TaskGenLogic struct {
-	avsWriter     chainio.AvsWriterer
+	avsWriter          chainio.AvsWriterer
 	thresholdNumerator types.QuorumThresholdPercentage
 	quorumNumbers      types.QuorumNums
 	logger             logging.Logger
@@ -37,9 +37,9 @@ func NewTaskGenLogic(c *config.Config, thresholdNumerator types.QuorumThresholdP
 
 func (tgl *TaskGenLogic) SendNewTask(taskNumber int64) error {
 	_, _, err := tgl.avsWriter.SendNewTaskNumberToSquare(
-		context.Background(), 
+		context.Background(),
 		big.NewInt(taskNumber),
-		tgl.thresholdNumerator, 
+		tgl.thresholdNumerator,
 		tgl.quorumNumbers,
 	)
 	if err != nil {
