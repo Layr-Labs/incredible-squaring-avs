@@ -212,12 +212,12 @@ func TestIntegration(t *testing.T) {
 		RegisterOnStartup:             true,
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
-	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger)
+	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger, &aggregator.IncredibleSquaringTaskResponse{})
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 
-	go operator.Start(ctx, &aggregator.IncredibleSquaringTaskResponse{})
+	go operator.Start(ctx)
 	log.Println("Started operator. Sleeping 15 seconds to give it time to register...")
 	time.Sleep(15 * time.Second)
 

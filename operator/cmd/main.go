@@ -82,14 +82,14 @@ func operatorMain(ctx *cli.Context) error {
 		RegisterOnStartup:             true,
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
-	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger)
+	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger, &aggregator.IncredibleSquaringTaskResponse{})
 	if err != nil {
 		return err
 	}
 	log.Println("initialized operator")
 
 	log.Println("starting operator")
-	err = operator.Start(context.Background(), &aggregator.IncredibleSquaringTaskResponse{})
+	err = operator.Start(context.Background())
 	if err != nil {
 		return err
 	}
