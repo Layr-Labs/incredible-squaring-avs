@@ -212,7 +212,12 @@ func TestIntegration(t *testing.T) {
 		RegisterOnStartup:             true,
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
-	operator, err := sdkoperator.NewOperatorFromConfig(operatorConfig, blockHash, operatorTaskProcessor, logger, &aggregator.IncredibleSquaringTaskResponse{})
+	operator, err := sdkoperator.NewOperatorFromConfig[aggregator.IncredibleSquaringTaskResponse](
+		operatorConfig,
+		blockHash,
+		operatorTaskProcessor,
+		logger,
+	)
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
