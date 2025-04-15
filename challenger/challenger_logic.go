@@ -15,8 +15,7 @@ import (
 
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-)	
-
+)
 
 type ChallengerLogicImpl struct {
 	logger        logging.Logger
@@ -67,12 +66,6 @@ func (c *ChallengerLogicImpl) ProcessNewTaskCreatedLog(
 
 	newTaskIndex := uint32(new(big.Int).SetBytes(log.Topics[1].Bytes()).Uint64())
 	c.tasks[newTaskIndex] = newTaskCreatedLog.Task
-
-	// Note: This verification is strange, and is not in Rust version. If removing it breaks something,
-	// probably its a bug on challenger implementation
-	if _, found := c.taskResponses[newTaskIndex]; found {
-		_ = c.verifyChallenge(newTaskIndex)
-	}
 
 	return nil
 }
