@@ -115,16 +115,15 @@ func aggregatorMain(ctx *cli.Context) error {
 	cfg.TaskResponseHashFn = hashFunction
 
 	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
-	agg, err := sdkaggregator.NewAggregator(cfg, taskProcessor, blockHash)
+	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](cfg, taskProcessor, blockHash)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	err = agg.Start(context.Background(), &aggregator.IncredibleSquaringTaskResponse{})
+	err = agg.Start(context.Background())
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
 
 	return nil
-
 }

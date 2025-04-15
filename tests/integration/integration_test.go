@@ -284,11 +284,15 @@ func TestIntegration(t *testing.T) {
 	}
 	aggConfig.TaskResponseHashFn = hashFunction
 
-	agg, err := sdkaggregator.NewAggregator(aggConfig, taskProcessor, blockHash)
+	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](
+		aggConfig,
+		taskProcessor,
+		blockHash,
+	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
-	go agg.Start(ctx, &aggregator.IncredibleSquaringTaskResponse{})
+	go agg.Start(ctx)
 
 	go taskGenerator.Start(ctx)
 
