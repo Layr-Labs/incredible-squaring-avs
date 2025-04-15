@@ -54,15 +54,6 @@ func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
 
 	numberSquared := big.NewInt(0).Exp(newTaskCreatedLog.Task.NumberToBeSquared, big.NewInt(2), nil)
 
-	// if otp.timesFailing > 0 {
-	// 	rand.Seed(uint64((time.Now().UnixNano())))
-	// 	num := rand.Intn(100)
-	// 	if num < otp.timesFailing {
-	// 		numberSquared = big.NewInt(908243203843)
-	// 		otp.logger.Info("Operator computed wrong task result")
-	// 	}
-	// }
-
 	taskResponse := aggregator.IncredibleSquaringTaskResponse{
 		ReferenceTaskIndex: newTaskIndex,
 		NumberSquared:      numberSquared,
