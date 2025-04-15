@@ -70,7 +70,11 @@ func challengerMain(ctx *cli.Context) error {
 		return err
 	}
 
-	challenger, err := sdkchallenger.NewChallenger(cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash)
+	challenger, err := sdkchallenger.NewChallenger[
+		NewTaskCreatedEvent, 
+		TaskRespondedEvent,
+		cstaskmanager.IIncredibleSquaringTaskManagerTask,
+		](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger from config: %v", err)
 		return err
@@ -83,4 +87,29 @@ func challengerMain(ctx *cli.Context) error {
 
 	return nil
 
+}
+
+type NewTaskCreatedEvent struct {
+	event cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+}
+
+func (newTaskEvent NewTaskCreatedEvent) Task() (sdkchallenger.GenericTask){
+	return newTaskEvent.event.Task
+}
+
+type TaskRespondedEvent struct {
+	event cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded
+}
+
+
+func (taskRespEvent TaskRespondedEvent)TaskIndex()(uint32){
+	return taskRespEvent.event.TaskResponse.ReferenceTaskIndex
+}
+
+func (taskRespEvent TaskRespondedEvent)TaskResponse()(sdkchallenger.GenericTaskResponse){
+	return taskRespEvent.event.TaskResponse
+}
+
+func (taskRespEvent TaskRespondedEvent)TaskResponseMetadata()(sdkchallenger.GenericTaskResponseMetadata){
+	return taskRespEvent.event.TaskResponseMetadata
 }
