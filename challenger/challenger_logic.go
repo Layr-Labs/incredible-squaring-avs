@@ -10,7 +10,6 @@ import (
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
@@ -21,11 +20,9 @@ type ChallengerLogicImpl struct {
 	logger        logging.Logger
 	ethClient     *ethclient.Client
 	avsWriter     chainio.AvsWriterer
-	tasks         map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask
-	taskResponses map[uint32]TaskResponseData
 }
 
-var _ sdkchallenger.ChallengerLogic = (*ChallengerLogicImpl)(nil)
+//var _ sdkchallenger.ChallengerLogic = (*ChallengerLogicImpl)(nil)
 
 type TaskResponseData struct {
 	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
@@ -44,69 +41,12 @@ func NewChallengerLogicImpl(c *config.Config) (*ChallengerLogicImpl, error) {
 		logger:        c.Logger,
 		ethClient:     &c.EthHttpClient,
 		avsWriter:     avsWriter,
-		tasks:         make(map[uint32]cstaskmanager.IIncredibleSquaringTaskManagerTask),
-		taskResponses: make(map[uint32]TaskResponseData),
 	}, nil
 }
 
-func (c *ChallengerLogicImpl) ProcessNewTaskCreatedLog(
-	log types.Log,
-) error {
-	var newTaskCreatedLog cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
-
-	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
-	if err != nil {
-		c.logger.Fatalf("Error obtaining task manager ABI: %v", err)
-	}
-
-	err = taskManagerAbi.UnpackIntoInterface(&newTaskCreatedLog, "NewTaskCreated", log.Data)
-	if err != nil {
-		return fmt.Errorf("error unpacking the log: %w", err)
-	}
-
-	newTaskIndex := uint32(new(big.Int).SetBytes(log.Topics[1].Bytes()).Uint64())
-	c.tasks[newTaskIndex] = newTaskCreatedLog.Task
-
-	return nil
-}
-
-func (c *ChallengerLogicImpl) ProcessTaskResponseLog(
-	log types.Log,
-) error {
-	var taskRespondedLog cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded
-
-	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
-	if err != nil {
-		c.logger.Fatalf("Error obtaining task manager ABI: %v", err)
-	}
-
-	err = taskManagerAbi.UnpackIntoInterface(&taskRespondedLog, "TaskResponded", log.Data)
-	if err != nil {
-		return fmt.Errorf("error unpacking the log: %w", err)
-	}
-
-	taskIndex := taskRespondedLog.TaskResponse.ReferenceTaskIndex
-
-	// get the inputs necessary for raising a challenge
-	nonSigningOperatorPubKeys := c.getNonSigningOperatorPubKeys(log.TxHash)
-	taskResponseData := TaskResponseData{
-		TaskResponse:              taskRespondedLog.TaskResponse,
-		TaskResponseMetadata:      taskRespondedLog.TaskResponseMetadata,
-		NonSigningOperatorPubKeys: nonSigningOperatorPubKeys,
-	}
-
-	c.taskResponses[taskIndex] = taskResponseData
-
-	if _, found := c.tasks[taskIndex]; found {
-		_ = c.verifyChallenge(taskIndex)
-	}
-
-	return nil
-}
-
-func (c *ChallengerLogicImpl) getNonSigningOperatorPubKeys(
+func (c *ChallengerLogicImpl) GetNonSigningOperatorPubKeys(
 	transactionHash common.Hash,
-) []cstaskmanager.BN254G1Point {
+) []sdkchallenger.BN254G1Point {
 	// get the nonSignerStakesAndSignature
 	tx, _, err := c.ethClient.TransactionByHash(context.Background(), transactionHash)
 	if err != nil {
@@ -158,11 +98,11 @@ func (c *ChallengerLogicImpl) getNonSigningOperatorPubKeys(
 
 	// get pubkeys of non-signing operators and submit them to the contract
 	nonSigningOperatorPubKeys := make(
-		[]cstaskmanager.BN254G1Point,
+		[]sdkchallenger.BN254G1Point,
 		len(nonSignerStakesAndSignatureInput.NonSignerPubkeys),
 	)
 	for i, pubkey := range nonSignerStakesAndSignatureInput.NonSignerPubkeys {
-		nonSigningOperatorPubKeys[i] = cstaskmanager.BN254G1Point{
+		nonSigningOperatorPubKeys[i] = sdkchallenger.BN254G1Point{
 			X: pubkey.X,
 			Y: pubkey.Y,
 		}
@@ -171,9 +111,29 @@ func (c *ChallengerLogicImpl) getNonSigningOperatorPubKeys(
 	return nonSigningOperatorPubKeys
 }
 
-func (c *ChallengerLogicImpl) verifyChallenge(taskIndex uint32) error {
-	numberToBeSquared := c.tasks[taskIndex].NumberToBeSquared
-	answerInResponse := c.taskResponses[taskIndex].TaskResponse.NumberSquared
+func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchallenger.GenericTask, responseData sdkchallenger.TaskResponseData) error {
+	incredibleSquaringTask, ok := task.(cstaskmanager.IIncredibleSquaringTaskManagerTask)
+	if !ok {
+		return fmt.Errorf("task was not a incredible squaring task. Task %v", task)
+	}
+	incredibleSquaringTaskResponse, ok := responseData.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
+	if !ok {
+		return fmt.Errorf("task was not a incredible squaring task response. Task response: %v", responseData.TaskResponse)
+	}
+	incredibleSquaringTaskResponseMetadata, ok := responseData.TaskResponseMetadata.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata)
+	if !ok {
+		return fmt.Errorf("task was not a incredible squaring task response metadata. Task response metadata: %v", responseData.TaskResponseMetadata)
+	}
+	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
+	for i, pubkey := range responseData.NonSigningOperatorPubKeys {
+		nonSignerPubkeys[i] = cstaskmanager.BN254G1Point{
+			X: pubkey.X,
+			Y: pubkey.Y,
+		}
+	}
+
+	numberToBeSquared := incredibleSquaringTask.NumberToBeSquared
+	answerInResponse := incredibleSquaringTaskResponse.NumberSquared
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 
 	// checking if the answer in the response submitted by aggregator is correct
@@ -185,10 +145,10 @@ func (c *ChallengerLogicImpl) verifyChallenge(taskIndex uint32) error {
 
 		_, err := c.avsWriter.RaiseChallenge(
 			context.Background(),
-			c.tasks[taskIndex],
-			c.taskResponses[taskIndex].TaskResponse,
-			c.taskResponses[taskIndex].TaskResponseMetadata,
-			c.taskResponses[taskIndex].NonSigningOperatorPubKeys,
+			incredibleSquaringTask,
+			incredibleSquaringTaskResponse,
+			incredibleSquaringTaskResponseMetadata,
+			nonSignerPubkeys,
 		)
 		if err != nil {
 			c.logger.Error("Challenger failed to raise challenge:", "err", err)
