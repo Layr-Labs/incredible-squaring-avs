@@ -38,9 +38,9 @@ func NewTaskProcessor(c *config.Config) (*IncredibleTaskProcessor, error) {
 
 func (tp *IncredibleTaskProcessor) ProcessTaskResponse(
 	ctx context.Context,
-	event sdkaggregator.TaskResponse,
+	response sdkaggregator.TaskResponse,
 ) ([32]byte, error) {
-	return event.Digest(), nil
+	return response.Digest(), nil
 }
 
 // This method sends the aggregated response to the on-chain Task Manager contract
