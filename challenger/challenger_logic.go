@@ -20,7 +20,7 @@ type ChallengerLogicImpl struct {
 	avsWriter chainio.AvsWriterer
 }
 
-//var _ sdkchallenger.ChallengerLogic = (*ChallengerLogicImpl)(nil)
+var _ sdkchallenger.ChallengerLogic[*big.Int] = (*ChallengerLogicImpl)(nil)
 
 type TaskResponseData struct {
 	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
