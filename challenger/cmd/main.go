@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -72,9 +73,9 @@ func challengerMain(ctx *cli.Context) error {
 	}
 
 	challenger, err := sdkchallenger.NewChallenger[
+		*big.Int,
 		NewTaskCreatedEvent, 
 		TaskRespondedEvent,
-		cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger from config: %v", err)
@@ -92,26 +93,25 @@ func challengerMain(ctx *cli.Context) error {
 
 type NewTaskCreatedEvent struct {
 	TaskIndex uint32
-	Task      cstaskmanager.IIncredibleSquaringTaskManagerTask
+	Task      sdkchallenger.GenericInputTask[*big.Int]
 	Raw       types.Log
 }
 
-func (newTaskEvent NewTaskCreatedEvent) InnerTask() (sdkchallenger.GenericTask){
+func (newTaskEvent NewTaskCreatedEvent) InnerTask() (sdkchallenger.GenericInputTask[*big.Int]){
 	return newTaskEvent.Task
 }
 
 type TaskRespondedEvent struct {
-	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-	TaskResponseMetadata      cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata
+	TaskResponse              sdkchallenger.GenericInputTaskResponse[*big.Int]
+	TaskResponseMetadata      sdkchallenger.GenericTaskResponseMetadata
 	NonSigningOperatorPubKeys []sdkchallenger.BN254G1Point
 }
-
 
 func (taskRespEvent TaskRespondedEvent)TaskIndex()(uint32){
 	return taskRespEvent.TaskResponse.ReferenceTaskIndex
 }
 
-func (taskRespEvent TaskRespondedEvent)GetTaskResponse()(sdkchallenger.GenericTaskResponse){
+func (taskRespEvent TaskRespondedEvent)GetTaskResponse()(sdkchallenger.GenericInputTaskResponse[*big.Int]){
 	return taskRespEvent.TaskResponse
 }
 

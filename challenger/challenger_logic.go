@@ -110,19 +110,7 @@ func (c *ChallengerLogicImpl) GetNonSigningOperatorPubKeys(
 	return nonSigningOperatorPubKeys
 }
 
-func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchallenger.GenericTask, responseData sdkchallenger.TaskResponseData) error {
-	incredibleSquaringTask, ok := task.(cstaskmanager.IIncredibleSquaringTaskManagerTask)
-	if !ok {
-		return fmt.Errorf("task was not a incredible squaring task. Task %v", task)
-	}
-	incredibleSquaringTaskResponse, ok := responseData.TaskResponse.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse)
-	if !ok {
-		return fmt.Errorf("task was not a incredible squaring task response. Task response: %v", responseData.TaskResponse)
-	}
-	incredibleSquaringTaskResponseMetadata, ok := responseData.TaskResponseMetadata.(cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata)
-	if !ok {
-		return fmt.Errorf("task was not a incredible squaring task response metadata. Task response metadata: %v", responseData.TaskResponseMetadata)
-	}
+func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchallenger.GenericInputTask[*big.Int], responseData sdkchallenger.TaskResponseData[*big.Int]) error {
 	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
 	for i, pubkey := range responseData.NonSigningOperatorPubKeys {
 		nonSignerPubkeys[i] = cstaskmanager.BN254G1Point{
@@ -131,8 +119,8 @@ func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchalleng
 		}
 	}
 
-	numberToBeSquared := incredibleSquaringTask.NumberToBeSquared
-	answerInResponse := incredibleSquaringTaskResponse.NumberSquared
+	numberToBeSquared := task.InputValue
+	answerInResponse := responseData.TaskResponse.InputValue
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 
 	// checking if the answer in the response submitted by aggregator is correct
@@ -141,6 +129,23 @@ func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchalleng
 
 		// raise challenge
 		c.logger.Info("Challenger raising challenge.", "taskIndex", taskIndex)
+
+		incredibleSquaringTask := cstaskmanager.IIncredibleSquaringTaskManagerTask{
+			NumberToBeSquared: task.InputValue, 
+			TaskCreatedBlock: task.TaskCreatedBlock, 
+			QuorumNumbers: task.QuorumNumbers, 
+			QuorumThresholdPercentage: task.QuorumThresholdPercentage,
+		}
+
+		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+			ReferenceTaskIndex: responseData.TaskResponse.ReferenceTaskIndex, 
+			NumberSquared: responseData.TaskResponse.InputValue,
+		}
+		
+		incredibleSquaringTaskResponseMetadata := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
+			TaskRespondedBlock: responseData.TaskResponseMetadata.TaskRespondedBlock, 
+			HashOfNonSigners: responseData.TaskResponseMetadata.HashOfNonSigners,
+		}
 
 		_, err := c.avsWriter.RaiseChallenge(
 			context.Background(),
