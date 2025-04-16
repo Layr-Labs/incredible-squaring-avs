@@ -10,7 +10,6 @@ import (
 
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -82,11 +81,12 @@ func operatorMain(ctx *cli.Context) error {
 		RegisterOnStartup:             true,
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
-	operator, err := sdkoperator.NewOperatorFromConfig[aggregator.IncredibleSquaringTaskResponse](
+	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
 		blockHash,
 		operatorTaskProcessor,
 		logger,
+		taskManagerAbi,
 	)
 	if err != nil {
 		return err

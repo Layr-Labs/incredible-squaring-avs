@@ -7,7 +7,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
-	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/Layr-Labs/incredible-squaring-avs/core"
 )
 
 type OperatorTaskProcessor struct {
@@ -37,4 +37,16 @@ func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
 	}
 
 	return taskResponse, nil
+}
+
+func (otp OperatorTaskProcessor) DigestResponse(response sdkchallenger.GenericInputTaskResponse[*big.Int]) [32]byte {
+	incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		ReferenceTaskIndex: response.ReferenceTaskIndex,
+		NumberSquared: response.InputValue,
+	}
+	taskResponseHash, err := core.GetTaskResponseDigest(&incredibleSquaringTaskResponse)
+	if err != nil {
+		return [32]byte{}
+	}
+	return taskResponseHash
 }
