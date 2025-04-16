@@ -33,7 +33,7 @@ func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
 
 	taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
 		ReferenceTaskIndex: taskIndex,
-		InputValue:      numberSquared,
+		InputValue:         numberSquared,
 	}
 
 	return taskResponse, nil
@@ -42,7 +42,7 @@ func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
 func (otp OperatorTaskProcessor) DigestResponse(response *sdkchallenger.GenericInputTaskResponse[*big.Int]) [32]byte {
 	incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: response.ReferenceTaskIndex,
-		NumberSquared: response.InputValue,
+		NumberSquared:      response.InputValue,
 	}
 	taskResponseHash, err := core.GetTaskResponseDigest(&incredibleSquaringTaskResponse)
 	if err != nil {

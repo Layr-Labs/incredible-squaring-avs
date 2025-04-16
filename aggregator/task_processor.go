@@ -79,7 +79,7 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 
 	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-		NumberSquared: taskResponseAgg.InputValue,
+		NumberSquared:      taskResponseAgg.InputValue,
 	}
 
 	incredibleSquaringTask := cstaskmanager.IIncredibleSquaringTaskManagerTask{
@@ -100,7 +100,8 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 	}
 	return nil
 }
-/* 
+
+/*
 type IncredibleSquaringTaskResponse struct {
 	ReferenceTaskIndex uint32
 	NumberSquared      *big.Int
