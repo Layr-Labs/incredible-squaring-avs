@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -117,7 +116,7 @@ func aggregatorMain(ctx *cli.Context) error {
 
 	newTaskCreatedEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
 
-	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse, *big.Int](
+	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](
 		cfg,
 		taskProcessor,
 		newTaskCreatedEventHash,

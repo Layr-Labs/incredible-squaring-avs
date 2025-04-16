@@ -290,6 +290,7 @@ func TestIntegration(t *testing.T) {
 		aggConfig,
 		taskProcessor,
 		blockHash,
+		taskManagerAbi,
 	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
