@@ -66,6 +66,7 @@ func (c *ChallengerLogicImpl) VerifyChallenge(
 		// raise challenge
 		c.logger.Info("Challenger raising challenge.", "taskIndex", taskIndex)
 
+		// This conversions are not optimal, but are necessary to send the challenge to the contract
 		incredibleSquaringTask := cstaskmanager.IIncredibleSquaringTaskManagerTask{
 			NumberToBeSquared:         task.InputValue,
 			TaskCreatedBlock:          task.TaskCreatedBlock,
