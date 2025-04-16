@@ -8,7 +8,6 @@ import (
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	blsagg "github.com/Layr-Labs/eigensdk-go/services/bls_aggregation"
-	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core"
@@ -73,12 +72,15 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 
 	tp.logger.Info("Threshold reached. Sending aggregated response onchain.", "taskIndex", response.TaskIndex)
 
-	taskResponseAgg, ok := response.TaskResponse.(*IncredibleSquaringTaskResponse)
+	taskResponseAgg, ok := response.TaskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
 	if !ok {
 		tp.logger.Error("task Response could not be converted to sdk aggregator's Task Response type")
 	}
 
-	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse(*taskResponseAgg)
+	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+		ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
+		NumberSquared: taskResponseAgg.InputValue,
+	}
 
 	incredibleSquaringTask := cstaskmanager.IIncredibleSquaringTaskManagerTask{
 		NumberToBeSquared:         task.InputValue,
@@ -98,7 +100,7 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 	}
 	return nil
 }
-
+/* 
 type IncredibleSquaringTaskResponse struct {
 	ReferenceTaskIndex uint32
 	NumberSquared      *big.Int
@@ -115,4 +117,4 @@ func (tr IncredibleSquaringTaskResponse) Digest() [32]byte {
 		return [32]byte{}
 	}
 	return taskResponseHash
-}
+} */

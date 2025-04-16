@@ -116,7 +116,7 @@ func aggregatorMain(ctx *cli.Context) error {
 
 	newTaskCreatedEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
 
-	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](
+	agg, err := sdkaggregator.NewAggregator(
 		cfg,
 		taskProcessor,
 		newTaskCreatedEventHash,
