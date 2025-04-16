@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/urfave/cli"
 
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
@@ -74,8 +73,8 @@ func challengerMain(ctx *cli.Context) error {
 
 	challenger, err := sdkchallenger.NewChallenger[
 		*big.Int,
-		NewTaskCreatedEvent,
-		TaskRespondedEvent,
+		challenger.NewTaskCreatedEvent,
+		challenger.TaskRespondedEvent,
 	](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi, &config.EthHttpClient)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger from config: %v", err)
@@ -89,32 +88,4 @@ func challengerMain(ctx *cli.Context) error {
 
 	return nil
 
-}
-
-type NewTaskCreatedEvent struct {
-	TaskIndex uint32
-	Task      sdkchallenger.GenericInputTask[*big.Int]
-	Raw       types.Log
-}
-
-func (newTaskEvent NewTaskCreatedEvent) InnerTask() sdkchallenger.GenericInputTask[*big.Int] {
-	return newTaskEvent.Task
-}
-
-type TaskRespondedEvent struct {
-	TaskResponse              sdkchallenger.GenericInputTaskResponse[*big.Int]
-	TaskResponseMetadata      sdkchallenger.GenericTaskResponseMetadata
-	NonSigningOperatorPubKeys []sdkchallenger.BN254G1Point
-}
-
-func (taskRespEvent TaskRespondedEvent) TaskIndex() uint32 {
-	return taskRespEvent.TaskResponse.ReferenceTaskIndex
-}
-
-func (taskRespEvent TaskRespondedEvent) GetTaskResponse() sdkchallenger.GenericInputTaskResponse[*big.Int] {
-	return taskRespEvent.TaskResponse
-}
-
-func (taskRespEvent TaskRespondedEvent) GetTaskResponseMetadata() sdkchallenger.GenericTaskResponseMetadata {
-	return taskRespEvent.TaskResponseMetadata
 }
