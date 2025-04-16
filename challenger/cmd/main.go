@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 
 	"github.com/urfave/cli"
@@ -71,11 +70,14 @@ func challengerMain(ctx *cli.Context) error {
 		return err
 	}
 
-	challenger, err := sdkchallenger.NewChallenger[
-		*big.Int,
-		challenger.NewTaskCreatedEvent,
-		challenger.TaskRespondedEvent,
-	](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi, &config.EthHttpClient)
+	challenger, err := sdkchallenger.NewChallenger(
+		cfg,
+		challengerLogicImpl,
+		newTaskEventHash,
+		taskRespondedEventHash,
+		taskManagerAbi,
+		&config.EthHttpClient,
+	)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger from config: %v", err)
 		return err

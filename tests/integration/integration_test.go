@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -172,11 +171,14 @@ func TestIntegration(t *testing.T) {
 		config.Logger.Fatalf("Failed to create challenger logic from config: %v", err)
 	}
 
-	challenger, err := sdkchallenger.NewChallenger[
-		*big.Int,
-		challenger.NewTaskCreatedEvent,
-		challenger.TaskRespondedEvent,
-	](challenferCfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi, &config.EthHttpClient)
+	challenger, err := sdkchallenger.NewChallenger(
+		challenferCfg,
+		challengerLogicImpl,
+		newTaskEventHash,
+		taskRespondedEventHash,
+		taskManagerAbi,
+		&config.EthHttpClient,
+	)
 	if err != nil {
 		config.Logger.Fatalf("Failed to create challenger from config: %v", err)
 	}
