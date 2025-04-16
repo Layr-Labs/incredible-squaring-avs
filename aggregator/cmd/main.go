@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -114,8 +115,14 @@ func aggregatorMain(ctx *cli.Context) error {
 	}
 	cfg.TaskResponseHashFn = hashFunction
 
-	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
-	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](cfg, taskProcessor, blockHash)
+	newTaskCreatedEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
+
+	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse, *big.Int](
+		cfg,
+		taskProcessor,
+		newTaskCreatedEventHash,
+		taskManagerAbi,
+	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
