@@ -2,7 +2,6 @@ package challenger
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -158,6 +157,6 @@ func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchalleng
 		return nil
 	} else {
 		c.logger.Info("The number squared is correct")
-		return errors.New("100. Task response is valid")
+		return nil
 	}
 }
