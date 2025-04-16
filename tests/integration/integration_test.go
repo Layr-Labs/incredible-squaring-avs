@@ -214,11 +214,12 @@ func TestIntegration(t *testing.T) {
 		RegisterOnStartup:             true,
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
-	operator, err := sdkoperator.NewOperatorFromConfig[aggregator.IncredibleSquaringTaskResponse](
+	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
 		blockHash,
 		operatorTaskProcessor,
 		logger,
+		taskManagerAbi,
 	)
 	if err != nil {
 		logger.Fatalf(err.Error())
@@ -286,7 +287,7 @@ func TestIntegration(t *testing.T) {
 	}
 	aggConfig.TaskResponseHashFn = hashFunction
 
-	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](
+	agg, err := sdkaggregator.NewAggregator(
 		aggConfig,
 		taskProcessor,
 		blockHash,
@@ -300,7 +301,7 @@ func TestIntegration(t *testing.T) {
 	go taskGenerator.Start(ctx)
 
 	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")
-	time.Sleep(20 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	// get avsRegistry client to interact with the chain
 	avsReader, err := chainio.BuildAvsReaderFromConfig(config)
