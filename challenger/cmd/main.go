@@ -76,7 +76,7 @@ func challengerMain(ctx *cli.Context) error {
 		*big.Int,
 		NewTaskCreatedEvent, 
 		TaskRespondedEvent,
-		](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi)
+		](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi, &config.EthHttpClient)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger from config: %v", err)
 		return err
