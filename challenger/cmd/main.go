@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/urfave/cli"
 
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
@@ -90,26 +91,30 @@ func challengerMain(ctx *cli.Context) error {
 }
 
 type NewTaskCreatedEvent struct {
-	event cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated
+	TaskIndex uint32
+	Task      cstaskmanager.IIncredibleSquaringTaskManagerTask
+	Raw       types.Log
 }
 
-func (newTaskEvent NewTaskCreatedEvent) Task() (sdkchallenger.GenericTask){
-	return newTaskEvent.event.Task
+func (newTaskEvent NewTaskCreatedEvent) InnerTask() (sdkchallenger.GenericTask){
+	return newTaskEvent.Task
 }
 
 type TaskRespondedEvent struct {
-	event cstaskmanager.ContractIncredibleSquaringTaskManagerTaskResponded
+	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+	TaskResponseMetadata      cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata
+	NonSigningOperatorPubKeys []sdkchallenger.BN254G1Point
 }
 
 
 func (taskRespEvent TaskRespondedEvent)TaskIndex()(uint32){
-	return taskRespEvent.event.TaskResponse.ReferenceTaskIndex
+	return taskRespEvent.TaskResponse.ReferenceTaskIndex
 }
 
-func (taskRespEvent TaskRespondedEvent)TaskResponse()(sdkchallenger.GenericTaskResponse){
-	return taskRespEvent.event.TaskResponse
+func (taskRespEvent TaskRespondedEvent)GetTaskResponse()(sdkchallenger.GenericTaskResponse){
+	return taskRespEvent.TaskResponse
 }
 
-func (taskRespEvent TaskRespondedEvent)TaskResponseMetadata()(sdkchallenger.GenericTaskResponseMetadata){
-	return taskRespEvent.event.TaskResponseMetadata
+func (taskRespEvent TaskRespondedEvent)GetTaskResponseMetadata()(sdkchallenger.GenericTaskResponseMetadata){
+	return taskRespEvent.TaskResponseMetadata
 }
