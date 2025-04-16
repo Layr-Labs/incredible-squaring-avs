@@ -15,9 +15,9 @@ import (
 )
 
 type ChallengerLogicImpl struct {
-	logger        logging.Logger
-	ethClient     *ethclient.Client
-	avsWriter     chainio.AvsWriterer
+	logger    logging.Logger
+	ethClient *ethclient.Client
+	avsWriter chainio.AvsWriterer
 }
 
 //var _ sdkchallenger.ChallengerLogic = (*ChallengerLogicImpl)(nil)
@@ -36,13 +36,17 @@ func NewChallengerLogicImpl(c *config.Config) (*ChallengerLogicImpl, error) {
 	}
 
 	return &ChallengerLogicImpl{
-		logger:        c.Logger,
-		ethClient:     &c.EthHttpClient,
-		avsWriter:     avsWriter,
+		logger:    c.Logger,
+		ethClient: &c.EthHttpClient,
+		avsWriter: avsWriter,
 	}, nil
 }
 
-func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchallenger.GenericInputTask[*big.Int], responseData sdkchallenger.TaskResponseData[*big.Int]) error {
+func (c *ChallengerLogicImpl) VerifyChallenge(
+	taskIndex uint32,
+	task sdkchallenger.GenericInputTask[*big.Int],
+	responseData sdkchallenger.TaskResponseData[*big.Int],
+) error {
 	nonSignerPubkeys := []cstaskmanager.BN254G1Point{}
 	for i, pubkey := range responseData.NonSigningOperatorPubKeys {
 		nonSignerPubkeys[i] = cstaskmanager.BN254G1Point{
@@ -63,20 +67,20 @@ func (c *ChallengerLogicImpl) VerifyChallenge(taskIndex uint32, task sdkchalleng
 		c.logger.Info("Challenger raising challenge.", "taskIndex", taskIndex)
 
 		incredibleSquaringTask := cstaskmanager.IIncredibleSquaringTaskManagerTask{
-			NumberToBeSquared: task.InputValue, 
-			TaskCreatedBlock: task.TaskCreatedBlock, 
-			QuorumNumbers: task.QuorumNumbers, 
+			NumberToBeSquared:         task.InputValue,
+			TaskCreatedBlock:          task.TaskCreatedBlock,
+			QuorumNumbers:             task.QuorumNumbers,
 			QuorumThresholdPercentage: task.QuorumThresholdPercentage,
 		}
 
 		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-			ReferenceTaskIndex: responseData.TaskResponse.ReferenceTaskIndex, 
-			NumberSquared: responseData.TaskResponse.InputValue,
+			ReferenceTaskIndex: responseData.TaskResponse.ReferenceTaskIndex,
+			NumberSquared:      responseData.TaskResponse.InputValue,
 		}
-		
+
 		incredibleSquaringTaskResponseMetadata := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
-			TaskRespondedBlock: responseData.TaskResponseMetadata.TaskRespondedBlock, 
-			HashOfNonSigners: responseData.TaskResponseMetadata.HashOfNonSigners,
+			TaskRespondedBlock: responseData.TaskResponseMetadata.TaskRespondedBlock,
+			HashOfNonSigners:   responseData.TaskResponseMetadata.HashOfNonSigners,
 		}
 
 		_, err := c.avsWriter.RaiseChallenge(

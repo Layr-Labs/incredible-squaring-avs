@@ -74,9 +74,9 @@ func challengerMain(ctx *cli.Context) error {
 
 	challenger, err := sdkchallenger.NewChallenger[
 		*big.Int,
-		NewTaskCreatedEvent, 
+		NewTaskCreatedEvent,
 		TaskRespondedEvent,
-		](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi, &config.EthHttpClient)
+	](cfg, challengerLogicImpl, newTaskEventHash, taskRespondedEventHash, taskManagerAbi, &config.EthHttpClient)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger from config: %v", err)
 		return err
@@ -97,7 +97,7 @@ type NewTaskCreatedEvent struct {
 	Raw       types.Log
 }
 
-func (newTaskEvent NewTaskCreatedEvent) InnerTask() (sdkchallenger.GenericInputTask[*big.Int]){
+func (newTaskEvent NewTaskCreatedEvent) InnerTask() sdkchallenger.GenericInputTask[*big.Int] {
 	return newTaskEvent.Task
 }
 
@@ -107,14 +107,14 @@ type TaskRespondedEvent struct {
 	NonSigningOperatorPubKeys []sdkchallenger.BN254G1Point
 }
 
-func (taskRespEvent TaskRespondedEvent)TaskIndex()(uint32){
+func (taskRespEvent TaskRespondedEvent) TaskIndex() uint32 {
 	return taskRespEvent.TaskResponse.ReferenceTaskIndex
 }
 
-func (taskRespEvent TaskRespondedEvent)GetTaskResponse()(sdkchallenger.GenericInputTaskResponse[*big.Int]){
+func (taskRespEvent TaskRespondedEvent) GetTaskResponse() sdkchallenger.GenericInputTaskResponse[*big.Int] {
 	return taskRespEvent.TaskResponse
 }
 
-func (taskRespEvent TaskRespondedEvent)GetTaskResponseMetadata()(sdkchallenger.GenericTaskResponseMetadata){
+func (taskRespEvent TaskRespondedEvent) GetTaskResponseMetadata() sdkchallenger.GenericTaskResponseMetadata {
 	return taskRespEvent.TaskResponseMetadata
 }
