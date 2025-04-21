@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -12,6 +14,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
+	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
@@ -100,7 +103,18 @@ func aggregatorMain(ctx *cli.Context) error {
 			},
 		}
 
-		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
+		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
+		if !ok {
+			return sdktypes.TaskResponseDigest{}, errors.New(
+				"task Response could not be converted to sdk aggregator's Task Response type",
+			)
+		}
+
+		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
+			NumberSquared:      taskResponseAgg.InputValue,
+		}
+		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
 		if err != nil {
 			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error Packing taskResponse", err)
 		}

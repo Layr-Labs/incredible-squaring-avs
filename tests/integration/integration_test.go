@@ -2,8 +2,10 @@ package integration_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -273,7 +275,18 @@ func TestIntegration(t *testing.T) {
 			},
 		}
 
-		encodeTaskResponseByte, err := arguments.Pack(taskResponse)
+		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
+		if !ok {
+			return sdktypes.TaskResponseDigest{}, errors.New(
+				"task Response could not be converted to sdk aggregator's Task Response type",
+			)
+		}
+
+		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
+			NumberSquared:      taskResponseAgg.InputValue,
+		}
+		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
 		if err != nil {
 			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error Packing taskResponse", err)
 		}
@@ -301,7 +314,7 @@ func TestIntegration(t *testing.T) {
 	go taskGenerator.Start(ctx)
 
 	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")
-	time.Sleep(30 * time.Second)
+	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
 	avsReader, err := chainio.BuildAvsReaderFromConfig(config)
