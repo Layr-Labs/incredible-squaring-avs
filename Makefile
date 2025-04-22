@@ -27,11 +27,11 @@ ___CONTRACTS___: ##
 build-contracts: ## builds all contracts
 	cd contracts && forge build
 
-deploy-eigenlayer-contracts-to-anvil-and-save-state: ## Deploy eigenlayer
-	./tests/anvil/deploy-eigenlayer-save-anvil-state.sh
+deploy-eigenlayer: ## Deploy eigenlayer
+	./tests/anvil/deploy-eigenlayer.sh
 
-deploy-incredible-squaring-contracts-to-anvil-and-save-state: ## Deploy avs
-	./tests/anvil/deploy-avs-save-anvil-state.sh
+deploy-avs: ## Deploy avs
+	./tests/anvil/deploy-avs.sh
 
 deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
