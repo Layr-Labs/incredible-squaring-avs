@@ -33,7 +33,7 @@ deploy-eigenlayer: ## Deploy eigenlayer
 deploy-avs: ## Deploy avs
 	./tests/anvil/deploy-avs.sh
 
-deploy-all-to-anvil-and-save-state: deploy-eigenlayer-contracts-to-anvil-and-save-state deploy-incredible-squaring-contracts-to-anvil-and-save-state ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
+deploy-all-to-anvil-and-save-state: deploy-eigenlayer deploy-avs ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
