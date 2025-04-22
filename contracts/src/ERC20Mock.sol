@@ -1,12 +1,16 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.12;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.27;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract ERC20Mock is ERC20 {
-    constructor() ERC20("", "") {}
-
+contract ERC20Mock is ERC20("Mock Token", "MCK") {
     function mint(address account, uint256 amount) public {
         _mint(account, amount);
+    }
+
+    /// WARNING: Vulnerable, bypasses allowance check. Do not use in production!
+    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+        super._transfer(from, to, amount);
+        return true;
     }
 }
