@@ -20,6 +20,8 @@ CHAINID=31337
 STRATEGY_ADDRESS=0x7a2088a1bFc9d81c55368AE168C2C02570cB814F
 DEPLOYMENT_FILES_DIR=contracts/script/output/${CHAINID}
 
+DEPLOYMENT_FILE=contracts/script/deployments/incredible-squaring/${CHAINID}.json
+CORE_DEPLOYMENT_FILE=contracts/script/deployments/core/${CHAINID}.json
 -----------------------------: ## 
 
 ___CONTRACTS___: ## 
@@ -33,7 +35,13 @@ deploy-eigenlayer: ## Deploy eigenlayer
 deploy-avs: ## Deploy avs
 	./tests/anvil/deploy-avs.sh
 
-deploy-all: deploy-eigenlayer deploy-avs
+create-quorum:
+	./tests/anvil/create-quorum.sh
+
+uam-permissions:
+	./tests/anvil/uam-permissions.sh
+
+deploy-all: deploy-eigenlayer deploy-avs uam-permissions create-quorum
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
@@ -76,7 +84,8 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
 	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
+		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
+		--core-deployment ${CORE_DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
@@ -86,9 +95,11 @@ start-operator: ##
 
 start-challenger: ## 
 	go run challenger/cmd/main.go --config config-files/challenger.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILES_DIR}/credible_squaring_avs_deployment_output.json \
+		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
+		--core-deployment ${CORE_DEPLOYMENT_FILE} \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
+
 
 run-plugin: ## 
 	go run plugin/cmd/main.go --config config-files/operator.anvil.yaml
