@@ -52,6 +52,7 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 		c.TxMgr,
 		c.IncredibleSquaringRegistryCoordinatorAddr,
 		c.OperatorStateRetrieverAddr,
+		c.IncredibleSquaringServiceManager,
 		&c.EthHttpClient,
 		c.Logger,
 	)
@@ -60,11 +61,12 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 func BuildAvsWriter(
 	txMgr txmgr.TxManager,
 	registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,
+	serviceManagerAddr gethcommon.Address,
 	ethHttpClient sdkcommon.EthClientInterface,
 	logger logging.Logger,
 ) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(
-		registryCoordinatorAddr,
+		serviceManagerAddr,
 		operatorStateRetrieverAddr,
 		ethHttpClient,
 		logger,

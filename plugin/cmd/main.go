@@ -141,6 +141,7 @@ func plugin(ctx *cli.Context) {
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
+		common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
 		ethHttpClient,
 		logger,
 	)
@@ -165,6 +166,7 @@ func plugin(ctx *cli.Context) {
 		txMgr,
 		common.HexToAddress(avsConfig.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(avsConfig.OperatorStateRetrieverAddress),
+		common.HexToAddress(avsConfig.IncredibleSquaringServiceManager),
 		ethHttpClient,
 		logger,
 	)
