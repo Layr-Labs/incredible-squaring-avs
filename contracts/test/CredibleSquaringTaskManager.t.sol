@@ -6,6 +6,8 @@ import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManage
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from
     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {ISlashingRegistryCoordinator} from
+    "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 
 contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     incsqsm.IncredibleSquaringServiceManager sm;
@@ -21,7 +23,7 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
         _setUpBLSMockAVSDeployer();
 
         tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)), TASK_RESPONSE_WINDOW_BLOCK
+            ISlashingRegistryCoordinator(address(registryCoordinator)), pauserRegistry, TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
