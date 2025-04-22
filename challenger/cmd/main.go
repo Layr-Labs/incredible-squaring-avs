@@ -64,7 +64,7 @@ func challengerMain(ctx *cli.Context) error {
 		Logger:   config.Logger,
 	}
 
-	challengerLogicImpl, err := challenger.NewChallengerLogicImpl(config)
+	challengerLogicImpl, err := challenger.NewChallengerVerifierImpl(config)
 	if err != nil {
 		config.Logger.Errorf("Failed to create challenger logic from config: %v", err)
 		return err

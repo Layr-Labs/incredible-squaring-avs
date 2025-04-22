@@ -14,13 +14,13 @@ import (
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 )
 
-type ChallengerLogicImpl struct {
+type ChallengerVerifierImpl struct {
 	logger    logging.Logger
 	ethClient *ethclient.Client
 	avsWriter chainio.AvsWriterer
 }
 
-var _ sdkchallenger.ChallengerLogic[*big.Int] = (*ChallengerLogicImpl)(nil)
+var _ sdkchallenger.ChallengeVerifier[*big.Int, *big.Int] = (*ChallengerVerifierImpl)(nil)
 
 type TaskResponseData struct {
 	TaskResponse              cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
@@ -28,21 +28,21 @@ type TaskResponseData struct {
 	NonSigningOperatorPubKeys []cstaskmanager.BN254G1Point
 }
 
-func NewChallengerLogicImpl(c *config.Config) (*ChallengerLogicImpl, error) {
+func NewChallengerVerifierImpl(c *config.Config) (*ChallengerVerifierImpl, error) {
 	avsWriter, err := chainio.BuildAvsWriterFromConfig(c)
 	if err != nil {
 		c.Logger.Errorf("Cannot create avsWriter", "err", err)
 		return nil, err
 	}
 
-	return &ChallengerLogicImpl{
+	return &ChallengerVerifierImpl{
 		logger:    c.Logger,
 		ethClient: &c.EthHttpClient,
 		avsWriter: avsWriter,
 	}, nil
 }
 
-func (c *ChallengerLogicImpl) VerifyChallenge(
+func (c *ChallengerVerifierImpl) VerifyChallenge(
 	taskIndex uint32,
 	task sdkchallenger.GenericInputTask[*big.Int],
 	responseData sdkchallenger.TaskResponseData[*big.Int],
@@ -56,7 +56,7 @@ func (c *ChallengerLogicImpl) VerifyChallenge(
 	}
 
 	numberToBeSquared := task.InputValue
-	answerInResponse := responseData.TaskResponse.InputValue
+	answerInResponse := responseData.TaskResponse.OutputValue
 	trueAnswer := numberToBeSquared.Exp(numberToBeSquared, big.NewInt(2), nil)
 
 	// checking if the answer in the response submitted by aggregator is correct
@@ -76,7 +76,7 @@ func (c *ChallengerLogicImpl) VerifyChallenge(
 
 		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: responseData.TaskResponse.ReferenceTaskIndex,
-			NumberSquared:      responseData.TaskResponse.InputValue,
+			NumberSquared:      responseData.TaskResponse.OutputValue,
 		}
 
 		incredibleSquaringTaskResponseMetadata := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponseMetadata{
