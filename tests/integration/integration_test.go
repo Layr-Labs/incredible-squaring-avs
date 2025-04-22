@@ -216,15 +216,19 @@ func startAnvilTestContainer() testcontainers.Container {
 		Mounts: testcontainers.ContainerMounts{
 			testcontainers.ContainerMount{
 				Source: testcontainers.GenericBindMountSource{
-					HostPath: filepath.Join(integrationDir, "../anvil/avs-and-eigenlayer-deployed-anvil-state.json"),
+					HostPath: filepath.Join(
+						integrationDir,
+						"../anvil/avs-and-eigenlayer-deployed-anvil-state/state.json",
+					),
 				},
-				Target: "/root/.anvil/state.json",
+				Target: "/state.json",
 			},
 		},
 		Entrypoint:   []string{"anvil"},
-		Cmd:          []string{"--host", "0.0.0.0", "--load-state", "/root/.anvil/state.json"},
+		Cmd:          []string{"--host", "0.0.0.0", "--load-state", "/state.json"},
 		ExposedPorts: []string{"8545/tcp"},
-		WaitingFor:   wait.ForLog("Listening on"),
+
+		WaitingFor: wait.ForLog("Listening on"),
 	}
 	anvilC, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
