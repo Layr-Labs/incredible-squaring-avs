@@ -59,7 +59,7 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 	}
 	blsKeyPair, err := bls.ReadPrivateKeyFromFile(nodeConfig.BlsPrivateKeyStorePath, blsKeyPassword)
 	if err != nil {
-		
+
 		return utils.WrapError("Cannot parse bls private key", err)
 	}
 
