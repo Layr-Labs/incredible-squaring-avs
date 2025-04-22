@@ -7,7 +7,7 @@ networks:
 
 services:
   anvil:
-    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+    image: ghcr.io/foundry-rs/foundry:stable
     container_name: anvil
     ports:
       # opening the port so we can easily cast to anvil from localhost
@@ -21,7 +21,7 @@ services:
       - incredible-squaring-network
   
   anvil-advance-chain-script:
-    image: ghcr.io/foundry-rs/foundry:nightly-5b7e4cb3c882b28f3c32ba580de27ce7381f415a
+    image: ghcr.io/foundry-rs/foundry:stable
     depends_on:
       - anvil
     entrypoint: cast
