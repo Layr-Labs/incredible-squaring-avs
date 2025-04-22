@@ -33,7 +33,7 @@ deploy-eigenlayer: ## Deploy eigenlayer
 deploy-avs: ## Deploy avs
 	./tests/anvil/deploy-avs.sh
 
-deploy-all-to-anvil-and-save-state: deploy-eigenlayer deploy-avs ## deploy eigenlayer, shared avs contracts, and inc-sq contracts 
+deploy-all: deploy-eigenlayer deploy-avs
 
 start-anvil-chain-with-el-and-avs-deployed: ## starts anvil from a saved state file (with el and avs contracts deployed)
 	./tests/anvil/start-anvil-chain-with-el-and-avs-deployed.sh
@@ -107,6 +107,10 @@ tests-contract: ## runs all forge tests
 
 tests-integration: ## runs all integration tests
 	go test ./tests/integration/... -v -count=1
+
+.PHONY: dump-state
+dump-state: 
+	./tests/anvil/dump-state.sh
 
 .PHONY: fmt
 fmt: ## formats all go files
