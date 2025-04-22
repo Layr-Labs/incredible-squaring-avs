@@ -3,11 +3,11 @@ pragma solidity ^0.8.12;
 
 import "../src/IncredibleSquaringServiceManager.sol" as incsqsm;
 import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
+import "@eigenlayer/contracts/permissions/PauserRegistry.sol";
+import "@eigenlayer/contracts/interfaces/IPauserRegistry.sol";
 import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 import {TransparentUpgradeableProxy} from
     "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
-import {ISlashingRegistryCoordinator} from
-    "@eigenlayer-middleware/src/interfaces/ISlashingRegistryCoordinator.sol";
 
 contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     incsqsm.IncredibleSquaringServiceManager sm;
@@ -18,12 +18,18 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
     uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
     address aggregator = address(uint160(uint256(keccak256(abi.encodePacked("aggregator")))));
     address generator = address(uint160(uint256(keccak256(abi.encodePacked("generator")))));
+    address initialOwner = makeAddr("initialOwner");
+    address slasher = makeAddr("slasher");
 
     function setUp() public {
         _setUpBLSMockAVSDeployer();
-
+        address[] memory _pausers = new address[](1);
+        _pausers[0] = pauser;
+        address pauserRegistry = address(new PauserRegistry(_pausers, unpauser));
         tmImplementation = new IncredibleSquaringTaskManager(
-            ISlashingRegistryCoordinator(address(registryCoordinator)), pauserRegistry, TASK_RESPONSE_WINDOW_BLOCK
+            incsqsm.ISlashingRegistryCoordinator(address(registryCoordinator)),
+            IPauserRegistry(pauserRegistry),
+            TASK_RESPONSE_WINDOW_BLOCK
         );
 
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
@@ -34,10 +40,12 @@ contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
                     address(proxyAdmin),
                     abi.encodeWithSelector(
                         tm.initialize.selector,
-                        pauserRegistry,
-                        registryCoordinatorOwner,
+                        initialOwner,
                         aggregator,
-                        generator
+                        generator,
+                        allocationManager,
+                        slasher,
+                        address(serviceManager)
                     )
                 )
             )
