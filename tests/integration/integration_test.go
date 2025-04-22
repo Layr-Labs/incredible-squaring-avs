@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -235,7 +236,6 @@ func TestIntegration(t *testing.T) {
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
 		EthHttpClient:                 &config.EthHttpClient,
-		TxMgr:                         config.TxMgr,
 		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
@@ -286,7 +286,7 @@ func TestIntegration(t *testing.T) {
 	}
 	aggConfig.TaskResponseHashFn = hashFunction
 
-	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse](
+	agg, err := sdkaggregator.NewAggregator[aggregator.IncredibleSquaringTaskResponse, *big.Int, *big.Int](
 		aggConfig,
 		taskProcessor,
 		blockHash,
