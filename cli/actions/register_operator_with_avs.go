@@ -2,14 +2,18 @@ package actions
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"os"
 
+	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
+	"github.com/Layr-Labs/eigensdk-go/utils"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 )
 
@@ -26,7 +30,7 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 	nodeConfig.RegisterOperatorOnStartup = false
 	configJson, err := json.MarshalIndent(nodeConfig, "", "  ")
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 	log.Println("Config:", string(configJson))
 
@@ -47,7 +51,27 @@ func RegisterOperatorWithAvs(ctx *cli.Context) error {
 		return err
 	}
 
-	err = operator.RegisterOperatorWithAvs(operatorEcdsaPrivKey)
+	operatorSetsIds := []uint32{nodeConfig.OperatorSetId}
+
+	blsKeyPassword, ok := os.LookupEnv("OPERATOR_BLS_KEY_PASSWORD")
+	if !ok {
+		return errors.New("OPERATOR_BLS_KEY_PASSWORD env var not set. using empty string")
+	}
+	blsKeyPair, err := bls.ReadPrivateKeyFromFile(nodeConfig.BlsPrivateKeyStorePath, blsKeyPassword)
+	if err != nil {
+		
+		return utils.WrapError("Cannot parse bls private key", err)
+	}
+
+	err = operator.RegisterForOperatorSets(
+		common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		operatorSetsIds,
+		true,
+		*blsKeyPair,
+		"socket",
+		operatorEcdsaPrivKey,
+	)
 	if err != nil {
 		return err
 	}
