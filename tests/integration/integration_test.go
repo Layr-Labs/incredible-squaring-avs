@@ -54,10 +54,11 @@ func TestIntegration(t *testing.T) {
 	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
 
 	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
-	credibleSquaringDeploymentFilePath := "../../contracts/script/output/31337/credible_squaring_avs_deployment_output.json"
+	credibleSquaringDeploymentFilePath := "../../contracts/script/deployments/incredible-squaring/31337.json"
 	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
 
 	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
+
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
@@ -118,6 +119,9 @@ func TestIntegration(t *testing.T) {
 		RegisterOperatorOnStartup:  aggConfigRaw.RegisterOperatorOnStartup,
 		TxMgr:                      txMgr,
 		AggregatorAddress:          aggregatorAddr,
+		IncredibleSquaringServiceManager: common.HexToAddress(
+			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
+		),
 	}
 
 	/* Prepare the config file for operator */
@@ -127,16 +131,6 @@ func TestIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to read yaml config: %s", err.Error())
 	}
-	/* Register operator*/
-	// log.Println("registering operator for integration tests")
-	// we need to do this dynamically and can't just hardcode a registered operator into the anvil
-	// state because the anvil state dump doesn't also dump the receipts tree so we lose events,
-	// and the aggregator thus can't get the operator's pubkey
-	// operatorRegistrationCmd := exec.Command("bash", "./operator-registration.sh")
-	// err = operatorRegistrationCmd.Run()
-	// if err != nil {
-	// 	t.Fatalf("Failed to register operator: %s", err.Error())
-	// }
 
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
 	defer cancel()
