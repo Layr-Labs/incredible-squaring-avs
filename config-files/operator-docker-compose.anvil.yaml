@@ -8,9 +8,14 @@ operator_address: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 # This is the address of the contracts which are deployed in the anvil saved state
 # The saved eigenlayer state is located in tests/anvil/credible_squaring_avs_deployment_output.json
 # TODO(samlaf): automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0x7bc06c482dead17c0e297afbc32f6e63d3846650
-operator_state_retriever_address: 0x4c5859f0f772848b2d91f1d83e2fe57935348029
-service_manager_address: 0x5f3f1dbd7b74c6b46e8c44f98792a1daf8d69154
+avs_registry_coordinator_address: 0xfd6f7a6a5c21a3f503ebae7a473639974379c351
+operator_state_retriever_address: 0xd42912755319665397ff090fbb63b1a31ae87cee
+rewards_coordinator_address: 0xf8e31cb472bc70500f08cd84917e5a1912ec8397
+permission_controller_address: 0x276c216d241856199a83bf27b2286659e5b877d3
+service_manager_address: 0x927b167526babb9be047421db732c663a0b77b11
+allocation_manager_address: 0x18e317a7d70d8fbf8e6e893616b52390ebbdb629
+instant_slasher_address: 0xde2bd2ffea002b8e84adea96e5976af664115e2c
+delegation_manager_address: 0xf953b3a269d80e3eb0f2947630da976b896a8c5b
 
 # ETH RPC URL
 eth_rpc_url: http://anvil:8545
