@@ -88,21 +88,20 @@ services:
         transport_protocol: "TCP"
         application_protocol: "http"
     input:
-      /usr/src/app/config-files/:
-        - aggregator-config
-        - avs_addresses
-        - eigenlayer_addresses
+      /usr/src/app/config-files/aggregator/: aggregator-config
+      /usr/src/app/config-files/core/: eigenlayer_addresses
+      /usr/src/app/config-files/avs/: avs_addresses
 
     cmd:
       - "--config"
-      - "/usr/src/app/config-files/aggregator-config.yaml"
+      - "/usr/src/app/config-files/aggregator/aggregator-config.yaml"
       - "--ecdsa-private-key"
       # NOTE: aggregator key-pair is hardcoded in the deployment scripts
       - "{{.keys.aggregator_key.private_key}}"
       - "--credible-squaring-deployment"
-      - "/usr/src/app/config-files/3151908.json"
+      - "/usr/src/app/config-files/avs/3151908.json"
       - "--core-deployment"
-      - "/usr/src/app/config-files/3151908.json"
+      - "/usr/src/app/config-files/core/3151908.json"
 
 keys:
   # This generates new keypairs for each operator
