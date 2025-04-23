@@ -44,7 +44,7 @@ trap 'cleanup' EXIT
 avs-devnet start || { echo "Failed to start the devnet" ; exit 42; }
 
 # Fetch RPC URL and TaskManager address
-RPC_URL=$(avs-devnet get-ports | yq .el-1-besu-lighthouse.rpc)
+RPC_URL=$(avs-devnet get-ports | yq .el-1-reth-lighthouse.rpc)
 echo "Fetched RPC URL: $RPC_URL"
 
 TASK_MANAGER_ADDR=$(avs-devnet get-address avs_addresses:incredibleSquaringTaskManager)
