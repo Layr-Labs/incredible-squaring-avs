@@ -299,7 +299,7 @@ func TestIntegration(t *testing.T) {
 	}
 	aggConfig.TaskResponseHashFn = hashFunction
 
-	agg, err := sdkaggregator.NewAggregator(
+	agg, err := sdkaggregator.NewAggregator[*big.Int, *big.Int](
 		aggConfig,
 		taskProcessor,
 		blockHash,
