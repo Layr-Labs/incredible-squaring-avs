@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/urfave/cli"
 
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
@@ -83,25 +84,58 @@ func operatorMain(ctx *cli.Context) error {
 		RegisterOnStartup:             true,
 	}
 
-	responseCalculationFn := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericInputTaskResponse[*big.Int], error) {
+	responseCalculationFn := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericOutputTaskResponse[*big.Int], error) {
 		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
 
-		taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
+		taskResponse := sdkchallenger.GenericOutputTaskResponse[*big.Int]{
 			ReferenceTaskIndex: taskIndex,
-			InputValue:         numberSquared,
+			OutputValue:        numberSquared,
 		}
 
 		return taskResponse, nil
 	}
 
-	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
+	abiEncondingFn := func(taskResponse sdkchallenger.GenericOutputTaskResponse[*big.Int]) ([]byte, error) {
+		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
+			{
+				Name: "referenceTaskIndex",
+				Type: "uint32",
+			},
+			{
+				Name: "numberSquared",
+				Type: "uint256",
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		arguments := abi.Arguments{
+			{
+				Type: taskResponseType,
+			},
+		}
+
+		incredibleTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+			ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
+			NumberSquared:      taskResponse.OutputValue,
+		}
+
+		bytes, err := arguments.Pack(incredibleTaskResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		return bytes, nil
+	}
+
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
 		blockHash,
-		operatorTaskProcessor,
 		logger,
 		taskManagerAbi,
 		responseCalculationFn,
+		abiEncondingFn,
 	)
 	if err != nil {
 		return err
