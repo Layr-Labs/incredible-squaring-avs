@@ -168,14 +168,14 @@ func TestIntegration(t *testing.T) {
 		Logger:   config.Logger,
 	}
 
-	challengerLogicImpl, err := challenger.NewChallengerLogicImpl(config)
+	challengerVerifier, err := challenger.NewChallengerVerifierImpl(config)
 	if err != nil {
 		config.Logger.Fatalf("Failed to create challenger logic from config: %v", err)
 	}
 
 	challenger, err := sdkchallenger.NewChallenger(
 		challenferCfg,
-		challengerLogicImpl,
+		challengerVerifier,
 		newTaskEventHash,
 		taskRespondedEventHash,
 		taskManagerAbi,
@@ -238,7 +238,6 @@ func TestIntegration(t *testing.T) {
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
 		EthHttpClient:                 &config.EthHttpClient,
-		TxMgr:                         config.TxMgr,
 		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,

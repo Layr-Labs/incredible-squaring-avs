@@ -63,7 +63,6 @@ func aggregatorMain(ctx *cli.Context) error {
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
 		EthHttpClient:                 &config.EthHttpClient,
-		TxMgr:                         config.TxMgr,
 		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
