@@ -168,14 +168,14 @@ func TestIntegration(t *testing.T) {
 		Logger:   config.Logger,
 	}
 
-	challengerLogicImpl, err := challenger.NewChallengerLogicImpl(config)
+	challengerVerifier, err := challenger.NewChallengerVerifierImpl(config)
 	if err != nil {
 		config.Logger.Fatalf("Failed to create challenger logic from config: %v", err)
 	}
 
 	challenger, err := sdkchallenger.NewChallenger(
 		challenferCfg,
-		challengerLogicImpl,
+		challengerVerifier,
 		newTaskEventHash,
 		taskRespondedEventHash,
 		taskManagerAbi,
@@ -217,12 +217,12 @@ func TestIntegration(t *testing.T) {
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
 
-	calcFunction := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericInputTaskResponse[*big.Int], error) {
+	calcFunction := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericOutputTaskResponse[*big.Int], error) {
 		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
 
-		taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
+		taskResponse := sdkchallenger.GenericOutputTaskResponse[*big.Int]{
 			ReferenceTaskIndex: taskIndex,
-			InputValue:         numberSquared,
+			OutputValue:        numberSquared,
 		}
 
 		return taskResponse, nil
@@ -251,7 +251,6 @@ func TestIntegration(t *testing.T) {
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
 		EthHttpClient:                 &config.EthHttpClient,
-		TxMgr:                         config.TxMgr,
 		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
@@ -288,7 +287,7 @@ func TestIntegration(t *testing.T) {
 			},
 		}
 
-		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
+		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericOutputTaskResponse[*big.Int])
 		if !ok {
 			return sdktypes.TaskResponseDigest{}, errors.New(
 				"task Response could not be converted to sdk aggregator's Task Response type",
@@ -297,7 +296,7 @@ func TestIntegration(t *testing.T) {
 
 		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-			NumberSquared:      taskResponseAgg.InputValue,
+			NumberSquared:      taskResponseAgg.OutputValue,
 		}
 		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
 		if err != nil {
@@ -313,7 +312,7 @@ func TestIntegration(t *testing.T) {
 	}
 	aggConfig.TaskResponseHashFn = hashFunction
 
-	agg, err := sdkaggregator.NewAggregator(
+	agg, err := sdkaggregator.NewAggregator[*big.Int, *big.Int](
 		aggConfig,
 		taskProcessor,
 		blockHash,

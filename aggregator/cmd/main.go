@@ -63,7 +63,6 @@ func aggregatorMain(ctx *cli.Context) error {
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
 		EthHttpClient:                 &config.EthHttpClient,
-		TxMgr:                         config.TxMgr,
 		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
@@ -103,7 +102,7 @@ func aggregatorMain(ctx *cli.Context) error {
 			},
 		}
 
-		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
+		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericOutputTaskResponse[*big.Int])
 		if !ok {
 			return sdktypes.TaskResponseDigest{}, errors.New(
 				"task Response could not be converted to sdk aggregator's Task Response type",
@@ -112,7 +111,7 @@ func aggregatorMain(ctx *cli.Context) error {
 
 		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-			NumberSquared:      taskResponseAgg.InputValue,
+			NumberSquared:      taskResponseAgg.OutputValue,
 		}
 		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
 		if err != nil {
@@ -130,7 +129,7 @@ func aggregatorMain(ctx *cli.Context) error {
 
 	newTaskCreatedEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
 
-	agg, err := sdkaggregator.NewAggregator(
+	agg, err := sdkaggregator.NewAggregator[*big.Int, *big.Int](
 		cfg,
 		taskProcessor,
 		newTaskCreatedEventHash,

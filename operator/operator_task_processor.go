@@ -22,10 +22,10 @@ func NewOperatorTaskProcessor(c sdkoperator.OperatorConfig, logger logging.Logge
 	}
 }
 
-func (otp OperatorTaskProcessor) DigestResponse(response *sdkchallenger.GenericInputTaskResponse[*big.Int]) [32]byte {
+func (otp OperatorTaskProcessor) DigestResponse(response *sdkchallenger.GenericOutputTaskResponse[*big.Int]) [32]byte {
 	incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: response.ReferenceTaskIndex,
-		NumberSquared:      response.InputValue,
+		NumberSquared:      response.OutputValue,
 	}
 	taskResponseHash, err := core.GetTaskResponseDigest(&incredibleSquaringTaskResponse)
 	if err != nil {
