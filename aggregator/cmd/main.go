@@ -103,7 +103,7 @@ func aggregatorMain(ctx *cli.Context) error {
 			},
 		}
 
-		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
+		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericOutputTaskResponse[*big.Int])
 		if !ok {
 			return sdktypes.TaskResponseDigest{}, errors.New(
 				"task Response could not be converted to sdk aggregator's Task Response type",
@@ -112,7 +112,7 @@ func aggregatorMain(ctx *cli.Context) error {
 
 		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-			NumberSquared:      taskResponseAgg.InputValue,
+			NumberSquared:      taskResponseAgg.OutputValue,
 		}
 		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
 		if err != nil {

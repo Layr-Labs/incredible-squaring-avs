@@ -72,14 +72,14 @@ func (tp *IncredibleTaskProcessor) ProcessAggregatedResponse(
 
 	tp.logger.Info("Threshold reached. Sending aggregated response onchain.", "taskIndex", response.TaskIndex)
 
-	taskResponseAgg, ok := response.TaskResponse.(sdkchallenger.GenericInputTaskResponse[*big.Int])
+	taskResponseAgg, ok := response.TaskResponse.(sdkchallenger.GenericOutputTaskResponse[*big.Int])
 	if !ok {
 		tp.logger.Error("task Response could not be converted to sdk aggregator's Task Response type")
 	}
 
 	taskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-		NumberSquared:      taskResponseAgg.InputValue,
+		NumberSquared:      taskResponseAgg.OutputValue,
 	}
 
 	incredibleSquaringTask := cstaskmanager.IIncredibleSquaringTaskManagerTask{

@@ -14,7 +14,7 @@ type OperatorTaskProcessor struct {
 	logger logging.Logger
 }
 
-var _ sdkoperator.OperatorTaskProcessor[*big.Int] = (*OperatorTaskProcessor)(nil)
+var _ sdkoperator.OperatorTaskProcessor[*big.Int, *big.Int] = (*OperatorTaskProcessor)(nil)
 
 func NewOperatorTaskProcessor(c sdkoperator.OperatorConfig, logger logging.Logger) OperatorTaskProcessor {
 	return OperatorTaskProcessor{
@@ -27,22 +27,22 @@ func NewOperatorTaskProcessor(c sdkoperator.OperatorConfig, logger logging.Logge
 func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
 	task sdkchallenger.GenericInputTask[*big.Int],
 	taskIndex uint32,
-) (sdkchallenger.GenericInputTaskResponse[*big.Int], error) {
+) (sdkchallenger.GenericOutputTaskResponse[*big.Int], error) {
 
 	numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
 
-	taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
+	taskResponse := sdkchallenger.GenericOutputTaskResponse[*big.Int]{
 		ReferenceTaskIndex: taskIndex,
-		InputValue:         numberSquared,
+		OutputValue:        numberSquared,
 	}
 
 	return taskResponse, nil
 }
 
-func (otp OperatorTaskProcessor) DigestResponse(response *sdkchallenger.GenericInputTaskResponse[*big.Int]) [32]byte {
+func (otp OperatorTaskProcessor) DigestResponse(response *sdkchallenger.GenericOutputTaskResponse[*big.Int]) [32]byte {
 	incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: response.ReferenceTaskIndex,
-		NumberSquared:      response.InputValue,
+		NumberSquared:      response.OutputValue,
 	}
 	taskResponseHash, err := core.GetTaskResponseDigest(&incredibleSquaringTaskResponse)
 	if err != nil {
