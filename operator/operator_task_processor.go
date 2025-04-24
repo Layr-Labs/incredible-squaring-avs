@@ -22,23 +22,6 @@ func NewOperatorTaskProcessor(c sdkoperator.OperatorConfig, logger logging.Logge
 	}
 }
 
-// Takes a NewTaskCreatedLog struct as input and returns a TaskResponseHeader struct.
-// The TaskResponseHeader struct is the struct that is signed and sent to the contract as a task response.
-func (otp OperatorTaskProcessor) ProcessNewTaskCreatedLog(
-	task sdkchallenger.GenericInputTask[*big.Int],
-	taskIndex uint32,
-) (sdkchallenger.GenericInputTaskResponse[*big.Int], error) {
-
-	numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
-
-	taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
-		ReferenceTaskIndex: taskIndex,
-		InputValue:         numberSquared,
-	}
-
-	return taskResponse, nil
-}
-
 func (otp OperatorTaskProcessor) DigestResponse(response *sdkchallenger.GenericInputTaskResponse[*big.Int]) [32]byte {
 	incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
 		ReferenceTaskIndex: response.ReferenceTaskIndex,
