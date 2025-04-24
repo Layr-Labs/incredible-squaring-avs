@@ -215,7 +215,6 @@ func TestIntegration(t *testing.T) {
 		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
 		RegisterOnStartup:             true,
 	}
-	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
 
 	calcFunction := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericOutputTaskResponse[*big.Int], error) {
 		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
@@ -228,13 +227,47 @@ func TestIntegration(t *testing.T) {
 		return taskResponse, nil
 	}
 
+	abiEncondingFn := func(taskResponse sdkchallenger.GenericOutputTaskResponse[*big.Int]) ([]byte, error) {
+		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
+		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
+			{
+				Name: "referenceTaskIndex",
+				Type: "uint32",
+			},
+			{
+				Name: "numberSquared",
+				Type: "uint256",
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		arguments := abi.Arguments{
+			{
+				Type: taskResponseType,
+			},
+		}
+
+		incredibleTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
+			ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
+			NumberSquared:      taskResponse.OutputValue,
+		}
+
+		bytes, err := arguments.Pack(incredibleTaskResponse)
+		if err != nil {
+			return nil, err
+		}
+
+		return bytes, nil
+	}
+
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
 		blockHash,
-		operatorTaskProcessor,
 		logger,
 		taskManagerAbi,
 		calcFunction,
+		abiEncondingFn,
 	)
 	if err != nil {
 		logger.Fatalf(err.Error())
