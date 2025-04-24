@@ -216,12 +216,25 @@ func TestIntegration(t *testing.T) {
 		RegisterOnStartup:             true,
 	}
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
+
+	calcFunction := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericInputTaskResponse[*big.Int], error) {
+		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
+
+		taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
+			ReferenceTaskIndex: taskIndex,
+			InputValue:         numberSquared,
+		}
+
+		return taskResponse, nil
+	}
+
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
 		blockHash,
 		operatorTaskProcessor,
 		logger,
 		taskManagerAbi,
+		calcFunction,
 	)
 	if err != nil {
 		logger.Fatalf(err.Error())
