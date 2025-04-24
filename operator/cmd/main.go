@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/urfave/cli"
 
+	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -80,6 +82,18 @@ func operatorMain(ctx *cli.Context) error {
 		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
 		RegisterOnStartup:             true,
 	}
+
+	responseCalculationFn := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericInputTaskResponse[*big.Int], error) {
+		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
+
+		taskResponse := sdkchallenger.GenericInputTaskResponse[*big.Int]{
+			ReferenceTaskIndex: taskIndex,
+			InputValue:         numberSquared,
+		}
+
+		return taskResponse, nil
+	}
+
 	operatorTaskProcessor := operator.NewOperatorTaskProcessor(operatorConfig, logger)
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
@@ -87,6 +101,7 @@ func operatorMain(ctx *cli.Context) error {
 		operatorTaskProcessor,
 		logger,
 		taskManagerAbi,
+		responseCalculationFn,
 	)
 	if err != nil {
 		return err
