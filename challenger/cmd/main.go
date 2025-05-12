@@ -74,10 +74,18 @@ func challengerMain(ctx *cli.Context) error {
 
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 
+	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](
+		taskManagerAddr,
+		taskManagerAbi,
+		config.TxMgr,
+		cfg.EthClient,
+	)
 
-	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](taskManagerAddr, taskManagerAbi, config.TxMgr, cfg.EthClient)
-
-	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(config.Logger, squareValidation, challengerRaiser)
+	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
+		config.Logger,
+		squareValidation,
+		challengerRaiser,
+	)
 
 	challenger, err := sdkchallenger.NewChallenger(
 		cfg,
@@ -104,7 +112,7 @@ func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 
 func squareValidation(taskIndex uint32, numberToSquare *big.Int, numberSquared *big.Int) (bool, error) {
 	result, err := square(taskIndex, numberToSquare)
-	if err != nil{
+	if err != nil {
 		return false, utils.WrapError("failed to calculate square", err)
 	}
 

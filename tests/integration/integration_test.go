@@ -188,9 +188,18 @@ func TestIntegration(t *testing.T) {
 		EthClient:      &config.EthHttpClient,
 	}
 
-	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](taskManagerAddr, taskManagerAbi, txMgr, ethRpcClient)
+	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](
+		taskManagerAddr,
+		taskManagerAbi,
+		txMgr,
+		ethRpcClient,
+	)
 
-	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(logger, squareValidation, challengerRaiser)
+	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
+		logger,
+		squareValidation,
+		challengerRaiser,
+	)
 
 	challenger, err := sdkchallenger.NewChallenger(
 		challenferCfg,
@@ -326,7 +335,6 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
-
 // This function computes the square of a number
 func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
@@ -340,7 +348,7 @@ func wrongSquare(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 
 func squareValidation(taskIndex uint32, numberToSquare *big.Int, numberSquared *big.Int) (bool, error) {
 	result, err := square(taskIndex, numberToSquare)
-	if err != nil{
+	if err != nil {
 		return false, utils.WrapError("failed to calculate square", err)
 	}
 
