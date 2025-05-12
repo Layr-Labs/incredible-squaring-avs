@@ -13,7 +13,7 @@ help:
 
 AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-TASK_GENERATOR_PRIVATE_KEY=0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
+TASK_SPAMMER_PRIVATE_KEY=0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
 
 CHAINID=31337
 # Make sure to update this if the strategy address changes
@@ -104,11 +104,11 @@ start-challenger: ##
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
-start-task-generator: ## 
-	go run task-generator/cmd/main.go --config config-files/task-generator.yaml \
+start-task-spammer: ## 
+	go run task-spammer/cmd/main.go --config config-files/task-spammer.yaml \
 		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
 		--core-deployment ${CORE_DEPLOYMENT_FILE} \
-		--ecdsa-private-key ${TASK_GENERATOR_PRIVATE_KEY} \
+		--ecdsa-private-key ${TASK_SPAMMER_PRIVATE_KEY} \
 		2>&1 | zap-pretty
 
 run-plugin: ## 

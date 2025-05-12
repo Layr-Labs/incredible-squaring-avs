@@ -50,10 +50,10 @@ Start the aggregator:
 make start-aggregator
 ```
 
-Start the task generator:
+Start the task spammer:
 
 ``` bash
-make start-task-generator
+make start-task-spammer
 ```
 
 Register the operator with eigenlayer and incredible-squaring, and then start the process:
@@ -152,23 +152,23 @@ The architecture of the AVS contains:
   - [TaskManager](contracts/src/IncredibleSquaringTaskManager.sol) which contains [task creation](contracts/src/IncredibleSquaringTaskManager.sol#L83) and [task response](contracts/src/IncredibleSquaringTaskManager.sol#L102) logic.
   - The [challenge](contracts/src/IncredibleSquaringTaskManager.sol#L176) logic could be separated into its own contract, but we have decided to include it in the TaskManager for this simple task.
   - Set of [registry contracts](https://github.com/Layr-Labs/eigenlayer-middleware) to manage operators opted in to this avs
-- Task Generator
+- Task Spammer
   - Generates a new tasks and sends it to the Task Manager every 10 seconds
 - Aggregator
   - aggregates BLS signatures from operators and posts the aggregated response to the task manager
   - For this simple demo, the aggregator is not an operator, and thus does not need to register with eigenlayer or the AVS contract. It's IP address is simply hardcoded into the operators' config.
 - Operators
-  - Square the number sent to the task manager by the task generator, sign it, and send it to the aggregator
+  - Square the number sent to the task manager by the task spammer, sign it, and send it to the aggregator
 
 ![](./diagrams/architecture.png)
 
-1. A task generator publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the IncredibleSquaringTaskManager contract's [createNewTask](contracts/src/IncredibleSquaringTaskManager.sol#L83) function. Each task specifies an integer `numberToBeSquared` for which it wants the currently opted-in operators to determine its square `numberToBeSquared^2`. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in incredible-squaring) needs to reach at least thresholdPercentage of operator signatures.
+1. A task spammer publishes tasks once every regular interval (say 10 blocks, you are free to set your own interval) to the IncredibleSquaringTaskManager contract's [createNewTask](contracts/src/IncredibleSquaringTaskManager.sol#L83) function. Each task specifies an integer `numberToBeSquared` for which it wants the currently opted-in operators to determine its square `numberToBeSquared^2`. `createNewTask` also takes `quorumNumbers` and `quorumThresholdPercentage` which requests that each listed quorum (we only use quorumNumber 0 in incredible-squaring) needs to reach at least thresholdPercentage of operator signatures.
 
 2. A [registry](https://github.com/Layr-Labs/eigenlayer-middleware/blob/master/src/BLSRegistryCoordinatorWithIndices.sol) contract is deployed that allows any eigenlayer operator with at least 1 delegated [mockerc20](contracts/src/ERC20Mock.sol) token to opt-in to this AVS and also de-register from this AVS.
 
 3. [Operator] The operators who are currently opted-in with the AVS need to read the task number from the Task contract, compute its square, sign on that computed result (over the BN254 curve) and send their taskResponse and signature to the aggregator.
 
-4. [Aggregator] The aggregator collects the signatures from the operators and aggregates them using BLS aggregation. If any response passes the [quorumThresholdPercentage](contracts/src/IIncredibleSquaringTaskManager.sol#L36) set by the task generator when posting the task, the aggregator posts the aggregated response to the Task contract.
+4. [Aggregator] The aggregator collects the signatures from the operators and aggregates them using BLS aggregation. If any response passes the [quorumThresholdPercentage](contracts/src/IIncredibleSquaringTaskManager.sol#L36) set by the task spammer when posting the task, the aggregator posts the aggregated response to the Task contract.
 
 5. If a response was sent within the [response window](contracts/src/IncredibleSquaringTaskManager.sol#L119), we enter the [Dispute resolution] period.
    - [Off-chain] A challenge window is launched during which anyone can [raise a dispute](contracts/src/IncredibleSquaringTaskManager.sol#L171) in a DisputeResolution contract (in our case, this is the same as the TaskManager contract)
@@ -193,7 +193,7 @@ This AVS has four main participants:
 - Operator: The operator subscribes to NewTasks Events and, when a new task is created, completes it, calculates the response, signs it, and sends it to the BLS aggregation service.
 - Aggregator: The aggregator listens to NewTasks Events and, when a new task is created, initializes a new task in the BLS aggregation service. It also collects aggregated responses from the BLS aggregation service and sends them to the on-chain `TaskManager`, which then emits a TaskRespondedEvent.
 - Challenger: The Challenger subscribes to TaskRespondedEvents, and in case the response given by the aggregator differs from the Challenger calculated response, it raises a challenge, that calls on-chain `TaskManager`, which verifies if the aggregator response was right. If it was not right, then the operator that signed the task will be slashed.
-- Task generator: The one who creates new tasks for the operators (through the on-chain `TaskManager`) every certain time (10 seconds).
+- Task spammer: The one who creates new tasks for the operators (through the on-chain `TaskManager`) every certain time (10 seconds).
 
 Now we will focus on each to show how each one does each thing.
 
@@ -388,12 +388,12 @@ In that method the `TaskManager` calculates the response and determines if the a
 
 The slashing mechanism can be found in the [second part](https://github.com/Layr-Labs/incredible-squaring-avs/blob/f8c379b151d8db778a12a5de1ba0266436d85366/contracts/src/IncredibleSquaringTaskManager.sol#L261-L279) of the raiseAndResolveChallenge method, but in a simple way to explain, the Manager defines an amount of wads to slash from each operator, and calls the [`InstantSlasher.fulfillSlashingRequest()` method](https://github.com/Layr-Labs/eigenlayer-middleware/blob/4d63f27247587607beb67f96fdabec4b2c1321ef/src/slashers/InstantSlasher.sol#L22-L31), that ends up calling the [`allocationManager.slashOperator()` method](https://github.com/Layr-Labs/eigenlayer-contracts/blob/aa84b7a1d801510a9b893be2f2a91e8ef093faf6/src/contracts/core/AllocationManager.sol#L64-L67).
 
-### Task Generator
+### Task Spammer
 
-The task Generator has this `Start()` method:
+The task Spammer has this `Start()` method:
 
 ``` Go
-func (taskGen *TaskGenerator) Start(ctx context.Context) error {
+func (taskGen *TaskSpammer) Start(ctx context.Context) error {
     ticker := time.NewTicker(10 * time.Second)
     defer ticker.Stop()
 
@@ -406,7 +406,7 @@ func (taskGen *TaskGenerator) Start(ctx context.Context) error {
         case <-ctx.Done():
             return nil
         case <-ticker.C:
-            taskGen.logger.Infof("Task Generator sending new task, number to square: %v", taskNum)
+            taskGen.logger.Infof("Task Spammer sending new task, number to square: %v", taskNum)
             _, _, err := taskGen.avsWriter.SendNewTaskNumberToSquare(context.Background(), big.NewInt(taskNum),
                 thresholdNumerator, quorumNumbers)
             if err != nil {
@@ -419,7 +419,7 @@ func (taskGen *TaskGenerator) Start(ctx context.Context) error {
 }
 ```
 
-In this method we can see the only thing task generator does, generating tasks each 10 seconds. That consists on calling the `CreateNewTask()` method of the on-chain `TaskManager` contract, that stores a hash of the new task and emits a `NewTaskCreated` event, that will be caught by the challenger, the operator and the aggregator.
+In this method we can see the only thing task spammer does, generating tasks each 10 seconds. That consists on calling the `CreateNewTask()` method of the on-chain `TaskManager` contract, that stores a hash of the new task and emits a `NewTaskCreated` event, that will be caught by the challenger, the operator and the aggregator.
 
 ## Troubleshooting
 

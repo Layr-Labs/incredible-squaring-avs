@@ -178,7 +178,7 @@ func TestIntegration(t *testing.T) {
 
 	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskCreator, taskSpammerCfg)
 	if err != nil {
-		t.Fatalf("Failed to create task generator: %s", err.Error())
+		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
 	challenferCfg := sdkchallenger.ChallengerConfig{
@@ -297,7 +297,7 @@ func TestIntegration(t *testing.T) {
 
 	go taskSpammer.Start(ctx, NewNumberToSquareSequence())
 
-	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")
+	log.Println("Started aggregator and task spammer. Sleeping 20 seconds to give operator time to answer task 1...")
 	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain

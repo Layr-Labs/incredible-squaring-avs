@@ -79,19 +79,19 @@ services:
       OPERATOR_BLS_KEY_PASSWORD: ""
     cmd: ["--config", "/usr/src/app/config-files/operator-config.yaml"]
 
-  - name: task-generator
-    image: "ko.local/task-generator/cmd/main.go:latest"
-    build_cmd: KO_DOCKER_REPO=ko.local ko build task-generator/cmd/main.go --preserve-import-paths --local
+  - name: task-spammer
+    image: "ko.local/task-spammer/cmd/main.go:latest"
+    build_cmd: KO_DOCKER_REPO=ko.local ko build task-spammer/cmd/main.go --preserve-import-paths --local
     input:
-      /usr/src/app/config-files/generator/: task-generator-config
+      /usr/src/app/config-files/spammer/: task-spammer-config
       /usr/src/app/config-files/core/: eigenlayer_addresses
       /usr/src/app/config-files/avs/: avs_addresses
     cmd:
       - "--config"
-      - "/usr/src/app/config-files/generator/task-generator-config.yaml"
+      - "/usr/src/app/config-files/spammer/task-spammer-config.yaml"
       - "--ecdsa-private-key"
       # NOTE: aggregator key-pair is hardcoded in the deployment scripts
-      - "{{.keys.generator_key.private_key}}"
+      - "{{.keys.spammer_key.private_key}}"
       - "--credible-squaring-deployment"
       - "/usr/src/app/config-files/avs/3151908.json"
       - "--core-deployment"
@@ -131,7 +131,7 @@ keys:
   - name: aggregator_key
     address: "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720"
     private_key: "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-  - name: generator_key
+  - name: spammer_key
     address: "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
     private_key: "0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356"
 
@@ -152,9 +152,9 @@ artifacts:
           # address which the aggregator listens on for operator signed messages
           aggregator_server_ip_port_address: 0.0.0.0:8090
 
-  task-generator-config:
+  task-spammer-config:
     files:
-      task-generator-config.yaml:
+      task-spammer-config.yaml:
         template: |
           # 'production' only prints info and above. 'development' also prints debug
           environment: production

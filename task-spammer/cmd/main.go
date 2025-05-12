@@ -32,20 +32,20 @@ func main() {
 	app := cli.NewApp()
 	app.Flags = config.Flags
 	app.Version = fmt.Sprintf("%s-%s-%s", Version, GitCommit, GitDate)
-	app.Name = "credible-squaring-task-generator"
-	app.Usage = "Credible Squaring Task Generator"
+	app.Name = "credible-squaring-task-spammer"
+	app.Usage = "Credible Squaring Task Spammer"
 	app.Description = "Service that generates tasks and sends them to Task Manager."
 
-	app.Action = taskGeneratorMain
+	app.Action = taskSpammerMain
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatalln("Application failed.", "Message:", err)
 	}
 }
 
-func taskGeneratorMain(ctx *cli.Context) error {
+func taskSpammerMain(ctx *cli.Context) error {
 
-	log.Println("Initializing Task Generator...")
+	log.Println("Initializing Task Spammer...")
 	config, err := config.NewConfig(ctx)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func taskGeneratorMain(ctx *cli.Context) error {
 
 	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskCreator, taskSpammerCfg)
 	if err != nil {
-		config.Logger.Fatalf("Failed to create task generator: %s", err.Error())
+		config.Logger.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
 	seq := NewNumberToSquareSequence()
