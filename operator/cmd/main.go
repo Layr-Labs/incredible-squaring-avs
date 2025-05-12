@@ -7,10 +7,8 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/urfave/cli"
 
-	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
@@ -56,7 +54,6 @@ func operatorMain(ctx *cli.Context) error {
 
 	if nodeConfig.RegisterOperatorOnStartup {
 		log.Println("Registering operator on startup")
-
 		err = operator.RegisterOperatorOnStartup(nodeConfig, logger)
 		if err != nil {
 			logger.Fatalf(err.Error())
@@ -70,8 +67,6 @@ func operatorMain(ctx *cli.Context) error {
 		logger.Fatalf(err.Error())
 	}
 
-	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
-
 	operatorConfig := sdkoperator.OperatorConfig{
 		OperatorAddress:               nodeConfig.OperatorAddress,
 		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
@@ -82,60 +77,19 @@ func operatorMain(ctx *cli.Context) error {
 		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
 		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
 		RegisterOnStartup:             true,
+		Logger:                        logger,
+		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	responseCalculationFn := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericOutputTaskResponse[*big.Int], error) {
-		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
-
-		taskResponse := sdkchallenger.GenericOutputTaskResponse[*big.Int]{
-			ReferenceTaskIndex: taskIndex,
-			OutputValue:        numberSquared,
-		}
-
-		return taskResponse, nil
-	}
-
-	abiEncondingFn := func(taskResponse sdkchallenger.GenericOutputTaskResponse[*big.Int]) ([]byte, error) {
-		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
-			{
-				Name: "referenceTaskIndex",
-				Type: "uint32",
-			},
-			{
-				Name: "numberSquared",
-				Type: "uint256",
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		arguments := abi.Arguments{
-			{
-				Type: taskResponseType,
-			},
-		}
-
-		incredibleTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-			ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
-			NumberSquared:      taskResponse.OutputValue,
-		}
-
-		bytes, err := arguments.Pack(incredibleTaskResponse)
-		if err != nil {
-			return nil, err
-		}
-
-		return bytes, nil
+	logic, err := sdkoperator.ComputeWithFailures(square, wrongSquare, 50)
+	if err != nil {
+		logger.Fatalf(err.Error())
 	}
 
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
-		blockHash,
-		logger,
-		taskManagerAbi,
-		responseCalculationFn,
-		abiEncondingFn,
+		logic,
+		nil,
 	)
 	if err != nil {
 		return err
@@ -151,4 +105,15 @@ func operatorMain(ctx *cli.Context) error {
 
 	return nil
 
+}
+
+// This function computes the square of a number
+func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
+	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
+
+	return numberSquared, nil
+}
+
+func wrongSquare(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
+	return big.NewInt(0), nil
 }

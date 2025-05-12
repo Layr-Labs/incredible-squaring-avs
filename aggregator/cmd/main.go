@@ -3,21 +3,17 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/urfave/cli"
-	"golang.org/x/crypto/sha3"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
-	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
-	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/Layr-Labs/eigensdk-go/utils"
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
+	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
@@ -58,6 +54,11 @@ func aggregatorMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
 	cfg := sdkaggregator.AggregatorConfig{
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
@@ -68,72 +69,31 @@ func aggregatorMain(ctx *cli.Context) error {
 		EthWsUrl:                      config.EthWsRpcUrl,
 		EcdsaPrivateKey:               config.EcdsaPrivateKey,
 		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
+		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	taskProcessor, err := aggregator.NewTaskProcessor(config)
+	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
+		config.IncredibleSquaringServiceManager,
+		&config.EthHttpClient,
+	)
+
+	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+
+	taskResponder, err := taskprocessor.NewTaskResponderFromAbi[*big.Int, *big.Int](
+		taskManagerAddr,
+		taskManagerAbi,
+		config.TxMgr,
+		&config.EthHttpClient,
+	)
+
+	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(config.Logger, taskResponder)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
-	if err != nil {
-		config.Logger.Fatalf(err.Error())
-	}
-
-	// This is the same hash function used by the operator to hash the task response before signing it.
-	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
-		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
-			{
-				Name: "referenceTaskIndex",
-				Type: "uint32",
-			},
-			{
-				Name: "numberSquared",
-				Type: "uint256",
-			},
-		})
-		if err != nil {
-			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error creating taskResponseType", err)
-		}
-		arguments := abi.Arguments{
-			{
-				Type: taskResponseType,
-			},
-		}
-
-		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericOutputTaskResponse[*big.Int])
-		if !ok {
-			return sdktypes.TaskResponseDigest{}, errors.New(
-				"task Response could not be converted to sdk aggregator's Task Response type",
-			)
-		}
-
-		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-			NumberSquared:      taskResponseAgg.OutputValue,
-		}
-		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
-		if err != nil {
-			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error Packing taskResponse", err)
-		}
-
-		var taskResponseDigest [32]byte
-		hasher := sha3.NewLegacyKeccak256()
-		hasher.Write(encodeTaskResponseByte)
-		copy(taskResponseDigest[:], hasher.Sum(nil)[:32])
-
-		return taskResponseDigest, nil
-	}
-	cfg.TaskResponseHashFn = hashFunction
-
-	newTaskCreatedEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
-
-	agg, err := sdkaggregator.NewAggregator[*big.Int, *big.Int](
+	agg, err := sdkaggregator.NewAggregator(
 		cfg,
 		taskProcessor,
-		newTaskCreatedEventHash,
-		taskManagerAbi,
 	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())

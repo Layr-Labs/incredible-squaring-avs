@@ -2,8 +2,8 @@ package integration_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"iter"
 	"log"
 	"math/big"
 	"os"
@@ -14,7 +14,10 @@ import (
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
-	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
+	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
+	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
+	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
+	"github.com/Layr-Labs/eigensdk-go/utils"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
@@ -23,25 +26,20 @@ import (
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/Layr-Labs/eigensdk-go/utils"
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
-	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
-	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	taskgenerator "github.com/Layr-Labs/incredible-squaring-avs/task-generator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-	"golang.org/x/crypto/sha3"
 )
 
 type IntegrationClients struct {
@@ -148,38 +146,55 @@ func TestIntegration(t *testing.T) {
 
 	thresholdNumerator := sdktypes.QuorumThresholdPercentage(100)
 	quorumNumbers := sdktypes.QuorumNums{0}
-	taskGenLogic, err := taskgenerator.NewTaskGenLogic(config, thresholdNumerator, quorumNumbers)
 
-	taskGenerator, err := sdktaskgenerator.BuildTaskGenerator(config.Logger, taskGenLogic, 10)
-	if err != nil {
-		t.Fatalf("Failed to create task generator: %s", err.Error())
-	}
+	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
+		config.IncredibleSquaringServiceManager,
+		&config.EthHttpClient,
+	)
+
+	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	newTaskEventHash := taskManagerAbi.Events["NewTaskCreated"].ID
-	taskRespondedEventHash := taskManagerAbi.Events["TaskResponded"].ID
+	taskCreator, err := sdktaskspammer.NewTaskCreatorFromAbi[*big.Int](
+		taskManagerAddr,
+		*taskManagerAbi,
+		txMgr,
+		&config.EthHttpClient,
+	)
+	if err != nil {
+		return
+	}
+
+	taskSpammerCfg := sdktaskspammer.Config{
+		Logger:                    config.Logger,
+		TimeBetweenTasks:          10,
+		QuorumThresholdPercentage: uint32(thresholdNumerator),
+		QuorumNumbers:             quorumNumbers.UnderlyingType(),
+	}
+
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskCreator, taskSpammerCfg)
+	if err != nil {
+		t.Fatalf("Failed to create task generator: %s", err.Error())
+	}
 
 	challenferCfg := sdkchallenger.ChallengerConfig{
-		EthWsUrl: config.EthWsRpcUrl,
-		Logger:   config.Logger,
+		EthWsUrl:       config.EthWsRpcUrl,
+		Logger:         config.Logger,
+		TaskManagerAbi: taskManagerAbi,
+		EthClient:      &config.EthHttpClient,
 	}
 
-	challengerVerifier, err := challenger.NewChallengerVerifierImpl(config)
-	if err != nil {
-		config.Logger.Fatalf("Failed to create challenger logic from config: %v", err)
-	}
+	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](taskManagerAddr, taskManagerAbi, txMgr, ethRpcClient)
+
+	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(logger, squareValidation, challengerRaiser)
 
 	challenger, err := sdkchallenger.NewChallenger(
 		challenferCfg,
-		challengerVerifier,
-		newTaskEventHash,
-		taskRespondedEventHash,
-		taskManagerAbi,
-		&config.EthHttpClient,
+		indexingChallengerProcessor,
 	)
 	if err != nil {
 		config.Logger.Fatalf("Failed to create challenger from config: %v", err)
@@ -197,8 +212,6 @@ func TestIntegration(t *testing.T) {
 	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
 	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint
 
-	blockHash := taskManagerAbi.Events["NewTaskCreated"].ID
-
 	err = operator.RegisterOperatorOnStartup(nodeConfig, logger)
 	if err != nil {
 		logger.Fatalf(err.Error())
@@ -214,60 +227,19 @@ func TestIntegration(t *testing.T) {
 		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
 		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
 		RegisterOnStartup:             true,
+		Logger:                        logger,
+		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	calcFunction := func(task sdkchallenger.GenericInputTask[*big.Int], taskIndex uint32) (sdkchallenger.GenericOutputTaskResponse[*big.Int], error) {
-		numberSquared := big.NewInt(0).Exp(task.InputValue, big.NewInt(2), nil)
-
-		taskResponse := sdkchallenger.GenericOutputTaskResponse[*big.Int]{
-			ReferenceTaskIndex: taskIndex,
-			OutputValue:        numberSquared,
-		}
-
-		return taskResponse, nil
-	}
-
-	abiEncondingFn := func(taskResponse sdkchallenger.GenericOutputTaskResponse[*big.Int]) ([]byte, error) {
-		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
-			{
-				Name: "referenceTaskIndex",
-				Type: "uint32",
-			},
-			{
-				Name: "numberSquared",
-				Type: "uint256",
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		arguments := abi.Arguments{
-			{
-				Type: taskResponseType,
-			},
-		}
-
-		incredibleTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-			ReferenceTaskIndex: taskResponse.ReferenceTaskIndex,
-			NumberSquared:      taskResponse.OutputValue,
-		}
-
-		bytes, err := arguments.Pack(incredibleTaskResponse)
-		if err != nil {
-			return nil, err
-		}
-
-		return bytes, nil
+	failingFunction, err := sdkoperator.ComputeWithFailures(square, wrongSquare, 50)
+	if err != nil {
+		logger.Fatalf(err.Error())
 	}
 
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
-		blockHash,
-		logger,
-		taskManagerAbi,
-		calcFunction,
-		abiEncondingFn,
+		failingFunction,
+		nil,
 	)
 	if err != nil {
 		logger.Fatalf(err.Error())
@@ -289,74 +261,32 @@ func TestIntegration(t *testing.T) {
 		EthWsUrl:                      config.EthWsRpcUrl,
 		EcdsaPrivateKey:               config.EcdsaPrivateKey,
 		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
+		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	taskProcessor, err := aggregator.NewTaskProcessor(config)
+	taskResponder, err := taskprocessor.NewTaskResponderFromAbi[*big.Int, *big.Int](
+		taskManagerAddr,
+		taskManagerAbi,
+		txMgr,
+		&config.EthHttpClient,
+	)
+
+	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskResponder)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
 
 	go challenger.Start(ctx)
-
-	// This is the same hash function used by the operator to hash the task response before signing it.
-	hashFunction := func(taskResponse sdktypes.TaskResponse) (sdktypes.TaskResponseDigest, error) {
-		// The order here has to match the field ordering of cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse
-		taskResponseType, err := abi.NewType("tuple", "", []abi.ArgumentMarshaling{
-			{
-				Name: "referenceTaskIndex",
-				Type: "uint32",
-			},
-			{
-				Name: "numberSquared",
-				Type: "uint256",
-			},
-		})
-		if err != nil {
-			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error creating taskResponseType", err)
-		}
-		arguments := abi.Arguments{
-			{
-				Type: taskResponseType,
-			},
-		}
-
-		taskResponseAgg, ok := taskResponse.(sdkchallenger.GenericOutputTaskResponse[*big.Int])
-		if !ok {
-			return sdktypes.TaskResponseDigest{}, errors.New(
-				"task Response could not be converted to sdk aggregator's Task Response type",
-			)
-		}
-
-		incredibleSquaringTaskResponse := cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{
-			ReferenceTaskIndex: taskResponseAgg.ReferenceTaskIndex,
-			NumberSquared:      taskResponseAgg.OutputValue,
-		}
-		encodeTaskResponseByte, err := arguments.Pack(incredibleSquaringTaskResponse)
-		if err != nil {
-			return sdktypes.TaskResponseDigest{}, utils.WrapError("Error Packing taskResponse", err)
-		}
-
-		var taskResponseDigest [32]byte
-		hasher := sha3.NewLegacyKeccak256()
-		hasher.Write(encodeTaskResponseByte)
-		copy(taskResponseDigest[:], hasher.Sum(nil)[:32])
-
-		return taskResponseDigest, nil
-	}
-	aggConfig.TaskResponseHashFn = hashFunction
-
-	agg, err := sdkaggregator.NewAggregator[*big.Int, *big.Int](
+	agg, err := sdkaggregator.NewAggregator(
 		aggConfig,
 		taskProcessor,
-		blockHash,
-		taskManagerAbi,
 	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
 	go agg.Start(ctx)
 
-	go taskGenerator.Start(ctx)
+	go taskSpammer.Start(ctx, NewNumberToSquareSequence())
 
 	log.Println("Started aggregator and task generator. Sleeping 20 seconds to give operator time to answer task 1...")
 	time.Sleep(20 * time.Second)
@@ -394,6 +324,42 @@ func TestIntegration(t *testing.T) {
 	if !received {
 		t.Fatalf("Task response hash is empty")
 	}
+}
+
+
+// This function computes the square of a number
+func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
+	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
+
+	return numberSquared, nil
+}
+
+func wrongSquare(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
+	return big.NewInt(0), nil
+}
+
+func squareValidation(taskIndex uint32, numberToSquare *big.Int, numberSquared *big.Int) (bool, error) {
+	result, err := square(taskIndex, numberToSquare)
+	if err != nil{
+		return false, utils.WrapError("failed to calculate square", err)
+	}
+
+	return result.Cmp(numberSquared) == 0, nil
+}
+
+// Returns an iterator for the sequence 1, 2, 3, ...
+func NewNumberToSquareSequence() iter.Seq[*big.Int] {
+	acc := big.NewInt(1)
+	delta := big.NewInt(1)
+	return func(yield func(*big.Int) bool) {
+		for {
+			if !yield(acc) {
+				break
+			}
+			acc.Add(acc, delta)
+		}
+	}
+
 }
 
 // TODO(samlaf): have to advance chain to a block where the task is answered

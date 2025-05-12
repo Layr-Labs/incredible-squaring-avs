@@ -4,16 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"log"
+	"math/big"
 	"os"
+	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/urfave/cli"
 
-	sdktaskgenerator "github.com/Layr-Labs/eigensdk-go/task-generator"
+	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
+	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 
-	"github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	taskgenerator "github.com/Layr-Labs/incredible-squaring-avs/task-generator"
 )
 
 var (
@@ -52,20 +56,54 @@ func taskGeneratorMain(ctx *cli.Context) error {
 	}
 	fmt.Println("Config:", string(configJson))
 
-	thresholdNumerator := types.QuorumThresholdPercentage(100)
-	quorumNumbers := types.QuorumNums{0}
-	taskGenLogic, err := taskgenerator.NewTaskGenLogic(config, thresholdNumerator, quorumNumbers)
+	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(config.IncredibleSquaringServiceManager, &config.EthHttpClient)
 
-	taskGen, err := sdktaskgenerator.BuildTaskGenerator(config.Logger, taskGenLogic, 10)
+	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		return err
+		config.Logger.Fatalf(err.Error())
 	}
 
-	err = taskGen.Start(context.Background())
+	taskCreator, err := sdktaskspammer.NewTaskCreatorFromAbi[*big.Int](taskManagerAddr, *taskManagerAbi, config.TxMgr, &config.EthHttpClient)
+	if err != nil {
+		config.Logger.Fatalf(err.Error())
+	}
+
+	taskSpammerCfg := sdktaskspammer.Config{
+		Logger:                    config.Logger,
+		TimeBetweenTasks:          10 * time.Second,
+		QuorumThresholdPercentage: uint32(100),
+		QuorumNumbers:             []uint8{0},
+	}
+
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskCreator, taskSpammerCfg)
+	if err != nil {
+		config.Logger.Fatalf("Failed to create task generator: %s", err.Error())
+	}
+
+	seq := NewNumberToSquareSequence()
+
+	err = taskSpammer.Start(context.Background(), seq)
 	if err != nil {
 		return err
 	}
 
 	return nil
+
+}
+
+// Returns an iterator for the sequence 1, 2, 3, ...
+func NewNumberToSquareSequence() iter.Seq[*big.Int] {
+	acc := big.NewInt(1)
+	delta := big.NewInt(1)
+	return func(yield func(*big.Int) bool) {
+		for {
+			if !yield(acc) {
+				break
+			}
+			acc.Add(acc, delta)
+		}
+	}
 
 }
