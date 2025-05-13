@@ -74,7 +74,7 @@ func challengerMain(ctx *cli.Context) error {
 
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 
-	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](
+	challengerRaiser, err := sdkchallengerprocessor.NewChallengeRaiserFromAbi[*big.Int, *big.Int](
 		taskManagerAddr,
 		taskManagerAbi,
 		config.TxMgr,

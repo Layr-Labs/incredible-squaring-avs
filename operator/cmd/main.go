@@ -81,14 +81,20 @@ func operatorMain(ctx *cli.Context) error {
 		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	logic, err := sdkoperator.ComputeWithFailures(square, wrongSquare, 50)
+	calculator := sdkoperator.NewFunctionResponseCalculator(square)
+
+	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 10, big.NewInt(0))
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 
 	operator, err := sdkoperator.NewOperatorFromConfig(
 		operatorConfig,
-		logic,
+		failingFunction,
 		nil,
 	)
 	if err != nil {
@@ -112,8 +118,4 @@ func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
 
 	return numberSquared, nil
-}
-
-func wrongSquare(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
-	return big.NewInt(0), nil
 }

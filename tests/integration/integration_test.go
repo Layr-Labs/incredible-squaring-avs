@@ -188,7 +188,7 @@ func TestIntegration(t *testing.T) {
 		EthClient:      &config.EthHttpClient,
 	}
 
-	challengerRaiser, err := sdkchallengerprocessor.NewChallengerRaiserFromAbi[*big.Int, *big.Int](
+	challengerRaiser, err := sdkchallengerprocessor.NewChallengeRaiserFromAbi[*big.Int, *big.Int](
 		taskManagerAddr,
 		taskManagerAbi,
 		txMgr,
@@ -240,7 +240,9 @@ func TestIntegration(t *testing.T) {
 		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	failingFunction, err := sdkoperator.ComputeWithFailures(square, wrongSquare, 50)
+	calculator := sdkoperator.NewFunctionResponseCalculator(square)
+
+	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 10, big.NewInt(0))
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
@@ -340,10 +342,6 @@ func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
 
 	return numberSquared, nil
-}
-
-func wrongSquare(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
-	return big.NewInt(0), nil
 }
 
 func squareValidation(taskIndex uint32, numberToSquare *big.Int, numberSquared *big.Int) (bool, error) {
