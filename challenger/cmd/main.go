@@ -13,6 +13,7 @@ import (
 
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
+	taskmanager "github.com/Layr-Labs/eigensdk-go/task-processor/task-manager"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -74,7 +75,7 @@ func challengerMain(ctx *cli.Context) error {
 
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 
-	challengerRaiser, err := sdkchallengerprocessor.NewChallengeRaiserFromAbi[*big.Int, *big.Int](
+	challengerRaiser, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
 		taskManagerAddr,
 		taskManagerAbi,
 		config.TxMgr,

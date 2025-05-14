@@ -16,6 +16,7 @@ import (
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
 	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
+	taskmanager "github.com/Layr-Labs/eigensdk-go/task-processor/task-manager"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 
@@ -159,14 +160,14 @@ func TestIntegration(t *testing.T) {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	taskCreator, err := sdktaskspammer.NewTaskCreatorFromAbi[*big.Int](
+	taskManagerContract, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
 		taskManagerAddr,
-		*taskManagerAbi,
+		taskManagerAbi,
 		txMgr,
-		&config.EthHttpClient,
+		ethRpcClient,
 	)
 	if err != nil {
-		return
+		t.Fatalf("Failed to create task manager contract: %s", err.Error())
 	}
 
 	taskSpammerCfg := sdktaskspammer.Config{
@@ -176,7 +177,7 @@ func TestIntegration(t *testing.T) {
 		QuorumNumbers:             quorumNumbers.UnderlyingType(),
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskCreator, taskSpammerCfg)
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskManagerContract, taskSpammerCfg)
 	if err != nil {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
@@ -188,17 +189,10 @@ func TestIntegration(t *testing.T) {
 		EthClient:      &config.EthHttpClient,
 	}
 
-	challengerRaiser, err := sdkchallengerprocessor.NewChallengeRaiserFromAbi[*big.Int, *big.Int](
-		taskManagerAddr,
-		taskManagerAbi,
-		txMgr,
-		ethRpcClient,
-	)
-
 	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
 		logger,
 		squareValidation,
-		challengerRaiser,
+		taskManagerContract,
 	)
 
 	challenger, err := sdkchallenger.NewChallenger(
@@ -275,14 +269,7 @@ func TestIntegration(t *testing.T) {
 		TaskManagerAbi:                taskManagerAbi,
 	}
 
-	taskResponder, err := taskprocessor.NewTaskResponderFromAbi[*big.Int, *big.Int](
-		taskManagerAddr,
-		taskManagerAbi,
-		txMgr,
-		&config.EthHttpClient,
-	)
-
-	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskResponder)
+	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskManagerContract)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}

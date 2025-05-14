@@ -13,6 +13,7 @@ import (
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
+	taskmanager "github.com/Layr-Labs/eigensdk-go/task-processor/task-manager"
 	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
@@ -79,7 +80,7 @@ func aggregatorMain(ctx *cli.Context) error {
 
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 
-	taskResponder, err := taskprocessor.NewTaskResponderFromAbi[*big.Int, *big.Int](
+	taskResponder, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
 		taskManagerAddr,
 		taskManagerAbi,
 		config.TxMgr,

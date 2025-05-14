@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/urfave/cli"
 
+	taskmanager "github.com/Layr-Labs/eigensdk-go/task-processor/task-manager"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
 	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -65,7 +66,7 @@ func taskSpammerMain(ctx *cli.Context) error {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	taskCreator, err := sdktaskspammer.NewTaskCreatorFromAbi[*big.Int](taskManagerAddr, *taskManagerAbi, config.TxMgr, &config.EthHttpClient)
+	taskCreator, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](taskManagerAddr, taskManagerAbi, config.TxMgr, &config.EthHttpClient)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())
 	}
