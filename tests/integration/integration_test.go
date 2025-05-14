@@ -13,10 +13,10 @@ import (
 	"time"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
+	taskprocessor "github.com/Layr-Labs/eigensdk-go/aggregator/task-processor"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
-	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 

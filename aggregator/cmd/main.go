@@ -12,8 +12,8 @@ import (
 	"github.com/urfave/cli"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
+	taskprocessor "github.com/Layr-Labs/eigensdk-go/aggregator/task-processor"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
-	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
 	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
