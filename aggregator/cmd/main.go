@@ -60,7 +60,7 @@ func aggregatorMain(ctx *cli.Context) error {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	cfg := sdkaggregator.AggregatorConfig{
+	cfg := sdkaggregator.Config{
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,

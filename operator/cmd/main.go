@@ -67,7 +67,7 @@ func operatorMain(ctx *cli.Context) error {
 		logger.Fatalf(err.Error())
 	}
 
-	operatorConfig := sdkoperator.OperatorConfig{
+	operatorConfig := sdkoperator.Config{
 		OperatorAddress:               nodeConfig.OperatorAddress,
 		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
 		ServiceManagerAddress:         nodeConfig.IncredibleSquaringServiceManager,

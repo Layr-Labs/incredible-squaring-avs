@@ -61,7 +61,7 @@ func challengerMain(ctx *cli.Context) error {
 		config.Logger.Fatalf(err.Error())
 	}
 
-	cfg := sdkchallenger.ChallengerConfig{
+	cfg := sdkchallenger.Config{
 		EthWsUrl:       config.EthWsRpcUrl,
 		Logger:         config.Logger,
 		TaskManagerAbi: taskManagerAbi,

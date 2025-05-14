@@ -182,7 +182,7 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
-	challenferCfg := sdkchallenger.ChallengerConfig{
+	challenferCfg := sdkchallenger.Config{
 		EthWsUrl:       config.EthWsRpcUrl,
 		Logger:         config.Logger,
 		TaskManagerAbi: taskManagerAbi,
@@ -220,7 +220,7 @@ func TestIntegration(t *testing.T) {
 		logger.Fatalf(err.Error())
 	}
 
-	operatorConfig := sdkoperator.OperatorConfig{
+	operatorConfig := sdkoperator.Config{
 		OperatorAddress:               nodeConfig.OperatorAddress,
 		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
 		ServiceManagerAddress:         nodeConfig.IncredibleSquaringServiceManager,
@@ -256,7 +256,7 @@ func TestIntegration(t *testing.T) {
 
 	/* start aggregator */
 	log.Println("starting aggregator for integration tests")
-	aggConfig := sdkaggregator.AggregatorConfig{
+	aggConfig := sdkaggregator.Config{
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
