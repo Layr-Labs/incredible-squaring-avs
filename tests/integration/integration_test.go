@@ -15,8 +15,8 @@ import (
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
+	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	taskprocessor "github.com/Layr-Labs/eigensdk-go/task-processor"
-	taskmanager "github.com/Layr-Labs/eigensdk-go/task-processor/task-manager"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
 	"github.com/Layr-Labs/eigensdk-go/utils"
 
