@@ -64,13 +64,10 @@ func aggregatorMain(ctx *cli.Context) error {
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
-		EthHttpClient:                 &config.EthHttpClient,
-		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
 		EcdsaPrivateKey:               config.EcdsaPrivateKey,
 		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
-		TaskManagerAbi:                taskManagerAbi,
 	}
 
 	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
@@ -94,7 +91,9 @@ func aggregatorMain(ctx *cli.Context) error {
 
 	agg, err := sdkaggregator.NewAggregator(
 		cfg,
+		config.Logger,
 		taskProcessor,
+		taskManagerAbi,
 	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())

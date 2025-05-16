@@ -177,7 +177,7 @@ func TestIntegration(t *testing.T) {
 		QuorumNumbers:             quorumNumbers.UnderlyingType(),
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskManagerContract, taskSpammerCfg)
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer[*big.Int](taskManagerContract, taskSpammerCfg)
 	if err != nil {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
@@ -220,6 +220,31 @@ func TestIntegration(t *testing.T) {
 		logger.Fatalf(err.Error())
 	}
 
+	amount := new(big.Int)
+	amount.SetString("1000000000000000000000", 10)
+	registrationCfg := sdkoperator.RegistrationConfig{
+		RegisterOnStartup: true,
+
+		OperatorAddr:            common.HexToAddress(nodeConfig.OperatorAddress),
+		AllocationManagerAddr:   common.HexToAddress(nodeConfig.AllocationManagerAddress),
+		AvsAddress:              common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		RegistryCoordinatorAddr: common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
+		StrategyAddrs:           []common.Address{common.HexToAddress(nodeConfig.TokenStrategyAddr)},
+
+		DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
+		RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
+		PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
+
+		EthRpcUrl:         nodeConfig.EthRpcUrl,
+		EcdsaKeyStorePath: nodeConfig.EcdsaPrivateKeyStorePath,
+		BlsKeyStorePath:   nodeConfig.BlsPrivateKeyStorePath,
+
+		AmountToMint:          amount,
+		AllocatableMagnitudes: []uint64{1000000000000000},
+
+		OperatorSetIds: []uint32{0},
+	}
+
 	operatorConfig := sdkoperator.Config{
 		OperatorAddress:               nodeConfig.OperatorAddress,
 		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
@@ -229,9 +254,10 @@ func TestIntegration(t *testing.T) {
 		EthWsUrl:                      nodeConfig.EthWsUrl,
 		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
 		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
-		RegisterOnStartup:             true,
 		Logger:                        logger,
 		TaskManagerAbi:                taskManagerAbi,
+
+		RegistrationCfg: registrationCfg,
 	}
 
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)
@@ -260,13 +286,10 @@ func TestIntegration(t *testing.T) {
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
 		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
-		EthHttpClient:                 &config.EthHttpClient,
-		Logger:                        config.Logger,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
 		EcdsaPrivateKey:               config.EcdsaPrivateKey,
 		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
-		TaskManagerAbi:                taskManagerAbi,
 	}
 
 	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskManagerContract)
@@ -277,7 +300,9 @@ func TestIntegration(t *testing.T) {
 	go challenger.Start(ctx)
 	agg, err := sdkaggregator.NewAggregator(
 		aggConfig,
+		logger,
 		taskProcessor,
+		taskManagerAbi,
 	)
 	if err != nil {
 		config.Logger.Fatalf(err.Error())

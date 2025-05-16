@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
@@ -14,7 +15,6 @@ import (
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 )
 
@@ -52,19 +52,36 @@ func operatorMain(ctx *cli.Context) error {
 		return err
 	}
 
-	if nodeConfig.RegisterOperatorOnStartup {
-		log.Println("Registering operator on startup")
-		err = operator.RegisterOperatorOnStartup(nodeConfig, logger)
-		if err != nil {
-			logger.Fatalf(err.Error())
-		}
-	}
-
 	logger.Info("initializing operator")
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
 		logger.Fatalf(err.Error())
+	}
+
+	amount := new(big.Int)
+	amount.SetString("1000000000000000000000", 10)
+	registrationCfg := sdkoperator.RegistrationConfig{
+		RegisterOnStartup: true,
+
+		OperatorAddr:            common.HexToAddress(nodeConfig.OperatorAddress),
+		AllocationManagerAddr:   common.HexToAddress(nodeConfig.AllocationManagerAddress),
+		AvsAddress:              common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		RegistryCoordinatorAddr: common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
+		StrategyAddrs:           []common.Address{common.HexToAddress(nodeConfig.TokenStrategyAddr)},
+
+		DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
+		RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
+		PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
+
+		EthRpcUrl:         nodeConfig.EthRpcUrl,
+		EcdsaKeyStorePath: nodeConfig.EcdsaPrivateKeyStorePath,
+		BlsKeyStorePath:   nodeConfig.BlsPrivateKeyStorePath,
+
+		AmountToMint:          amount,
+		AllocatableMagnitudes: []uint64{1000000000000000},
+
+		OperatorSetIds: []uint32{0},
 	}
 
 	operatorConfig := sdkoperator.Config{
@@ -76,9 +93,10 @@ func operatorMain(ctx *cli.Context) error {
 		EthWsUrl:                      nodeConfig.EthWsUrl,
 		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
 		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
-		RegisterOnStartup:             true,
 		Logger:                        logger,
 		TaskManagerAbi:                taskManagerAbi,
+
+		RegistrationCfg: registrationCfg,
 	}
 
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)

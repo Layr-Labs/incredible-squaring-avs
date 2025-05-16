@@ -78,7 +78,7 @@ func taskSpammerMain(ctx *cli.Context) error {
 		QuorumNumbers:             []uint8{0},
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskCreator, taskSpammerCfg)
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer[*big.Int](taskCreator, taskSpammerCfg)
 	if err != nil {
 		config.Logger.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
