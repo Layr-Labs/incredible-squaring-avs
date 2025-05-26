@@ -2,23 +2,46 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
+	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	"github.com/Layr-Labs/eigensdk-go/utils"
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/pelletier/go-toml/v2"
 )
+
+type Config struct {
+	TaskManagerAddress string `toml:"task_manager_address"`
+
+	EthHttpUrl string `toml:"eth_http_url"`
+	EthWsUrl   string `toml:"eth_ws_url"`
+}
+
+// This function reads the config from the .toml file at the path received as a parameter
+// and returns a config with those values
+func GetConfigFromPath(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &Config{}
+	err = toml.Unmarshal(data, config)
+	return config, err
+}
 
 var (
 	// Version is the version of the binary.
@@ -46,44 +69,51 @@ func main() {
 func challengerMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Challenger...")
-	config, err := config.NewConfig(ctx)
+	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
+	challengerConfig, err := GetConfigFromPath(configPath)
+
+	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
 	if err != nil {
 		return err
 	}
-	configJson, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		config.Logger.Fatalf(err.Error())
-	}
-	fmt.Println("Config:", string(configJson))
+
+	ethRpcClient, err := ethclient.Dial(challengerConfig.EthHttpUrl)
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
+
+	privateKeyHex := ctx.String("ecdsa-private-key")
+	if privateKeyHex == "" {
+		logger.Fatal("Missing required flag: --ecdsa-private-key")
+	}
+
+	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		logger.Errorf("Cannot parse ECDSA private key", "err", err)
+		return err
+	}
+
+	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, ecdsaPrivateKey)
 
 	cfg := sdkchallenger.Config{
-		EthWsUrl:       config.EthWsRpcUrl,
-		Logger:         config.Logger,
+		EthWsUrl:       challengerConfig.EthWsUrl,
+		Logger:         logger,
 		TaskManagerAbi: taskManagerAbi,
-		EthClient:      &config.EthHttpClient,
+		EthClient:      ethRpcClient,
 	}
 
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
-		config.IncredibleSquaringServiceManager,
-		&config.EthHttpClient,
-	)
-
-	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
-
+	taskManagerAddr := challengerConfig.TaskManagerAddress
 	challengerRaiser, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
-		taskManagerAddr,
+		common.HexToAddress(taskManagerAddr),
 		taskManagerAbi,
-		config.TxMgr,
+		txMgr,
 		cfg.EthClient,
 	)
 
 	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
-		config.Logger,
+		logger,
 		squareValidation,
 		challengerRaiser,
 	)
@@ -93,7 +123,7 @@ func challengerMain(ctx *cli.Context) error {
 		indexingChallengerProcessor,
 	)
 	if err != nil {
-		config.Logger.Fatalf("Failed to create challenger from config: %v", err)
+		logger.Fatalf("Failed to create challenger from config: %v", err)
 	}
 
 	err = challenger.Start(context.Background())
