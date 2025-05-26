@@ -12,24 +12,16 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/eigensdk-go/aggregator"
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	taskprocessor "github.com/Layr-Labs/eigensdk-go/aggregator/task-processor"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
+	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
-
-// This config has the same attributes as the aggregator config and also includes the
-// deployed TaskManager contract address
-type Config struct {
-	aggregator.Config
-
-	TaskManagerAddress string `toml:"task_manager_address"`
-}
 
 var (
 	// Version is the version of the binary.
@@ -67,7 +59,7 @@ func aggregatorMain(ctx *cli.Context) error {
 	if configFilePath == "" {
 		logger.Fatal("Missing required flag: --config")
 	}
-	aggConfig := &Config{}
+	aggConfig := &aggregator.Config{}
 	err = commonincredible.ReadTomlConfig(configFilePath, aggConfig)
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()

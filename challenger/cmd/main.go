@@ -18,17 +18,11 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	"github.com/Layr-Labs/eigensdk-go/utils"
+	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
-
-type Config struct {
-	TaskManagerAddress string `toml:"task_manager_address"`
-
-	EthHttpUrl string `toml:"eth_http_url"`
-	EthWsUrl   string `toml:"eth_ws_url"`
-}
 
 var (
 	// Version is the version of the binary.
@@ -57,7 +51,7 @@ func challengerMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Challenger...")
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	challengerConfig := &Config{}
+	challengerConfig := &challenger.Config{}
 	err := commonincredible.ReadTomlConfig(configPath, challengerConfig)
 
 	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level

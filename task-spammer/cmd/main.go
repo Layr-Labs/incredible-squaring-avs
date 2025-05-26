@@ -19,17 +19,12 @@ import (
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	taskspammer "github.com/Layr-Labs/incredible-squaring-avs/task-spammer"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 )
-
-type Config struct {
-	TaskManagerAddress string `toml:"task_manager_address"`
-
-	EthHttpUrl string `toml:"eth_http_url"`
-}
 
 var (
 	// Version is the version of the binary.
@@ -59,7 +54,7 @@ func taskSpammerMain(ctx *cli.Context) error {
 	log.Println("Initializing Task Spammer...")
 
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	tsConfig := &Config{}
+	tsConfig := &taskspammer.Config{}
 	err := commonincredible.ReadTomlConfig(configPath, tsConfig)
 
 	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
