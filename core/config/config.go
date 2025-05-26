@@ -219,12 +219,13 @@ var (
 
 var requiredFlags = []cli.Flag{
 	ConfigFileFlag,
-	CredibleSquaringDeploymentFileFlag,
 	EcdsaPrivateKeyFlag,
-	CoreDeploymentFileFlag,
 }
 
-var optionalFlags = []cli.Flag{}
+var optionalFlags = []cli.Flag{
+	// CredibleSquaringDeploymentFileFlag,
+	// CoreDeploymentFileFlag,
+}
 
 func init() {
 	Flags = append(requiredFlags, optionalFlags...)

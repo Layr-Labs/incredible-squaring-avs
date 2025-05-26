@@ -2,22 +2,47 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 
+	"github.com/Layr-Labs/eigensdk-go/aggregator"
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
 	taskprocessor "github.com/Layr-Labs/eigensdk-go/aggregator/task-processor"
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
+	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/pelletier/go-toml/v2"
 )
+
+// This config has the same attributes as the aggregator config and also includes the
+// deployed TaskManager contract address
+type Config struct {
+	aggregator.Config
+
+	TaskManagerAddress string `toml:"task_manager_address"`
+}
+
+// This function reads the config from the .toml file at the path received as a parameter
+// and returns a config with those values
+func GetConfigFromPath(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &Config{}
+	err = toml.Unmarshal(data, config)
+	return config, err
+}
 
 var (
 	// Version is the version of the binary.
@@ -45,61 +70,65 @@ func main() {
 func aggregatorMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Aggregator")
-	config, err := config.NewConfig(ctx)
+
+	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
 	if err != nil {
 		return err
 	}
-	configJson, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		config.Logger.Fatalf(err.Error())
+
+	configFilePath := ctx.String("config")
+	if configFilePath == "" {
+		logger.Fatal("Missing required flag: --config")
 	}
-	fmt.Println("Config:", string(configJson))
+	aggConfig, err := GetConfigFromPath(configFilePath)
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
-	cfg := sdkaggregator.Config{
-		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
-		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
-		EthHttpUrl:                    config.EthHttpRpcUrl,
-		EthWsUrl:                      config.EthWsRpcUrl,
-		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
+	cfg := aggConfig.Config
+
+	ethRpcClient, err := ethclient.Dial(aggConfig.EthHttpUrl)
+
+	privateKeyHex := ctx.String("ecdsa-private-key")
+	if privateKeyHex == "" {
+		logger.Fatal("Missing required flag: --ecdsa-private-key")
 	}
 
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
-		config.IncredibleSquaringServiceManager,
-		&config.EthHttpClient,
-	)
+	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		logger.Errorf("Cannot parse ECDSA private key", "err", err)
+		return err
+	}
 
-	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, ecdsaPrivateKey)
 
 	taskResponder, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
-		taskManagerAddr,
+		common.HexToAddress(aggConfig.TaskManagerAddress),
 		taskManagerAbi,
-		config.TxMgr,
-		&config.EthHttpClient,
+		txMgr,
+		ethRpcClient,
 	)
 
-	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(config.Logger, taskResponder)
+	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskResponder)
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	agg, err := sdkaggregator.NewAggregator(
 		cfg,
-		config.Logger,
+		logger,
 		taskProcessor,
 		taskManagerAbi,
 	)
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	err = agg.Start(context.Background())
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	return nil

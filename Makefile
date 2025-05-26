@@ -11,7 +11,7 @@ GO_FOLDERS=$(shell echo ${GO_PACKAGES} | sed -e "s/\.\///g" | sed -e "s/\/\.\.\.
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-AGGREGATOR_ECDSA_PRIV_KEY=0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
+AGGREGATOR_ECDSA_PRIV_KEY=2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6
 CHALLENGER_ECDSA_PRIV_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 TASK_SPAMMER_PRIVATE_KEY=0x4bbbf85ce3377467afe5d46f804f221813b2bb87f24d81f60f1fcdbf7cbf4356
 
@@ -87,9 +87,7 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
-	go run aggregator/cmd/main.go --config config-files/aggregator.yaml \
-		--credible-squaring-deployment ${DEPLOYMENT_FILE} \
-		--core-deployment ${CORE_DEPLOYMENT_FILE} \
+	go run aggregator/cmd/main.go --config config-files/aggregator_config.toml \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
