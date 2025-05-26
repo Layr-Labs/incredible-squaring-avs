@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"math/big"
 	"os"
@@ -12,11 +11,49 @@ import (
 
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
-	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	"github.com/pelletier/go-toml/v2"
 )
+
+// TODO: add toml flags to the SDK operator config, removing most of this config attributes
+type Config struct {
+	OperatorAddress string `toml:"operator_address"`
+
+	// Core deployment addresses
+	AllocationManagerAddress    string `toml:"allocation_manager_address"`
+	DelegationManagerAddress    string `toml:"delegation_manager_address"`
+	RewardsCoordinatorAddress   string `toml:"rewards_coordinator_address"`
+	PermissionControllerAddress string `toml:"permission_controller_address"`
+
+	// Avs deployment addresses
+	ServiceManagerAddress      string `toml:"service_manager_address"`
+	RegistryCoordinatorAddress string `toml:"avs_registry_coordinator_address"`
+	TokenStrategyAddr          string `toml:"token_strategy_addr"`
+
+	EcdsaPrivateKeyStorePath string `toml:"ecdsa_private_key_store_path"`
+	BlsPrivateKeyStorePath   string `toml:"bls_private_key_store_path"`
+
+	EthRpcUrl string `toml:"eth_rpc_url"`
+	EthWsUrl  string `toml:"eth_ws_url"`
+
+	AggregatorServerIpPortAddress string `toml:"aggregator_server_ip_port_address"`
+
+	TaskManagerAddress string `toml:"task_manager_address"`
+}
+
+// This function reads the config from the .toml file at the path received as a parameter
+// and returns a config with those values
+func GetConfigFromPath(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &Config{}
+	err = toml.Unmarshal(data, config)
+	return config, err
+}
 
 func main() {
 	app := cli.NewApp()
@@ -36,21 +73,14 @@ func operatorMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Operator")
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	nodeConfig := types.NodeConfig{}
-	err := commonincredible.ReadYamlConfig(configPath, &nodeConfig)
-	if err != nil {
-		return err
-	}
-	configJson, err := json.MarshalIndent(nodeConfig, "", "  ")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	log.Println("Config:", string(configJson))
+	opConfig, err := GetConfigFromPath(configPath)
 
 	logger, err := sdklogging.NewZapLogger(sdklogging.Production) // Change here if want to change logging level
 	if err != nil {
 		return err
 	}
+
+	logger.Infof("Config is %#v", opConfig)
 
 	logger.Info("initializing operator")
 
@@ -64,15 +94,15 @@ func operatorMain(ctx *cli.Context) error {
 	registrationCfg := sdkoperator.RegistrationConfig{
 		RegisterOnStartup: true,
 
-		AllocationManagerAddr: common.HexToAddress(nodeConfig.AllocationManagerAddress),
-		AvsAddress:            common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
-		StrategyAddrs:         []common.Address{common.HexToAddress(nodeConfig.TokenStrategyAddr)},
+		AllocationManagerAddr: common.HexToAddress(opConfig.AllocationManagerAddress),
+		AvsAddress:            common.HexToAddress(opConfig.ServiceManagerAddress),
+		StrategyAddrs:         []common.Address{common.HexToAddress(opConfig.TokenStrategyAddr)},
 
-		DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
-		RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
-		PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
+		DelegationManagerAddress:    common.HexToAddress(opConfig.DelegationManagerAddress),
+		RewardsCoordinatorAddress:   common.HexToAddress(opConfig.RewardsCoordinatorAddress),
+		PermissionControllerAddress: common.HexToAddress(opConfig.PermissionControllerAddress),
 
-		EcdsaKeyStorePath: nodeConfig.EcdsaPrivateKeyStorePath,
+		EcdsaKeyStorePath: opConfig.EcdsaPrivateKeyStorePath,
 
 		AmountToMint:          amount,
 		AllocatableMagnitudes: []uint64{1000000000000000},
@@ -81,12 +111,12 @@ func operatorMain(ctx *cli.Context) error {
 	}
 
 	operatorConfig := sdkoperator.Config{
-		OperatorAddress:               nodeConfig.OperatorAddress,
-		RegistryCoordinatorAddress:    nodeConfig.AVSRegistryCoordinatorAddress,
-		EthRpcUrl:                     nodeConfig.EthRpcUrl,
-		EthWsUrl:                      nodeConfig.EthWsUrl,
-		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
-		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
+		OperatorAddress:               opConfig.OperatorAddress,
+		RegistryCoordinatorAddress:    opConfig.RegistryCoordinatorAddress,
+		EthRpcUrl:                     opConfig.EthRpcUrl,
+		EthWsUrl:                      opConfig.EthWsUrl,
+		BlsPrivateKeyStorePath:        opConfig.BlsPrivateKeyStorePath,
+		AggregatorServerIpPortAddress: opConfig.AggregatorServerIpPortAddress,
 		Logger:                        logger,
 		TaskManagerAbi:                taskManagerAbi,
 
@@ -110,14 +140,14 @@ func operatorMain(ctx *cli.Context) error {
 		nil,
 	)
 	if err != nil {
-		return err
+		logger.Fatalf(err.Error())
 	}
 	log.Println("initialized operator")
 
 	log.Println("starting operator")
 	err = operator.Start(context.Background())
 	if err != nil {
-		return err
+		logger.Fatalf(err.Error())
 	}
 	log.Println("started operator")
 

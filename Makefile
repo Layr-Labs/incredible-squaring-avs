@@ -92,7 +92,7 @@ start-aggregator: ##
 		2>&1 | zap-pretty
 
 start-operator: ## 
-	go run operator/cmd/main.go --config config-files/operator.anvil.yaml \
+	go run operator/cmd/main.go --config config-files/operator_config.toml \
 		2>&1 | zap-pretty
 
 start-challenger: ## 
