@@ -44,7 +44,11 @@ type AvsReader struct {
 
 var _ AvsReaderer = (*AvsReader)(nil)
 
-func BuildAvsReaderFromConfig(c *operator.Config, operatorStateRetrieverAddr common.Address, logger logging.Logger) (*AvsReader, error) {
+func BuildAvsReaderFromConfig(
+	c *operator.Config,
+	operatorStateRetrieverAddr common.Address,
+	logger logging.Logger,
+) (*AvsReader, error) {
 	ethWsClient, err := ethclient.Dial(c.EthWsUrl)
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)

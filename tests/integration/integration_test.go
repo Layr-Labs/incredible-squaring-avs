@@ -21,20 +21,17 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/utils"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
-	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
+	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	taskspammer "github.com/Layr-Labs/incredible-squaring-avs/task-spammer"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -50,7 +47,7 @@ type IntegrationClients struct {
 func TestIntegration(t *testing.T) {
 	log.Println("This test takes ~50 seconds to run...")
 
-	/* Start the anvil chain */
+	// Start the anvil chain and get the anvil endpoint
 	anvilC := startAnvilTestContainer()
 	// Not sure why but deferring anvilC.Terminate() causes a panic when the test finishes...
 	// so letting it terminate silently for now
@@ -59,109 +56,75 @@ func TestIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	/* Prepare the config file for aggregator */
-	var aggConfigRaw config.ConfigRaw
-	aggConfigFilePath := "../../config-files/aggregator.yaml"
-	commonincredible.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
-	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
-	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
-
-	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
-	credibleSquaringDeploymentFilePath := "../../contracts/script/deployments/incredible-squaring//31337.json"
-	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
-
-	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
-
+	// Read the configs from the toml config file
+	logger, err := sdklogging.NewZapLogger(sdklogging.Production)
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
-	ethRpcClient, err := ethclient.Dial(aggConfigRaw.EthRpcUrl)
+
+	aggCfg := &aggregator.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", aggCfg)
 	if err != nil {
-		t.Fatalf("Failed to create eth client: %s", err.Error())
+		t.Fatalf("Failed to read aggregator config: %s", err.Error())
 	}
-	ethWsClient, err := ethclient.Dial(aggConfigRaw.EthWsUrl)
+
+	aggCfg.EthHttpUrl = "http://" + anvilEndpoint
+	aggCfg.EthWsUrl = "ws://" + anvilEndpoint
+
+	chalCfg := &challenger.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", chalCfg)
+	if err != nil {
+		t.Fatalf("Failed to read challenger config: %s", err.Error())
+	}
+
+	chalCfg.EthHttpUrl = "http://" + anvilEndpoint
+	chalCfg.EthWsUrl = "ws://" + anvilEndpoint
+
+	opCfg := &operator.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", opCfg)
+	if err != nil {
+		t.Fatalf("Failed to read operator config: %s", err.Error())
+	}
+
+	opCfg.EthRpcUrl = "http://" + anvilEndpoint
+	opCfg.EthWsUrl = "ws://" + anvilEndpoint
+
+	opCfg.BlsPrivateKeyStorePath = "../keys/test.bls.key.json"
+	opCfg.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
+
+	logger.Infof("config is %#v", aggCfg)
+
+	tsCfg := &taskspammer.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", tsCfg)
+	if err != nil {
+		t.Fatalf("Failed to read task spammer config: %s", err.Error())
+	}
+
+	// tsCfg.EthHttpUrl = "http://" + anvilEndpoint
+
+	ethRpcClient, err := ethclient.Dial(aggCfg.EthHttpUrl)
 	if err != nil {
 		t.Fatalf("Failed to create eth client: %s", err.Error())
 	}
 
-	aggregatorEcdsaPrivateKeyString := "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-	if aggregatorEcdsaPrivateKeyString[:2] == "0x" {
-		aggregatorEcdsaPrivateKeyString = aggregatorEcdsaPrivateKeyString[2:]
-	}
+	aggregatorEcdsaPrivateKeyString := "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
 	aggregatorEcdsaPrivateKey, err := crypto.HexToECDSA(aggregatorEcdsaPrivateKeyString)
 	if err != nil {
 		t.Fatalf("Cannot parse ecdsa private key: %s", err.Error())
 	}
-	aggregatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(aggregatorEcdsaPrivateKey)
-	if err != nil {
-		t.Fatalf("Cannot get operator address: %s", err.Error())
-	}
 
-	chainId, err := ethRpcClient.ChainID(context.Background())
-	if err != nil {
-		t.Fatalf("Cannot get chainId: %s", err.Error())
-	}
-
-	privateKeySigner, _, err := signerv2.SignerFromConfig(
-		signerv2.Config{PrivateKey: aggregatorEcdsaPrivateKey},
-		chainId,
-	)
-	if err != nil {
-		t.Fatalf("Cannot create signer: %s", err.Error())
-	}
-	skWallet, err := wallet.NewPrivateKeyWallet(ethRpcClient, privateKeySigner, aggregatorAddr, logger)
-	if err != nil {
-		panic(err)
-	}
-	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
-
-	config := &config.Config{
-		EcdsaPrivateKey: aggregatorEcdsaPrivateKey,
-		Logger:          logger,
-		EthHttpRpcUrl:   aggConfigRaw.EthRpcUrl,
-		EthHttpClient:   *ethRpcClient,
-		EthWsRpcUrl:     aggConfigRaw.EthWsUrl,
-		EthWsClient:     *ethWsClient,
-		OperatorStateRetrieverAddr: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr,
-		),
-		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr,
-		),
-		AggregatorServerIpPortAddr: aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:  aggConfigRaw.RegisterOperatorOnStartup,
-		TxMgr:                      txMgr,
-		AggregatorAddress:          aggregatorAddr,
-		IncredibleSquaringServiceManager: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
-		),
-	}
-
-	/* Prepare the config file for operator */
-	nodeConfig := types.NodeConfig{}
-	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
-	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
-	if err != nil {
-		t.Fatalf("Failed to read yaml config: %s", err.Error())
-	}
+	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, aggregatorEcdsaPrivateKey)
 
 	thresholdNumerator := sdktypes.QuorumThresholdPercentage(100)
 	quorumNumbers := sdktypes.QuorumNums{0}
 
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
-		config.IncredibleSquaringServiceManager,
-		&config.EthHttpClient,
-	)
-
-	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
-
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	taskManagerContract, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
-		taskManagerAddr,
+		common.HexToAddress(aggCfg.TaskManagerAddress),
 		taskManagerAbi,
 		txMgr,
 		ethRpcClient,
@@ -171,22 +134,24 @@ func TestIntegration(t *testing.T) {
 	}
 
 	taskSpammerCfg := sdktaskspammer.Config{
-		Logger:                    config.Logger,
+		Logger:                    logger,
 		TimeBetweenTasks:          10,
 		QuorumThresholdPercentage: uint32(thresholdNumerator),
 		QuorumNumbers:             quorumNumbers.UnderlyingType(),
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer[*big.Int](taskManagerContract, taskSpammerCfg)
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskManagerContract, taskSpammerCfg)
 	if err != nil {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
+	ethClient, err := ethclient.Dial(chalCfg.EthHttpUrl)
+
 	challenferCfg := sdkchallenger.Config{
-		EthWsUrl:       config.EthWsRpcUrl,
-		Logger:         config.Logger,
+		EthWsUrl:       chalCfg.EthWsUrl,
+		Logger:         logger,
 		TaskManagerAbi: taskManagerAbi,
-		EthClient:      &config.EthHttpClient,
+		EthClient:      ethClient,
 	}
 
 	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
@@ -200,7 +165,7 @@ func TestIntegration(t *testing.T) {
 		indexingChallengerProcessor,
 	)
 	if err != nil {
-		config.Logger.Fatalf("Failed to create challenger from config: %v", err)
+		logger.Fatalf("Failed to create challenger from config: %v", err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
@@ -210,30 +175,21 @@ func TestIntegration(t *testing.T) {
 	log.Println("starting operator for integration tests")
 	os.Setenv("OPERATOR_BLS_KEY_PASSWORD", "")
 	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
-	nodeConfig.BlsPrivateKeyStorePath = "../keys/test.bls.key.json"
-	nodeConfig.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
-	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
-	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint
-
-	err = operator.RegisterOperatorOnStartup(nodeConfig, logger)
-	if err != nil {
-		logger.Fatalf(err.Error())
-	}
 
 	amount := new(big.Int)
 	amount.SetString("1000000000000000000000", 10)
 	registrationCfg := sdkoperator.RegistrationConfig{
 		RegisterOnStartup: true,
 
-		AllocationManagerAddr: common.HexToAddress(nodeConfig.AllocationManagerAddress),
-		AvsAddress:            common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
-		StrategyAddrs:         []common.Address{common.HexToAddress(nodeConfig.TokenStrategyAddr)},
+		AllocationManagerAddr: common.HexToAddress(opCfg.AllocationManagerAddress),
+		AvsAddress:            common.HexToAddress(opCfg.ServiceManagerAddress),
+		StrategyAddrs:         []common.Address{common.HexToAddress(opCfg.TokenStrategyAddr)},
 
-		DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
-		RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
-		PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
+		DelegationManagerAddress:    common.HexToAddress(opCfg.DelegationManagerAddress),
+		RewardsCoordinatorAddress:   common.HexToAddress(opCfg.RewardsCoordinatorAddress),
+		PermissionControllerAddress: common.HexToAddress(opCfg.PermissionControllerAddress),
 
-		EcdsaKeyStorePath: nodeConfig.EcdsaPrivateKeyStorePath,
+		EcdsaKeyStorePath: opCfg.EcdsaPrivateKeyStorePath,
 
 		AmountToMint:          amount,
 		AllocatableMagnitudes: []uint64{1000000000000000},
@@ -242,12 +198,12 @@ func TestIntegration(t *testing.T) {
 	}
 
 	operatorConfig := sdkoperator.Config{
-		OperatorAddress:               nodeConfig.OperatorAddress,
-		RegistryCoordinatorAddress:    nodeConfig.AVSRegistryCoordinatorAddress,
-		EthRpcUrl:                     nodeConfig.EthRpcUrl,
-		EthWsUrl:                      nodeConfig.EthWsUrl,
-		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
-		AggregatorServerIpPortAddress: nodeConfig.AggregatorServerIpPortAddress,
+		OperatorAddress:               opCfg.OperatorAddress,
+		RegistryCoordinatorAddress:    opCfg.RegistryCoordinatorAddress,
+		EthRpcUrl:                     opCfg.EthRpcUrl,
+		EthWsUrl:                      opCfg.EthWsUrl,
+		BlsPrivateKeyStorePath:        opCfg.BlsPrivateKeyStorePath,
+		AggregatorServerIpPortAddress: opCfg.AggregatorServerIpPortAddress,
 		Logger:                        logger,
 		TaskManagerAbi:                taskManagerAbi,
 
@@ -276,17 +232,11 @@ func TestIntegration(t *testing.T) {
 
 	/* start aggregator */
 	log.Println("starting aggregator for integration tests")
-	aggConfig := sdkaggregator.Config{
-		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
-		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
-		EthHttpUrl:                    config.EthHttpRpcUrl,
-		EthWsUrl:                      config.EthWsRpcUrl,
-		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
-	}
+	aggConfig := aggCfg.Config
 
 	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskManagerContract)
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	go challenger.Start(ctx)
@@ -297,7 +247,7 @@ func TestIntegration(t *testing.T) {
 		taskManagerAbi,
 	)
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 	go agg.Start(ctx)
 
@@ -307,7 +257,7 @@ func TestIntegration(t *testing.T) {
 	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
-	avsReader, err := chainio.BuildAvsReaderFromConfig(config)
+	avsReader, err := chainio.BuildAvsReaderFromConfig(opCfg, aggCfg.OperatorStateRetrieverAddress, logger)
 	if err != nil {
 		t.Fatalf("Cannot create AVS Reader: %s", err.Error())
 	}
