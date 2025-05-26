@@ -16,7 +16,7 @@ import (
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/MockERC20"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/Layr-Labs/incredible-squaring-avs/operator"
 )
 
 type AvsReaderer interface {
@@ -44,18 +44,23 @@ type AvsReader struct {
 
 var _ AvsReaderer = (*AvsReader)(nil)
 
-func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
-	ethWsClient, err := ethclient.Dial(c.EthWsRpcUrl)
+func BuildAvsReaderFromConfig(c *operator.Config, operatorStateRetrieverAddr common.Address, logger logging.Logger) (*AvsReader, error) {
+	ethWsClient, err := ethclient.Dial(c.EthWsUrl)
 	if err != nil {
 		return nil, utils.WrapError("Failed to create Eth WS client", err)
 	}
+	ethHttpClient, err := ethclient.Dial(c.EthRpcUrl)
+	if err != nil {
+		return nil, utils.WrapError("Failed to create Eth Http client", err)
+	}
+
 	return BuildAvsReader(
-		c.IncredibleSquaringRegistryCoordinatorAddr,
-		c.IncredibleSquaringServiceManager,
-		c.OperatorStateRetrieverAddr,
+		common.HexToAddress(c.RegistryCoordinatorAddress),
+		common.HexToAddress(c.ServiceManagerAddress),
+		operatorStateRetrieverAddr,
 		ethWsClient,
-		&c.EthHttpClient,
-		c.Logger,
+		ethHttpClient,
+		logger,
 	)
 }
 
