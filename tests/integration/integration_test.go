@@ -26,12 +26,10 @@ import (
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
-	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	taskspammer "github.com/Layr-Labs/incredible-squaring-avs/task-spammer"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -71,15 +69,6 @@ func TestIntegration(t *testing.T) {
 	aggCfg.EthHttpUrl = "http://" + anvilEndpoint
 	aggCfg.EthWsUrl = "ws://" + anvilEndpoint
 
-	chalCfg := &challenger.Config{}
-	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", chalCfg)
-	if err != nil {
-		t.Fatalf("Failed to read challenger config: %s", err.Error())
-	}
-
-	chalCfg.EthHttpUrl = "http://" + anvilEndpoint
-	chalCfg.EthWsUrl = "ws://" + anvilEndpoint
-
 	opCfg := &operator.Config{}
 	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", opCfg)
 	if err != nil {
@@ -93,14 +82,6 @@ func TestIntegration(t *testing.T) {
 	opCfg.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
 
 	logger.Infof("config is %#v", aggCfg)
-
-	tsCfg := &taskspammer.Config{}
-	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", tsCfg)
-	if err != nil {
-		t.Fatalf("Failed to read task spammer config: %s", err.Error())
-	}
-
-	// tsCfg.EthHttpUrl = "http://" + anvilEndpoint
 
 	ethRpcClient, err := ethclient.Dial(aggCfg.EthHttpUrl)
 	if err != nil {
@@ -123,6 +104,8 @@ func TestIntegration(t *testing.T) {
 		logger.Fatalf(err.Error())
 	}
 
+	// We use the same contract for the aggregator, challenger and task spammer because the task manager methods are
+	// permissionless excepting RespondToTask() (that is why we use the aggregator private key)
 	taskManagerContract, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
 		common.HexToAddress(aggCfg.TaskManagerAddress),
 		taskManagerAbi,
@@ -145,10 +128,11 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
-	ethClient, err := ethclient.Dial(chalCfg.EthHttpUrl)
+	// We use the aggregator config url because they are the same
+	ethClient, err := ethclient.Dial(aggCfg.EthHttpUrl)
 
 	challenferCfg := sdkchallenger.Config{
-		EthWsUrl:       chalCfg.EthWsUrl,
+		EthWsUrl:       aggCfg.EthWsUrl,
 		Logger:         logger,
 		TaskManagerAbi: taskManagerAbi,
 		EthClient:      ethClient,
