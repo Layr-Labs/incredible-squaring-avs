@@ -3,8 +3,8 @@
 
 GO_LINES_IGNORED_DIRS=contracts
 GO_PACKAGES=./aggregator/... ./challenger/... ./cli/... \
-	./common/... ./core/... ./metrics/... ./operator/... \
-	./plugin/... ./tests/... ./types/...
+	./common/... ./core/... ./operator/... \
+	./tests/... ./types/...
 GO_FOLDERS=$(shell echo ${GO_PACKAGES} | sed -e "s/\.\///g" | sed -e "s/\/\.\.\.//g")
 
 .PHONY: help tests
