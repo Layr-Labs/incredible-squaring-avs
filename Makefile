@@ -2,9 +2,8 @@
 # Make sure the help command stays first, so that it's printed by default when `make` is called without arguments
 
 GO_LINES_IGNORED_DIRS=contracts
-GO_PACKAGES=./aggregator/... ./challenger/... ./cli/... \
-	./common/... ./core/... ./operator/... \
-	./tests/... ./types/...
+GO_PACKAGES=./aggregator/... ./challenger/... ./common/... \
+	 ./core/... ./operator/... ./tests/...
 GO_FOLDERS=$(shell echo ${GO_PACKAGES} | sed -e "s/\.\///g" | sed -e "s/\/\.\.\.//g")
 
 .PHONY: help tests
