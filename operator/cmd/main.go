@@ -11,9 +11,9 @@ import (
 
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/pelletier/go-toml/v2"
 )
 
 // TODO: add toml flags to the SDK operator config, removing most of this config attributes
@@ -42,19 +42,6 @@ type Config struct {
 	TaskManagerAddress string `toml:"task_manager_address"`
 }
 
-// This function reads the config from the .toml file at the path received as a parameter
-// and returns a config with those values
-func GetConfigFromPath(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &Config{}
-	err = toml.Unmarshal(data, config)
-	return config, err
-}
-
 func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{config.ConfigFileFlag}
@@ -73,7 +60,9 @@ func operatorMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Operator")
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	opConfig, err := GetConfigFromPath(configPath)
+
+	opConfig := &Config{}
+	err := commonincredible.ReadTomlConfig(configPath, opConfig)
 
 	logger, err := sdklogging.NewZapLogger(sdklogging.Production) // Change here if want to change logging level
 	if err != nil {

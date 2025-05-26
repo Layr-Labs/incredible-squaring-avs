@@ -22,26 +22,13 @@ import (
 
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 
-	"github.com/pelletier/go-toml/v2"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 )
 
 type Config struct {
 	TaskManagerAddress string `toml:"task_manager_address"`
 
 	EthHttpUrl string `toml:"eth_http_url"`
-}
-
-// This function reads the config from the .toml file at the path received as a parameter
-// and returns a config with those values
-func GetConfigFromPath(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &Config{}
-	err = toml.Unmarshal(data, config)
-	return config, err
 }
 
 var (
@@ -72,7 +59,8 @@ func taskSpammerMain(ctx *cli.Context) error {
 	log.Println("Initializing Task Spammer...")
 
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	tsConfig, err := GetConfigFromPath(configPath)
+	tsConfig := &Config{}
+	err := commonincredible.ReadTomlConfig(configPath, tsConfig)
 
 	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
 	if err != nil {

@@ -18,9 +18,9 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	"github.com/Layr-Labs/eigensdk-go/utils"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/pelletier/go-toml/v2"
 )
 
 type Config struct {
@@ -28,19 +28,6 @@ type Config struct {
 
 	EthHttpUrl string `toml:"eth_http_url"`
 	EthWsUrl   string `toml:"eth_ws_url"`
-}
-
-// This function reads the config from the .toml file at the path received as a parameter
-// and returns a config with those values
-func GetConfigFromPath(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &Config{}
-	err = toml.Unmarshal(data, config)
-	return config, err
 }
 
 var (
@@ -70,7 +57,8 @@ func challengerMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Challenger...")
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	challengerConfig, err := GetConfigFromPath(configPath)
+	challengerConfig := &Config{}
+	err := commonincredible.ReadTomlConfig(configPath, challengerConfig)
 
 	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
 	if err != nil {

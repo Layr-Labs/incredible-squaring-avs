@@ -18,9 +18,9 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
-	"github.com/pelletier/go-toml/v2"
 )
 
 // This config has the same attributes as the aggregator config and also includes the
@@ -29,19 +29,6 @@ type Config struct {
 	aggregator.Config
 
 	TaskManagerAddress string `toml:"task_manager_address"`
-}
-
-// This function reads the config from the .toml file at the path received as a parameter
-// and returns a config with those values
-func GetConfigFromPath(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	config := &Config{}
-	err = toml.Unmarshal(data, config)
-	return config, err
 }
 
 var (
@@ -80,7 +67,8 @@ func aggregatorMain(ctx *cli.Context) error {
 	if configFilePath == "" {
 		logger.Fatal("Missing required flag: --config")
 	}
-	aggConfig, err := GetConfigFromPath(configFilePath)
+	aggConfig := &Config{}
+	err = commonincredible.ReadTomlConfig(configFilePath, aggConfig)
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
