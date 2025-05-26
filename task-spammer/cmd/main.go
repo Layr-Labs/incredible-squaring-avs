@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"iter"
 	"log"
@@ -10,16 +9,40 @@ import (
 	"os"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
+	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+
+	"github.com/pelletier/go-toml/v2"
 )
+
+type Config struct {
+	TaskManagerAddress string `toml:"task_manager_address"`
+
+	EthHttpUrl string `toml:"eth_http_url"`
+}
+
+// This function reads the config from the .toml file at the path received as a parameter
+// and returns a config with those values
+func GetConfigFromPath(path string) (*Config, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &Config{}
+	err = toml.Unmarshal(data, config)
+	return config, err
+}
 
 var (
 	// Version is the version of the binary.
@@ -47,32 +70,43 @@ func main() {
 func taskSpammerMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Task Spammer...")
-	config, err := config.NewConfig(ctx)
+
+	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
+	tsConfig, err := GetConfigFromPath(configPath)
+
+	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
 	if err != nil {
 		return err
 	}
-	configJson, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		config.Logger.Fatalf(err.Error())
+
+	ethRpcClient, err := ethclient.Dial(tsConfig.EthHttpUrl)
+
+	privateKeyHex := ctx.String("ecdsa-private-key")
+	if privateKeyHex == "" {
+		logger.Fatal("Missing required flag: --ecdsa-private-key")
 	}
-	fmt.Println("Config:", string(configJson))
 
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(config.IncredibleSquaringServiceManager, &config.EthHttpClient)
+	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		logger.Errorf("Cannot parse ECDSA private key", "err", err)
+		return err
+	}
 
-	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, ecdsaPrivateKey)
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
-	taskCreator, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](taskManagerAddr, taskManagerAbi, config.TxMgr, &config.EthHttpClient)
+	taskManagerAddr := common.HexToAddress(tsConfig.TaskManagerAddress)
+	taskCreator, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](taskManagerAddr, taskManagerAbi, txMgr, ethRpcClient)
 	if err != nil {
-		config.Logger.Fatalf(err.Error())
+		logger.Fatalf(err.Error())
 	}
 
 	taskSpammerCfg := sdktaskspammer.Config{
-		Logger:                    config.Logger,
+		Logger:                    logger,
 		TimeBetweenTasks:          10 * time.Second,
 		QuorumThresholdPercentage: uint32(100),
 		QuorumNumbers:             []uint8{0},
@@ -80,7 +114,7 @@ func taskSpammerMain(ctx *cli.Context) error {
 
 	taskSpammer, err := sdktaskspammer.NewTaskSpammer[*big.Int](taskCreator, taskSpammerCfg)
 	if err != nil {
-		config.Logger.Fatalf("Failed to create task spammer: %s", err.Error())
+		logger.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
 	seq := NewNumberToSquareSequence()
