@@ -87,21 +87,21 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
 start-aggregator: ## 
-	go run aggregator/cmd/main.go --config config-files/aggregator_config.toml \
+	go run aggregator/cmd/main.go --config config-files/config.toml \
 		--ecdsa-private-key ${AGGREGATOR_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
 start-operator: ## 
-	go run operator/cmd/main.go --config config-files/operator_config.toml \
+	go run operator/cmd/main.go --config config-files/config.toml \
 		2>&1 | zap-pretty
 
 start-challenger: ## 
-	go run challenger/cmd/main.go --config config-files/challenger_config.toml \
+	go run challenger/cmd/main.go --config config-files/config.toml \
 		--ecdsa-private-key ${CHALLENGER_ECDSA_PRIV_KEY} \
 		2>&1 | zap-pretty
 
 start-task-spammer: ## 
-	go run task-spammer/cmd/main.go --config config-files/task_spammer_config.toml \
+	go run task-spammer/cmd/main.go --config config-files/config.toml \
 		--ecdsa-private-key ${TASK_SPAMMER_PRIVATE_KEY} \
 		2>&1 | zap-pretty
 
