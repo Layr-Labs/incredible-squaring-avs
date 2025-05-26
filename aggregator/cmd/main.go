@@ -63,10 +63,8 @@ func aggregatorMain(ctx *cli.Context) error {
 	cfg := sdkaggregator.Config{
 		RegistryCoordinatorAddress:    config.IncredibleSquaringRegistryCoordinatorAddr,
 		OperatorStateRetrieverAddress: config.OperatorStateRetrieverAddr,
-		ServiceManagerAddress:         config.IncredibleSquaringServiceManager,
 		EthHttpUrl:                    config.EthHttpRpcUrl,
 		EthWsUrl:                      config.EthWsRpcUrl,
-		EcdsaPrivateKey:               config.EcdsaPrivateKey,
 		AggregatorServerIpPortAddr:    config.AggregatorServerIpPortAddr,
 	}
 

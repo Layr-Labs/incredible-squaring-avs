@@ -64,19 +64,15 @@ func operatorMain(ctx *cli.Context) error {
 	registrationCfg := sdkoperator.RegistrationConfig{
 		RegisterOnStartup: true,
 
-		OperatorAddr:            common.HexToAddress(nodeConfig.OperatorAddress),
-		AllocationManagerAddr:   common.HexToAddress(nodeConfig.AllocationManagerAddress),
-		AvsAddress:              common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
-		RegistryCoordinatorAddr: common.HexToAddress(nodeConfig.AVSRegistryCoordinatorAddress),
-		StrategyAddrs:           []common.Address{common.HexToAddress(nodeConfig.TokenStrategyAddr)},
+		AllocationManagerAddr: common.HexToAddress(nodeConfig.AllocationManagerAddress),
+		AvsAddress:            common.HexToAddress(nodeConfig.IncredibleSquaringServiceManager),
+		StrategyAddrs:         []common.Address{common.HexToAddress(nodeConfig.TokenStrategyAddr)},
 
 		DelegationManagerAddress:    common.HexToAddress(nodeConfig.DelegationManagerAddress),
 		RewardsCoordinatorAddress:   common.HexToAddress(nodeConfig.RewardsCoordinatorAddress),
 		PermissionControllerAddress: common.HexToAddress(nodeConfig.PermissionControllerAddress),
 
-		EthRpcUrl:         nodeConfig.EthRpcUrl,
 		EcdsaKeyStorePath: nodeConfig.EcdsaPrivateKeyStorePath,
-		BlsKeyStorePath:   nodeConfig.BlsPrivateKeyStorePath,
 
 		AmountToMint:          amount,
 		AllocatableMagnitudes: []uint64{1000000000000000},
@@ -86,9 +82,7 @@ func operatorMain(ctx *cli.Context) error {
 
 	operatorConfig := sdkoperator.Config{
 		OperatorAddress:               nodeConfig.OperatorAddress,
-		OperatorStateRetrieverAddress: nodeConfig.OperatorStateRetrieverAddress,
-		ServiceManagerAddress:         nodeConfig.IncredibleSquaringServiceManager,
-		AVSRegistryCoordinatorAddress: nodeConfig.AVSRegistryCoordinatorAddress,
+		RegistryCoordinatorAddress:    nodeConfig.AVSRegistryCoordinatorAddress,
 		EthRpcUrl:                     nodeConfig.EthRpcUrl,
 		EthWsUrl:                      nodeConfig.EthWsUrl,
 		BlsPrivateKeyStorePath:        nodeConfig.BlsPrivateKeyStorePath,
