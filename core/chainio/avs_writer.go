@@ -34,7 +34,7 @@ type AvsWriterer interface {
 	SendAggregatedResponse(ctx context.Context,
 		task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 		taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+		nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
 	) (*types.Receipt, error)
 }
 
@@ -52,6 +52,7 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 		c.TxMgr,
 		c.IncredibleSquaringRegistryCoordinatorAddr,
 		c.OperatorStateRetrieverAddr,
+		c.IncredibleSquaringServiceManager,
 		&c.EthHttpClient,
 		c.Logger,
 	)
@@ -60,11 +61,12 @@ func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
 func BuildAvsWriter(
 	txMgr txmgr.TxManager,
 	registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address,
+	serviceManagerAddr gethcommon.Address,
 	ethHttpClient sdkcommon.EthClientInterface,
 	logger logging.Logger,
 ) (*AvsWriter, error) {
 	avsServiceBindings, err := NewAvsManagersBindings(
-		registryCoordinatorAddr,
+		serviceManagerAddr,
 		operatorStateRetrieverAddr,
 		ethHttpClient,
 		logger,
@@ -141,7 +143,7 @@ func (w *AvsWriter) SendNewTaskNumberToSquare(
 func (w *AvsWriter) SendAggregatedResponse(
 	ctx context.Context, task cstaskmanager.IIncredibleSquaringTaskManagerTask,
 	taskResponse cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse,
-	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
 ) (*types.Receipt, error) {
 	txOpts, err := w.TxMgr.GetNoSendTxOpts()
 	if err != nil {

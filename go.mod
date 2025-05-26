@@ -5,14 +5,14 @@ go 1.22.0
 toolchain go1.23.5
 
 require (
-	github.com/Layr-Labs/eigensdk-go v0.3.0-rc.1.0.20250310132736-3839655b9fb9
+	github.com/Layr-Labs/eigensdk-go v1.0.0-rc.1
 	github.com/ethereum/go-ethereum v1.15.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/urfave/cli v1.22.14
 	go.uber.org/mock v0.4.0
-	golang.org/x/crypto v0.32.0 
+	golang.org/x/crypto v0.32.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
 	gopkg.in/yaml.v3 v3.0.1
 )

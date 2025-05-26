@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 
-	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
 	sdkcommon "github.com/Layr-Labs/incredible-squaring-avs/common"
 	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
 	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
@@ -23,18 +22,11 @@ type AvsManagersBindings struct {
 }
 
 func NewAvsManagersBindings(
-	registryCoordinatorAddr, operatorStateRetrieverAddr common.Address,
+	serviceManagerAddr common.Address,
+	operatorStateRetrieverAddr common.Address,
 	ethclient sdkcommon.EthClientInterface,
 	logger logging.Logger,
 ) (*AvsManagersBindings, error) {
-	contractRegistryCoordinator, err := regcoord.NewContractRegistryCoordinator(registryCoordinatorAddr, ethclient)
-	if err != nil {
-		return nil, err
-	}
-	serviceManagerAddr, err := contractRegistryCoordinator.ServiceManager(&bind.CallOpts{})
-	if err != nil {
-		return nil, err
-	}
 	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(
 		serviceManagerAddr,
 		ethclient,
@@ -43,7 +35,6 @@ func NewAvsManagersBindings(
 		logger.Error("Failed to fetch IServiceManager contract", "err", err)
 		return nil, err
 	}
-
 	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
 	if err != nil {
 		logger.Error("Failed to fetch TaskManager address", "err", err)

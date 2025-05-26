@@ -76,6 +76,7 @@ type Operator struct {
 //
 //	take the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
+
 	var logLevel sdklogging.LogLevel
 	if c.Production {
 		logLevel = sdklogging.Production
@@ -149,15 +150,17 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	if err != nil {
 		panic(err)
 	}
-	chainioConfig := clients.BuildAllConfig{
-		EthHttpUrl:                 c.EthRpcUrl,
-		EthWsUrl:                   c.EthWsUrl,
-		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
-		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
-		AvsName:                    AVS_NAME,
-		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
 
-		DontUseAllocationManager: true,
+	chainioConfig := clients.BuildAllConfig{
+		EthHttpUrl:                  c.EthRpcUrl,
+		EthWsUrl:                    c.EthWsUrl,
+		RegistryCoordinatorAddr:     c.AVSRegistryCoordinatorAddress,
+		OperatorStateRetrieverAddr:  c.OperatorStateRetrieverAddress,
+		ServiceManagerAddress:       c.IncredibleSquaringServiceManager,
+		RewardsCoordinatorAddress:   c.RewardsCoordinatorAddress,
+		PermissionControllerAddress: c.PermissionControllerAddress,
+		AvsName:                     AVS_NAME,
+		PromMetricsIpPortAddress:    c.EigenMetricsIpPortAddress,
 	}
 	operatorEcdsaPrivateKey, err := sdkecdsa.ReadKey(
 		c.EcdsaPrivateKeyStorePath,
@@ -175,10 +178,13 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		panic(err)
 	}
 	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, common.HexToAddress(c.OperatorAddress))
-
 	avsWriter, err := chainio.BuildAvsWriter(
-		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRpcClient, logger,
+		txMgr,
+		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		ethRpcClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
@@ -188,13 +194,17 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
 		ethRpcClient, logger)
 	if err != nil {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
 	}
-	avsSubscriber, err := chainio.BuildAvsSubscriber(common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethWsClient, logger,
+	avsSubscriber, err := chainio.BuildAvsSubscriber(
+		common.HexToAddress(c.OperatorStateRetrieverAddress),
+		common.HexToAddress(c.IncredibleSquaringServiceManager),
+		ethWsClient,
+		logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsSubscriber", "err", err)
@@ -237,13 +247,46 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		newTaskCreatedChan: make(
 			chan *cstaskmanager.ContractIncredibleSquaringTaskManagerNewTaskCreated,
 		),
-		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+		credibleSquaringServiceManagerAddr: common.HexToAddress(c.IncredibleSquaringServiceManager),
 		operatorId:                         [32]byte{0}, // this is set below
 		timesFailing:                       c.TimesFailing,
 	}
+	operatorSetsIds := []uint32{c.OperatorSetId}
+	waitForReceipt := true
 
 	if c.RegisterOperatorOnStartup {
-		operator.registerOperatorOnStartup(operatorEcdsaPrivateKey, common.HexToAddress(c.TokenStrategyAddr))
+		operator.registerOperatorOnStartup(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.TokenStrategyAddr),
+			common.HexToAddress(c.AVSRegistryCoordinatorAddress),
+			common.HexToAddress(c.IncredibleSquaringServiceManager),
+			operatorSetsIds,
+			waitForReceipt,
+			*operator.blsKeypair,
+			c.Socket,
+		)
+
+		operator.setAllocationDelay(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.AllocationManagerAddress),
+			c.EthRpcUrl,
+			txMgr,
+			0,
+		)
+		strategies := make([]common.Address, 1)
+		strategies[0] = common.HexToAddress(c.TokenStrategyAddr)
+		newMagnitudes := make([]uint64, 1)
+		newMagnitudes[0] = 100000000
+		operator.modifyAllocations(
+			operatorEcdsaPrivateKey,
+			common.HexToAddress(c.AllocationManagerAddress),
+			common.HexToAddress(c.IncredibleSquaringServiceManager),
+			strategies,
+			newMagnitudes,
+			c.EthRpcUrl,
+			txMgr,
+			0,
+		)
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
@@ -259,7 +302,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		"operatorG1Pubkey", operator.blsKeypair.GetPubKeyG1(),
 		"operatorG2Pubkey", operator.blsKeypair.GetPubKeyG2(),
 	)
-
 	return operator, nil
 }
 
@@ -278,7 +320,7 @@ func (o *Operator) Start(ctx context.Context) error {
 		)
 	}
 
-	o.logger.Infof("Starting operator.")
+	o.logger.Info("Starting operator.")
 
 	if o.config.EnableNodeApi {
 		o.nodeApi.Start()
@@ -338,6 +380,7 @@ func (o *Operator) ProcessNewTaskCreatedLog(
 		num := rand.Intn(100)
 		if num < o.timesFailing {
 			numberSquared = big.NewInt(908243203843)
+			o.logger.Info("Operator computed wrong task result")
 		}
 	}
 	taskResponse := &cstaskmanager.IIncredibleSquaringTaskManagerTaskResponse{

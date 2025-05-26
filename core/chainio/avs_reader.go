@@ -19,8 +19,8 @@ type AvsReaderer interface {
 	//sdkavsregistry.ChainReader
 
 	CheckSignatures(
-		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-	) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error)
+		ctx context.Context, msgHash [32]byte, quorumNumbers []byte, referenceBlockNumber uint32, nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
+	) (cstaskmanager.IBLSSignatureCheckerTypesQuorumStakeTotals, error)
 	GetErc20Mock(ctx context.Context, tokenAddr common.Address) (*erc20mock.ContractERC20Mock, error)
 	GetOperatorId(
 		opts *bind.CallOpts,
@@ -44,6 +44,7 @@ func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 	return BuildAvsReader(
 		c.IncredibleSquaringRegistryCoordinatorAddr,
 		c.OperatorStateRetrieverAddr,
+		c.IncredibleSquaringServiceManager,
 		&c.EthHttpClient,
 		c.Logger,
 	)
@@ -51,11 +52,12 @@ func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
 
 func BuildAvsReader(
 	registryCoordinatorAddr, operatorStateRetrieverAddr common.Address,
+	serviceManagerAddr common.Address,
 	ethHttpClient sdkcommon.EthClientInterface,
 	logger logging.Logger,
 ) (*AvsReader, error) {
 	avsManagersBindings, err := NewAvsManagersBindings(
-		registryCoordinatorAddr,
+		serviceManagerAddr,
 		operatorStateRetrieverAddr,
 		ethHttpClient,
 		logger,
@@ -93,13 +95,13 @@ func (r *AvsReader) CheckSignatures(
 	msgHash [32]byte,
 	quorumNumbers []byte,
 	referenceBlockNumber uint32,
-	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerNonSignerStakesAndSignature,
-) (cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals, error) {
+	nonSignerStakesAndSignature cstaskmanager.IBLSSignatureCheckerTypesNonSignerStakesAndSignature,
+) (cstaskmanager.IBLSSignatureCheckerTypesQuorumStakeTotals, error) {
 	stakeTotalsPerQuorum, _, err := r.AvsServiceBindings.TaskManager.CheckSignatures(
 		&bind.CallOpts{}, msgHash, quorumNumbers, referenceBlockNumber, nonSignerStakesAndSignature,
 	)
 	if err != nil {
-		return cstaskmanager.IBLSSignatureCheckerQuorumStakeTotals{}, err
+		return cstaskmanager.IBLSSignatureCheckerTypesQuorumStakeTotals{}, err
 	}
 	return stakeTotalsPerQuorum, nil
 }

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@eigenlayer-middleware/src/libraries/BN254.sol";
+import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategy.sol";
 
 interface IIncredibleSquaringTaskManager {
     // EVENTS
@@ -14,10 +15,6 @@ interface IIncredibleSquaringTaskManager {
     event TaskChallengedSuccessfully(uint32 indexed taskIndex, address indexed challenger);
 
     event TaskChallengedUnsuccessfully(uint32 indexed taskIndex, address indexed challenger);
-
-    event AggregatorUpdated(address indexed oldAggregator, address indexed newAggregator);
-
-    event GeneratorUpdated(address indexed oldGenerator, address indexed newGenerator);
 
     // STRUCTS
     struct Task {
@@ -34,7 +31,7 @@ interface IIncredibleSquaringTaskManager {
     }
 
     // Task response is hashed and signed by operators.
-    // These signatures are aggregated and sent to the contract as response.
+    // these signatures are aggregated and sent to the contract as response.
     struct TaskResponse {
         // Can be obtained by the operator from the event NewTaskCreated.
         uint32 referenceTaskIndex;
@@ -51,7 +48,7 @@ interface IIncredibleSquaringTaskManager {
     }
 
     // FUNCTIONS
-    // NOTE: this function creates a new task.
+    // NOTE: this function creates new task.
     function createNewTask(
         uint256 numberToBeSquared,
         uint32 quorumThresholdPercentage,
@@ -61,7 +58,7 @@ interface IIncredibleSquaringTaskManager {
     /// @notice Returns the current 'taskNumber' for the middleware
     function taskNumber() external view returns (uint32);
 
-    // NOTE: this function raises a challenge to existing tasks.
+    // // NOTE: this function raises challenge to existing tasks.
     function raiseAndResolveChallenge(
         Task calldata task,
         TaskResponse calldata taskResponse,
