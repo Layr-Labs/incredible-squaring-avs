@@ -12,18 +12,11 @@ import (
 	"testing"
 	"time"
 
-	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
-	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
-	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
-	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
-	"github.com/Layr-Labs/eigensdk-go/utils"
-
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
-	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	"github.com/Layr-Labs/eigensdk-go/testutils"
+
+	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
-	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
@@ -31,15 +24,11 @@ import (
 	taskspammer "github.com/Layr-Labs/incredible-squaring-avs/task-spammer"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-)
 
-type IntegrationClients struct {
-	Sdkclients clients.Clients
-}
+	sdkintegration "github.com/Layr-Labs/eigensdk-go/integration-tests"
+)
 
 func TestIntegration(t *testing.T) {
 	log.Println("This test takes ~50 seconds to run...")
@@ -80,127 +69,89 @@ func TestIntegration(t *testing.T) {
 	opCfg.BlsSignerCfg.KeystorePath = "../keys/test.bls.key.json"
 	opCfg.Registration.EcdsaSignerCfg.KeystorePath = "../keys/test.ecdsa.key.json"
 
-	challengerCfg := &challenger.Config{}
-	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", challengerCfg)
-	if err != nil {
-		t.Fatalf("Failed to read operator config: %s", err.Error())
-	}
-
-	challengerCfg.EthHttpUrl = "http://" + anvilEndpoint
-	challengerCfg.EthWsUrl = "ws://" + anvilEndpoint
-
 	tsConfig := &taskspammer.Config{}
 	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", tsConfig)
 	if err != nil {
 		t.Fatalf("Failed to read operator config: %s", err.Error())
 	}
 
-	ethRpcClient, err := ethclient.Dial(aggCfg.EthHttpUrl)
-	if err != nil {
-		t.Fatalf("Failed to create eth client: %s", err.Error())
-	}
-
-	aggregatorEcdsaPrivateKeyString := "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-	aggregatorEcdsaPrivateKey, err := crypto.HexToECDSA(aggregatorEcdsaPrivateKeyString)
-	if err != nil {
-		t.Fatalf("Cannot parse ecdsa private key: %s", err.Error())
-	}
-
-	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, aggregatorEcdsaPrivateKey)
-
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 
-	// We use the same contract for the aggregator, challenger and task spammer because the task manager methods are
-	// permissionless excepting RespondToTask() (that is why we use the aggregator private key)
-	taskManagerContract, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
-		common.HexToAddress(aggCfg.TaskManagerAddress),
-		taskManagerAbi,
-		txMgr,
-		ethRpcClient,
-	)
-	if err != nil {
-		t.Fatalf("Failed to create task manager contract: %s", err.Error())
+	responseCalculationBuilder := func() sdkoperator.ResponseCalculator[*big.Int, *big.Int] {
+		return sdkoperator.NewFunctionResponseCalculator(square)
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, tsConfig.Config, taskManagerContract, NewNumberToSquareSequence())
-	if err != nil {
-		t.Fatalf("Failed to create task spammer: %s", err.Error())
+	equalFn := func(a, b *big.Int) bool {
+		return a.Cmp(b) == 0
 	}
 
-	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
-		logger,
-		squareValidation,
-		taskManagerContract,
-	)
+	avsConfig := sdkintegration.AvsConfig[*big.Int, *big.Int]{
+		TaskManagerAddr: common.HexToAddress(aggCfg.TaskManagerAddress),
+		TaskManagerAbi:  taskManagerAbi,
 
-	challenger, err := sdkchallenger.NewChallenger(
-		logger,
-		challengerCfg.Config,
-		taskManagerAbi,
-		indexingChallengerProcessor,
-	)
-	if err != nil {
-		logger.Fatalf("Failed to create challenger from config: %v", err)
+		EthHttpUrl: aggCfg.EthHttpUrl,
+		EthWsUrl:   aggCfg.EthWsUrl,
+
+		ResponseCalculatorBuilder: responseCalculationBuilder,
+		EqualFn:                   equalFn,
+		InputSequence:             NewNumberToSquareSequence(),
+
+		AggregatorServerIpPortAddr: aggCfg.AggregatorServerIpPortAddr,
+
+		RegistryCoordinatorAddress:    aggCfg.RegistryCoordinatorAddress,
+		OperatorStateRetrieverAddress: aggCfg.OperatorStateRetrieverAddress,
+		AvsAddress:                    opCfg.Registration.AvsAddress,
+
+		OperatorPrivateKey:    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+		OperatorBlsPrivateKey: "0x2518600ef40ef39cb4ab8b828ce303b3e02ac01ec6ba6bd0d0cf0663e1252ff0",
+
+		TaskSpammerPrivateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+		AggregatorPrivateKey:  "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+		ChallengerPrivateKey:  testutils.ANVIL_FIRST_PRIVATE_KEY,
+		AmountToMint:          "1000000000000000000000",
+
+		AllocationManagerAddr:       opCfg.Registration.AllocationManagerAddr,
+		DelegationManagerAddress:    opCfg.Registration.DelegationManagerAddress,
+		StrategyAddr:                opCfg.Registration.StrategyAddrs[0],
+		RewardsCoordinatorAddress:   opCfg.Registration.RewardsCoordinatorAddress,
+		PermissionControllerAddress: opCfg.Registration.PermissionControllerAddress,
+
+		AllocatableMagnitude: opCfg.Registration.AllocatableMagnitudes[0],
+		OperatorSetId:        opCfg.Registration.OperatorSetIds[0],
+		OperatorAddr:         opCfg.OperatorAddress,
+
+		TimeBetweenTasks:          tsConfig.TimeBetweenTasks,
+		QuorumThresholdPercentage: tsConfig.QuorumThresholdPercentage,
+		QuorumNumbers:             tsConfig.QuorumNumbers,
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
-	defer cancel()
-	/* start operator */
-	// the passwords are set to empty strings
-	log.Println("starting operator for integration tests")
-	os.Setenv("OPERATOR_BLS_KEY_PASSWORD", "")
-	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
+	ctx, cancel := context.WithCancel(context.Background())
 
-	calculator := sdkoperator.NewFunctionResponseCalculator(square)
+	avs := sdkintegration.StartAvs(t, ctx, avsConfig)
 
-	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 10, big.NewInt(0))
-	if err != nil {
-		logger.Fatalf(err.Error())
+	timer := time.NewTimer(32 * time.Second)
+
+	select {
+	case err := <-avs.Aggregator:
+		t.Fatal("Aggregator error:", err)
+	case err := <-avs.Challenger:
+		t.Fatal("Challenger error:", err)
+	case err := <-avs.Operator:
+		t.Fatal("Operator error:", err)
+	case err := <-avs.TaskSpammer:
+		// Here we handle the input generation termination (in that case returns nil but does not imply an error)
+		if err == nil {
+			cancel()
+		} else {
+			t.Fatal("Task Spammer error:", err)
+		}
+	case <-timer.C:
+		// If reached this point, there must be a problem with the tasks generation.
+		t.Fatal("Timer expired before the task spammer finished sending tasks")
 	}
-
-	operator, err := sdkoperator.NewOperator(
-		logger,
-		opCfg.Config,
-		taskManagerAbi,
-		failingFunction,
-		nil,
-	)
-	if err != nil {
-		logger.Fatalf(err.Error())
-	}
-
-	go operator.Start(ctx)
-	log.Println("Started operator. Sleeping 15 seconds to give it time to register...")
-	time.Sleep(15 * time.Second)
-
-	/* start aggregator */
-	log.Println("starting aggregator for integration tests")
-	aggConfig := aggCfg.Config
-
-	taskProcessor, err := sdkaggregator.NewIndexingProcessor(logger, taskManagerContract)
-	if err != nil {
-		logger.Fatalf(err.Error())
-	}
-
-	go challenger.Start(ctx)
-	agg, err := sdkaggregator.NewAggregator(
-		logger,
-		aggConfig,
-		taskManagerAbi,
-		taskProcessor,
-	)
-	if err != nil {
-		logger.Fatalf(err.Error())
-	}
-	go agg.Start(ctx)
-
-	go taskSpammer.Start(ctx)
-
-	log.Println("Started aggregator and task spammer. Sleeping 20 seconds to give operator time to answer task 1...")
-	time.Sleep(20 * time.Second)
 
 	// get avsRegistry client to interact with the chain
 	avsReader, err := chainio.BuildAvsReaderFromConfig(opCfg, aggCfg.OperatorStateRetrieverAddress, logger)
@@ -244,25 +195,18 @@ func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 	return numberSquared, nil
 }
 
-func squareValidation(taskIndex uint32, numberToSquare *big.Int, numberSquared *big.Int) (bool, error) {
-	result, err := square(taskIndex, numberToSquare)
-	if err != nil {
-		return false, utils.WrapError("failed to calculate square", err)
-	}
-
-	return result.Cmp(numberSquared) == 0, nil
-}
-
 // Returns an iterator for the sequence 1, 2, 3, ...
 func NewNumberToSquareSequence() iter.Seq[*big.Int] {
 	acc := big.NewInt(1)
 	delta := big.NewInt(1)
+	count := 0
 	return func(yield func(*big.Int) bool) {
-		for {
+		for count < 3 {
 			if !yield(acc) {
 				break
 			}
 			acc.Add(acc, delta)
+			count++
 		}
 	}
 
