@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -88,15 +87,9 @@ func taskSpammerMain(ctx *cli.Context) error {
 		logger.Fatalf(err.Error())
 	}
 
-	taskSpammerCfg := sdktaskspammer.Config{
-		TimeBetweenTasks:          10 * time.Second,
-		QuorumThresholdPercentage: uint32(100),
-		QuorumNumbers:             []uint8{0},
-	}
-
 	seq := NewNumberToSquareSequence()
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, taskSpammerCfg, taskCreator, seq)
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, tsConfig.Config, taskCreator, seq)
 	if err != nil {
 		logger.Fatalf("Failed to create task spammer: %s", err.Error())
 	}

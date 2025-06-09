@@ -59,8 +59,8 @@ func BuildAvsReaderFromConfig(
 	}
 
 	return BuildAvsReader(
-		common.HexToAddress(c.RegistryCoordinatorAddress),
-		common.HexToAddress(c.ServiceManagerAddress),
+		c.RegistryCoordinatorAddress,
+		c.Registration.AvsAddress,
 		operatorStateRetrieverAddr,
 		ethWsClient,
 		ethHttpClient,

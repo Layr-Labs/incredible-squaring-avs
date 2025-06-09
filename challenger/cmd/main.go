@@ -78,11 +78,6 @@ func challengerMain(ctx *cli.Context) error {
 
 	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, ecdsaPrivateKey)
 
-	cfg := sdkchallenger.Config{
-		EthWsUrl:   challengerConfig.EthWsUrl,
-		EthHttpUrl: challengerConfig.EthHttpUrl,
-	}
-
 	taskManagerAddr := challengerConfig.TaskManagerAddress
 	challengerRaiser, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
 		common.HexToAddress(taskManagerAddr),
@@ -99,7 +94,7 @@ func challengerMain(ctx *cli.Context) error {
 
 	challenger, err := sdkchallenger.NewChallenger(
 		logger,
-		cfg,
+		challengerConfig.Config,
 		taskManagerAbi,
 		indexingChallengerProcessor,
 	)

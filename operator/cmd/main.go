@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli"
 
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
@@ -53,45 +52,7 @@ func operatorMain(ctx *cli.Context) error {
 		logger.Fatalf(err.Error())
 	}
 
-	ecdsaConfig := sdkoperator.EcdsaSignerConfig{
-		KeystorePath: opConfig.EcdsaPrivateKeyStorePath,
-	}
-
-	blsConfig := sdkoperator.BlsSignerConfig{
-		KeystorePath: opConfig.BlsPrivateKeyStorePath,
-	}
-
-	amount := new(big.Int)
-	amount.SetString("1000000000000000000000", 10)
-	registrationCfg := sdkoperator.RegistrationConfig{
-		RegisterOnStartup: true,
-
-		AllocationManagerAddr: common.HexToAddress(opConfig.AllocationManagerAddress),
-		AvsAddress:            common.HexToAddress(opConfig.ServiceManagerAddress),
-		StrategyAddrs:         []common.Address{common.HexToAddress(opConfig.TokenStrategyAddr)},
-
-		DelegationManagerAddress:    common.HexToAddress(opConfig.DelegationManagerAddress),
-		RewardsCoordinatorAddress:   common.HexToAddress(opConfig.RewardsCoordinatorAddress),
-		PermissionControllerAddress: common.HexToAddress(opConfig.PermissionControllerAddress),
-
-		EcdsaSignerCfg: ecdsaConfig,
-
-		AmountToMint:          amount,
-		AllocatableMagnitudes: []uint64{1000000000000000},
-
-		OperatorSetIds: []uint32{0},
-	}
-
-	operatorConfig := sdkoperator.Config{
-		OperatorAddress:               opConfig.OperatorAddress,
-		RegistryCoordinatorAddress:    common.HexToAddress(opConfig.RegistryCoordinatorAddress),
-		EthRpcUrl:                     opConfig.EthRpcUrl,
-		EthWsUrl:                      opConfig.EthWsUrl,
-		BlsSignerCfg:                  blsConfig,
-		AggregatorServerIpPortAddress: opConfig.AggregatorServerIpPortAddress,
-
-		Registration: registrationCfg,
-	}
+	operatorConfig := opConfig.Config
 
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)
 

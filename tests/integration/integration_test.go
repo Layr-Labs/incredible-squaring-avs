@@ -22,12 +22,13 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
-	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
+	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
+	taskspammer "github.com/Layr-Labs/incredible-squaring-avs/task-spammer"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -76,10 +77,23 @@ func TestIntegration(t *testing.T) {
 	opCfg.EthRpcUrl = "http://" + anvilEndpoint
 	opCfg.EthWsUrl = "ws://" + anvilEndpoint
 
-	opCfg.BlsPrivateKeyStorePath = "../keys/test.bls.key.json"
-	opCfg.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
+	opCfg.BlsSignerCfg.KeystorePath = "../keys/test.bls.key.json"
+	opCfg.Registration.EcdsaSignerCfg.KeystorePath = "../keys/test.ecdsa.key.json"
 
-	logger.Infof("config is %#v", aggCfg)
+	challengerCfg := &challenger.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", challengerCfg)
+	if err != nil {
+		t.Fatalf("Failed to read operator config: %s", err.Error())
+	}
+
+	challengerCfg.EthHttpUrl = "http://" + anvilEndpoint
+	challengerCfg.EthWsUrl = "ws://" + anvilEndpoint
+
+	tsConfig := &taskspammer.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", tsConfig)
+	if err != nil {
+		t.Fatalf("Failed to read operator config: %s", err.Error())
+	}
 
 	ethRpcClient, err := ethclient.Dial(aggCfg.EthHttpUrl)
 	if err != nil {
@@ -93,9 +107,6 @@ func TestIntegration(t *testing.T) {
 	}
 
 	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, aggregatorEcdsaPrivateKey)
-
-	thresholdNumerator := sdktypes.QuorumThresholdPercentage(100)
-	quorumNumbers := sdktypes.QuorumNums{0}
 
 	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
@@ -114,20 +125,9 @@ func TestIntegration(t *testing.T) {
 		t.Fatalf("Failed to create task manager contract: %s", err.Error())
 	}
 
-	taskSpammerCfg := sdktaskspammer.Config{
-		TimeBetweenTasks:          10,
-		QuorumThresholdPercentage: uint32(thresholdNumerator),
-		QuorumNumbers:             quorumNumbers.UnderlyingType(),
-	}
-
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, taskSpammerCfg, taskManagerContract, NewNumberToSquareSequence())
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, tsConfig.Config, taskManagerContract, NewNumberToSquareSequence())
 	if err != nil {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
-	}
-
-	challenferCfg := sdkchallenger.Config{
-		EthWsUrl:   aggCfg.EthWsUrl,
-		EthHttpUrl: aggCfg.EthHttpUrl,
 	}
 
 	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
@@ -138,7 +138,7 @@ func TestIntegration(t *testing.T) {
 
 	challenger, err := sdkchallenger.NewChallenger(
 		logger,
-		challenferCfg,
+		challengerCfg.Config,
 		taskManagerAbi,
 		indexingChallengerProcessor,
 	)
@@ -154,46 +154,6 @@ func TestIntegration(t *testing.T) {
 	os.Setenv("OPERATOR_BLS_KEY_PASSWORD", "")
 	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
 
-	ecdsaConfig := sdkoperator.EcdsaSignerConfig{
-		KeystorePath: opCfg.EcdsaPrivateKeyStorePath,
-	}
-
-	blsConfig := sdkoperator.BlsSignerConfig{
-		KeystorePath: opCfg.BlsPrivateKeyStorePath,
-	}
-
-	amount := new(big.Int)
-	amount.SetString("1000000000000000000000", 10)
-	registrationCfg := sdkoperator.RegistrationConfig{
-		RegisterOnStartup: true,
-
-		AllocationManagerAddr: common.HexToAddress(opCfg.AllocationManagerAddress),
-		AvsAddress:            common.HexToAddress(opCfg.ServiceManagerAddress),
-		StrategyAddrs:         []common.Address{common.HexToAddress(opCfg.TokenStrategyAddr)},
-
-		DelegationManagerAddress:    common.HexToAddress(opCfg.DelegationManagerAddress),
-		RewardsCoordinatorAddress:   common.HexToAddress(opCfg.RewardsCoordinatorAddress),
-		PermissionControllerAddress: common.HexToAddress(opCfg.PermissionControllerAddress),
-
-		EcdsaSignerCfg: ecdsaConfig,
-
-		AmountToMint:          amount,
-		AllocatableMagnitudes: []uint64{1000000000000000},
-
-		OperatorSetIds: []uint32{0},
-	}
-
-	operatorConfig := sdkoperator.Config{
-		OperatorAddress:               opCfg.OperatorAddress,
-		RegistryCoordinatorAddress:    common.HexToAddress(opCfg.RegistryCoordinatorAddress),
-		EthRpcUrl:                     opCfg.EthRpcUrl,
-		EthWsUrl:                      opCfg.EthWsUrl,
-		BlsSignerCfg:                  blsConfig,
-		AggregatorServerIpPortAddress: opCfg.AggregatorServerIpPortAddress,
-
-		Registration: registrationCfg,
-	}
-
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)
 
 	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 10, big.NewInt(0))
@@ -203,7 +163,7 @@ func TestIntegration(t *testing.T) {
 
 	operator, err := sdkoperator.NewOperator(
 		logger,
-		operatorConfig,
+		opCfg.Config,
 		taskManagerAbi,
 		failingFunction,
 		nil,
