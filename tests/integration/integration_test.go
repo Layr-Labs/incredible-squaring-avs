@@ -13,9 +13,7 @@ import (
 	"time"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
-	taskprocessor "github.com/Layr-Labs/eigensdk-go/aggregator/task-processor"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
-	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	sdktaskspammer "github.com/Layr-Labs/eigensdk-go/task-spammer"
 	"github.com/Layr-Labs/eigensdk-go/utils"
@@ -117,35 +115,31 @@ func TestIntegration(t *testing.T) {
 	}
 
 	taskSpammerCfg := sdktaskspammer.Config{
-		Logger:                    logger,
 		TimeBetweenTasks:          10,
 		QuorumThresholdPercentage: uint32(thresholdNumerator),
 		QuorumNumbers:             quorumNumbers.UnderlyingType(),
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer(taskManagerContract, taskSpammerCfg)
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, taskSpammerCfg, taskManagerContract, NewNumberToSquareSequence())
 	if err != nil {
 		t.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
-	// We use the aggregator config url because they are the same
-	ethClient, err := ethclient.Dial(aggCfg.EthHttpUrl)
-
 	challenferCfg := sdkchallenger.Config{
-		EthWsUrl:       aggCfg.EthWsUrl,
-		Logger:         logger,
-		TaskManagerAbi: taskManagerAbi,
-		EthClient:      ethClient,
+		EthWsUrl:   aggCfg.EthWsUrl,
+		EthHttpUrl: aggCfg.EthHttpUrl,
 	}
 
-	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
+	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
 		logger,
 		squareValidation,
 		taskManagerContract,
 	)
 
 	challenger, err := sdkchallenger.NewChallenger(
+		logger,
 		challenferCfg,
+		taskManagerAbi,
 		indexingChallengerProcessor,
 	)
 	if err != nil {
@@ -160,6 +154,14 @@ func TestIntegration(t *testing.T) {
 	os.Setenv("OPERATOR_BLS_KEY_PASSWORD", "")
 	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
 
+	ecdsaConfig := sdkoperator.EcdsaSignerConfig{
+		KeystorePath: opCfg.EcdsaPrivateKeyStorePath,
+	}
+
+	blsConfig := sdkoperator.BlsSignerConfig{
+		KeystorePath: opCfg.BlsPrivateKeyStorePath,
+	}
+
 	amount := new(big.Int)
 	amount.SetString("1000000000000000000000", 10)
 	registrationCfg := sdkoperator.RegistrationConfig{
@@ -173,7 +175,7 @@ func TestIntegration(t *testing.T) {
 		RewardsCoordinatorAddress:   common.HexToAddress(opCfg.RewardsCoordinatorAddress),
 		PermissionControllerAddress: common.HexToAddress(opCfg.PermissionControllerAddress),
 
-		EcdsaKeyStorePath: opCfg.EcdsaPrivateKeyStorePath,
+		EcdsaSignerCfg: ecdsaConfig,
 
 		AmountToMint:          amount,
 		AllocatableMagnitudes: []uint64{1000000000000000},
@@ -183,15 +185,13 @@ func TestIntegration(t *testing.T) {
 
 	operatorConfig := sdkoperator.Config{
 		OperatorAddress:               opCfg.OperatorAddress,
-		RegistryCoordinatorAddress:    opCfg.RegistryCoordinatorAddress,
+		RegistryCoordinatorAddress:    common.HexToAddress(opCfg.RegistryCoordinatorAddress),
 		EthRpcUrl:                     opCfg.EthRpcUrl,
 		EthWsUrl:                      opCfg.EthWsUrl,
-		BlsPrivateKeyStorePath:        opCfg.BlsPrivateKeyStorePath,
+		BlsSignerCfg:                  blsConfig,
 		AggregatorServerIpPortAddress: opCfg.AggregatorServerIpPortAddress,
-		Logger:                        logger,
-		TaskManagerAbi:                taskManagerAbi,
 
-		RegistrationCfg: registrationCfg,
+		Registration: registrationCfg,
 	}
 
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)
@@ -201,8 +201,10 @@ func TestIntegration(t *testing.T) {
 		logger.Fatalf(err.Error())
 	}
 
-	operator, err := sdkoperator.NewOperatorFromConfig(
+	operator, err := sdkoperator.NewOperator(
+		logger,
 		operatorConfig,
+		taskManagerAbi,
 		failingFunction,
 		nil,
 	)
@@ -218,24 +220,24 @@ func TestIntegration(t *testing.T) {
 	log.Println("starting aggregator for integration tests")
 	aggConfig := aggCfg.Config
 
-	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskManagerContract)
+	taskProcessor, err := sdkaggregator.NewIndexingProcessor(logger, taskManagerContract)
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 
 	go challenger.Start(ctx)
 	agg, err := sdkaggregator.NewAggregator(
-		aggConfig,
 		logger,
-		taskProcessor,
+		aggConfig,
 		taskManagerAbi,
+		taskProcessor,
 	)
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 	go agg.Start(ctx)
 
-	go taskSpammer.Start(ctx, NewNumberToSquareSequence())
+	go taskSpammer.Start(ctx)
 
 	log.Println("Started aggregator and task spammer. Sleeping 20 seconds to give operator time to answer task 1...")
 	time.Sleep(20 * time.Second)

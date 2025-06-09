@@ -14,7 +14,6 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
-	sdkchallengerprocessor "github.com/Layr-Labs/eigensdk-go/challenger/challenger-processor"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	"github.com/Layr-Labs/eigensdk-go/utils"
@@ -80,10 +79,8 @@ func challengerMain(ctx *cli.Context) error {
 	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, ecdsaPrivateKey)
 
 	cfg := sdkchallenger.Config{
-		EthWsUrl:       challengerConfig.EthWsUrl,
-		Logger:         logger,
-		TaskManagerAbi: taskManagerAbi,
-		EthClient:      ethRpcClient,
+		EthWsUrl:   challengerConfig.EthWsUrl,
+		EthHttpUrl: challengerConfig.EthHttpUrl,
 	}
 
 	taskManagerAddr := challengerConfig.TaskManagerAddress
@@ -91,24 +88,26 @@ func challengerMain(ctx *cli.Context) error {
 		common.HexToAddress(taskManagerAddr),
 		taskManagerAbi,
 		txMgr,
-		cfg.EthClient,
+		ethRpcClient,
 	)
 
-	indexingChallengerProcessor, err := sdkchallengerprocessor.NewIndexingChallengerProcessor(
+	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
 		logger,
 		squareValidation,
 		challengerRaiser,
 	)
 
 	challenger, err := sdkchallenger.NewChallenger(
+		logger,
 		cfg,
+		taskManagerAbi,
 		indexingChallengerProcessor,
 	)
 	if err != nil {
 		logger.Fatalf("Failed to create challenger from config: %v", err)
 	}
 
-	err = challenger.Start(context.Background())
+	err = <-challenger.Start(context.Background())
 	if err != nil {
 		return err
 	}

@@ -53,6 +53,14 @@ func operatorMain(ctx *cli.Context) error {
 		logger.Fatalf(err.Error())
 	}
 
+	ecdsaConfig := sdkoperator.EcdsaSignerConfig{
+		KeystorePath: opConfig.EcdsaPrivateKeyStorePath,
+	}
+
+	blsConfig := sdkoperator.BlsSignerConfig{
+		KeystorePath: opConfig.BlsPrivateKeyStorePath,
+	}
+
 	amount := new(big.Int)
 	amount.SetString("1000000000000000000000", 10)
 	registrationCfg := sdkoperator.RegistrationConfig{
@@ -66,7 +74,7 @@ func operatorMain(ctx *cli.Context) error {
 		RewardsCoordinatorAddress:   common.HexToAddress(opConfig.RewardsCoordinatorAddress),
 		PermissionControllerAddress: common.HexToAddress(opConfig.PermissionControllerAddress),
 
-		EcdsaKeyStorePath: opConfig.EcdsaPrivateKeyStorePath,
+		EcdsaSignerCfg: ecdsaConfig,
 
 		AmountToMint:          amount,
 		AllocatableMagnitudes: []uint64{1000000000000000},
@@ -76,15 +84,13 @@ func operatorMain(ctx *cli.Context) error {
 
 	operatorConfig := sdkoperator.Config{
 		OperatorAddress:               opConfig.OperatorAddress,
-		RegistryCoordinatorAddress:    opConfig.RegistryCoordinatorAddress,
+		RegistryCoordinatorAddress:    common.HexToAddress(opConfig.RegistryCoordinatorAddress),
 		EthRpcUrl:                     opConfig.EthRpcUrl,
 		EthWsUrl:                      opConfig.EthWsUrl,
-		BlsPrivateKeyStorePath:        opConfig.BlsPrivateKeyStorePath,
+		BlsSignerCfg:                  blsConfig,
 		AggregatorServerIpPortAddress: opConfig.AggregatorServerIpPortAddress,
-		Logger:                        logger,
-		TaskManagerAbi:                taskManagerAbi,
 
-		RegistrationCfg: registrationCfg,
+		Registration: registrationCfg,
 	}
 
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)
@@ -98,8 +104,10 @@ func operatorMain(ctx *cli.Context) error {
 		logger.Fatalf(err.Error())
 	}
 
-	operator, err := sdkoperator.NewOperatorFromConfig(
+	operator, err := sdkoperator.NewOperator(
+		logger,
 		operatorConfig,
+		taskManagerAbi,
 		failingFunction,
 		nil,
 	)
@@ -109,7 +117,7 @@ func operatorMain(ctx *cli.Context) error {
 	log.Println("initialized operator")
 
 	log.Println("starting operator")
-	err = operator.Start(context.Background())
+	err = <-operator.Start(context.Background())
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}

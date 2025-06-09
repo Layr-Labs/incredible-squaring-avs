@@ -13,7 +13,6 @@ import (
 	"github.com/urfave/cli"
 
 	sdkaggregator "github.com/Layr-Labs/eigensdk-go/aggregator"
-	taskprocessor "github.com/Layr-Labs/eigensdk-go/aggregator/task-processor"
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
@@ -91,22 +90,22 @@ func aggregatorMain(ctx *cli.Context) error {
 		ethRpcClient,
 	)
 
-	taskProcessor, err := taskprocessor.NewIndexingTaskProcessor(logger, taskResponder)
+	taskProcessor, err := sdkaggregator.NewIndexingProcessor(logger, taskResponder)
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 
 	agg, err := sdkaggregator.NewAggregator(
-		cfg,
 		logger,
-		taskProcessor,
+		cfg,
 		taskManagerAbi,
+		taskProcessor,
 	)
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
 
-	err = agg.Start(context.Background())
+	err = <-agg.Start(context.Background())
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}

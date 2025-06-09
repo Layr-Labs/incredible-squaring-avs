@@ -89,20 +89,19 @@ func taskSpammerMain(ctx *cli.Context) error {
 	}
 
 	taskSpammerCfg := sdktaskspammer.Config{
-		Logger:                    logger,
 		TimeBetweenTasks:          10 * time.Second,
 		QuorumThresholdPercentage: uint32(100),
 		QuorumNumbers:             []uint8{0},
 	}
 
-	taskSpammer, err := sdktaskspammer.NewTaskSpammer[*big.Int](taskCreator, taskSpammerCfg)
+	seq := NewNumberToSquareSequence()
+
+	taskSpammer, err := sdktaskspammer.NewTaskSpammer(logger, taskSpammerCfg, taskCreator, seq)
 	if err != nil {
 		logger.Fatalf("Failed to create task spammer: %s", err.Error())
 	}
 
-	seq := NewNumberToSquareSequence()
-
-	err = taskSpammer.Start(context.Background(), seq)
+	err = <-taskSpammer.Start(context.Background())
 	if err != nil {
 		return err
 	}
