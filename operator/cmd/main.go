@@ -56,7 +56,7 @@ func operatorMain(ctx *cli.Context) error {
 
 	calculator := sdkoperator.NewFunctionResponseCalculator(square)
 
-	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 10, big.NewInt(0))
+	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 50, big.NewInt(0))
 	if err != nil {
 		logger.Fatalf(err.Error())
 	}
