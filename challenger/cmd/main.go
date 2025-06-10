@@ -15,8 +15,8 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
 	"github.com/Layr-Labs/eigensdk-go/logging"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
-	"github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
 	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
@@ -86,6 +86,12 @@ func challengerMain(ctx *cli.Context) error {
 		ethRpcClient,
 	)
 
+	equalFn := func(a *big.Int, b *big.Int) bool {
+		return a.Cmp(b) == 0
+	}
+	responseCalculator := sdkoperator.NewFunctionResponseCalculator(square)
+	squareValidation := sdkchallenger.ResponseValidationFunctionFromResponseCalculator(responseCalculator, equalFn)
+
 	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
 		logger,
 		squareValidation,
@@ -115,13 +121,4 @@ func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
 	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
 
 	return numberSquared, nil
-}
-
-func squareValidation(taskIndex uint32, numberToSquare *big.Int, numberSquared *big.Int) (bool, error) {
-	result, err := square(taskIndex, numberToSquare)
-	if err != nil {
-		return false, utils.WrapError("failed to calculate square", err)
-	}
-
-	return result.Cmp(numberSquared) == 0, nil
 }
