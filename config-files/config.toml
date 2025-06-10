@@ -26,7 +26,7 @@ quorum_number = [0]
 
 [bls_signer]
 
-keystore_path = "keys/test.bls.key.json"
+keystore_path = "tests/keys/test.bls.key.json"
 
 keystore_password = ""
 
@@ -48,5 +48,5 @@ allocatable_magnitudes = [1000000000000000]
 operator_set_ids = [0]
 
 [registration.ecdsa_signer]
-keystore_path = "keys/test.ecdsa.key.json"
+keystore_path = "tests/keys/test.ecdsa.key.json"
 keystore_password = ""
