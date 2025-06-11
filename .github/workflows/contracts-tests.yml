@@ -25,6 +25,10 @@ jobs:
       - name: Copy .env.example to .env
         run: cp contracts/.env.example contracts/.env
         
+      - name: Clean before tests
+        run: forge clean
+        working-directory: ./contracts
+
       - name: Run tests
         run: forge test -vvv
         working-directory: ./contracts

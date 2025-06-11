@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"log"
+	"math/big"
 	"os"
 
 	"github.com/urfave/cli"
 
+	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
 )
 
 func main() {
@@ -32,28 +34,53 @@ func operatorMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Operator")
 	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
-	nodeConfig := types.NodeConfig{}
-	err := commonincredible.ReadYamlConfig(configPath, &nodeConfig)
-	if err != nil {
-		return err
-	}
-	configJson, err := json.MarshalIndent(nodeConfig, "", "  ")
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	log.Println("Config:", string(configJson))
 
-	log.Println("initializing operator")
-	operator, err := operator.NewOperatorFromConfig(nodeConfig)
+	opConfig := &operator.Config{}
+	err := commonincredible.ReadTomlConfig(configPath, opConfig)
+
+	logger, err := sdklogging.NewZapLogger(sdklogging.Production) // Change here if want to change logging level
 	if err != nil {
 		return err
+	}
+
+	logger.Infof("Config is %#v", opConfig)
+
+	logger.Info("initializing operator")
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	operatorConfig := opConfig.Config
+
+	calculator := sdkoperator.NewFunctionResponseCalculator(commonincredible.Square)
+
+	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 50, big.NewInt(0))
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	operator, err := sdkoperator.NewOperator(
+		logger,
+		operatorConfig,
+		taskManagerAbi,
+		failingFunction,
+		nil,
+	)
+	if err != nil {
+		logger.Fatalf(err.Error())
 	}
 	log.Println("initialized operator")
 
 	log.Println("starting operator")
-	err = operator.Start(context.Background())
+	err = <-operator.Start(context.Background())
 	if err != nil {
-		return err
+		logger.Fatalf(err.Error())
 	}
 	log.Println("started operator")
 

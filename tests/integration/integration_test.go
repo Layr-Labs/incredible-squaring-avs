@@ -3,41 +3,37 @@ package integration_test
 import (
 	"context"
 	"fmt"
+	"iter"
 	"log"
+	"math/big"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
-	"github.com/Layr-Labs/eigensdk-go/chainio/clients/wallet"
-	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	"github.com/Layr-Labs/eigensdk-go/testutils"
+
 	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/Layr-Labs/eigensdk-go/signerv2"
-	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 	"github.com/Layr-Labs/incredible-squaring-avs/aggregator"
 	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/chainio"
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/operator"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
+	taskspammer "github.com/Layr-Labs/incredible-squaring-avs/task-spammer"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-)
 
-type IntegrationClients struct {
-	Sdkclients clients.Clients
-}
+	sdkintegration "github.com/Layr-Labs/eigensdk-go/integration-tests"
+)
 
 func TestIntegration(t *testing.T) {
 	log.Println("This test takes ~50 seconds to run...")
 
-	/* Start the anvil chain */
+	// Start the anvil chain and get the anvil endpoint
 	anvilC := startAnvilTestContainer()
 	// Not sure why but deferring anvilC.Terminate() causes a panic when the test finishes...
 	// so letting it terminate silently for now
@@ -46,135 +42,119 @@ func TestIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	/* Prepare the config file for aggregator */
-	var aggConfigRaw config.ConfigRaw
-	aggConfigFilePath := "../../config-files/aggregator.yaml"
-	commonincredible.ReadYamlConfig(aggConfigFilePath, &aggConfigRaw)
-	aggConfigRaw.EthRpcUrl = "http://" + anvilEndpoint
-	aggConfigRaw.EthWsUrl = "ws://" + anvilEndpoint
-
-	var credibleSquaringDeploymentRaw config.IncredibleSquaringDeploymentRaw
-	credibleSquaringDeploymentFilePath := "../../contracts/script/deployments/incredible-squaring//31337.json"
-	commonincredible.ReadJsonConfig(credibleSquaringDeploymentFilePath, &credibleSquaringDeploymentRaw)
-
-	logger, err := sdklogging.NewZapLogger(aggConfigRaw.Environment)
-
+	// Read the configs from the toml config file
+	logger, err := sdklogging.NewZapLogger(sdklogging.Production)
 	if err != nil {
 		t.Fatalf("Failed to create logger: %s", err.Error())
 	}
-	ethRpcClient, err := ethclient.Dial(aggConfigRaw.EthRpcUrl)
+
+	aggCfg := &aggregator.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", aggCfg)
 	if err != nil {
-		t.Fatalf("Failed to create eth client: %s", err.Error())
-	}
-	ethWsClient, err := ethclient.Dial(aggConfigRaw.EthWsUrl)
-	if err != nil {
-		t.Fatalf("Failed to create eth client: %s", err.Error())
+		t.Fatalf("Failed to read aggregator config: %s", err.Error())
 	}
 
-	aggregatorEcdsaPrivateKeyString := "0x2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6"
-	if aggregatorEcdsaPrivateKeyString[:2] == "0x" {
-		aggregatorEcdsaPrivateKeyString = aggregatorEcdsaPrivateKeyString[2:]
-	}
-	aggregatorEcdsaPrivateKey, err := crypto.HexToECDSA(aggregatorEcdsaPrivateKeyString)
+	aggCfg.EthHttpUrl = "http://" + anvilEndpoint
+	aggCfg.EthWsUrl = "ws://" + anvilEndpoint
+
+	opCfg := &operator.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", opCfg)
 	if err != nil {
-		t.Fatalf("Cannot parse ecdsa private key: %s", err.Error())
-	}
-	aggregatorAddr, err := sdkutils.EcdsaPrivateKeyToAddress(aggregatorEcdsaPrivateKey)
-	if err != nil {
-		t.Fatalf("Cannot get operator address: %s", err.Error())
+		t.Fatalf("Failed to read operator config: %s", err.Error())
 	}
 
-	chainId, err := ethRpcClient.ChainID(context.Background())
+	opCfg.EthRpcUrl = "http://" + anvilEndpoint
+	opCfg.EthWsUrl = "ws://" + anvilEndpoint
+
+	opCfg.BlsSignerCfg.KeystorePath = "../keys/test.bls.key.json"
+	opCfg.Registration.EcdsaSignerCfg.KeystorePath = "../keys/test.ecdsa.key.json"
+
+	tsConfig := &taskspammer.Config{}
+	err = commonincredible.ReadTomlConfig("../../config-files/config.toml", tsConfig)
 	if err != nil {
-		t.Fatalf("Cannot get chainId: %s", err.Error())
+		t.Fatalf("Failed to read operator config: %s", err.Error())
 	}
 
-	privateKeySigner, _, err := signerv2.SignerFromConfig(
-		signerv2.Config{PrivateKey: aggregatorEcdsaPrivateKey},
-		chainId,
-	)
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
 	if err != nil {
-		t.Fatalf("Cannot create signer: %s", err.Error())
-	}
-	skWallet, err := wallet.NewPrivateKeyWallet(ethRpcClient, privateKeySigner, aggregatorAddr, logger)
-	if err != nil {
-		panic(err)
-	}
-	txMgr := txmgr.NewSimpleTxManager(skWallet, ethRpcClient, logger, aggregatorAddr)
-
-	config := &config.Config{
-		EcdsaPrivateKey: aggregatorEcdsaPrivateKey,
-		Logger:          logger,
-		EthHttpRpcUrl:   aggConfigRaw.EthRpcUrl,
-		EthHttpClient:   *ethRpcClient,
-		EthWsRpcUrl:     aggConfigRaw.EthWsUrl,
-		EthWsClient:     *ethWsClient,
-		OperatorStateRetrieverAddr: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr,
-		),
-		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr,
-		),
-		AggregatorServerIpPortAddr: aggConfigRaw.AggregatorServerIpPortAddr,
-		RegisterOperatorOnStartup:  aggConfigRaw.RegisterOperatorOnStartup,
-		TxMgr:                      txMgr,
-		AggregatorAddress:          aggregatorAddr,
-		IncredibleSquaringServiceManager: common.HexToAddress(
-			credibleSquaringDeploymentRaw.Addresses.IncredibleSquaringServiceManager,
-		),
+		logger.Fatalf(err.Error())
 	}
 
-	/* Prepare the config file for operator */
-	nodeConfig := types.NodeConfig{}
-	nodeConfigFilePath := "../../config-files/operator.anvil.yaml"
-	err = commonincredible.ReadYamlConfig(nodeConfigFilePath, &nodeConfig)
-	if err != nil {
-		t.Fatalf("Failed to read yaml config: %s", err.Error())
+	responseCalculationBuilder := func() sdkoperator.ResponseCalculator[*big.Int, *big.Int] {
+		return sdkoperator.NewFunctionResponseCalculator(square)
 	}
 
-	/* Register operator*/
-	// log.Println("registering operator for integration tests")
-	// we need to do this dynamically and can't just hardcode a registered operator into the anvil
-	// state because the anvil state dump doesn't also dump the receipts tree so we lose events,
-	// and the aggregator thus can't get the operator's pubkey
-	// operatorRegistrationCmd := exec.Command("bash", "./operator-registration.sh")
-	// err = operatorRegistrationCmd.Run()
-	// if err != nil {
-	// 	t.Fatalf("Failed to register operator: %s", err.Error())
-	// }
-
-	ctx, cancel := context.WithTimeout(context.Background(), 65*time.Second)
-	defer cancel()
-	/* start operator */
-	// the passwords are set to empty strings
-	log.Println("starting operator for integration tests")
-	os.Setenv("OPERATOR_BLS_KEY_PASSWORD", "")
-	os.Setenv("OPERATOR_ECDSA_KEY_PASSWORD", "")
-	nodeConfig.BlsPrivateKeyStorePath = "../keys/test.bls.key.json"
-	nodeConfig.EcdsaPrivateKeyStorePath = "../keys/test.ecdsa.key.json"
-	nodeConfig.RegisterOperatorOnStartup = true
-	nodeConfig.EthRpcUrl = "http://" + anvilEndpoint
-	nodeConfig.EthWsUrl = "ws://" + anvilEndpoint
-	operator, err := operator.NewOperatorFromConfig(nodeConfig)
-	if err != nil {
-		t.Fatalf("Failed to create operator: %s", err.Error())
+	equalFn := func(a, b *big.Int) bool {
+		return a.Cmp(b) == 0
 	}
-	go operator.Start(ctx)
-	log.Println("Started operator. Sleeping 15 seconds to give it time to register...")
-	time.Sleep(15 * time.Second)
 
-	/* start aggregator */
-	log.Println("starting aggregator for integration tests")
-	agg, err := aggregator.NewAggregator(config)
-	if err != nil {
-		t.Fatalf("Failed to create aggregator: %s", err.Error())
+	avsConfig := sdkintegration.AvsConfig[*big.Int, *big.Int]{
+		TaskManagerAddr: common.HexToAddress(aggCfg.TaskManagerAddress),
+		TaskManagerAbi:  taskManagerAbi,
+
+		EthHttpUrl: aggCfg.EthHttpUrl,
+		EthWsUrl:   aggCfg.EthWsUrl,
+
+		ResponseCalculatorBuilder: responseCalculationBuilder,
+		EqualFn:                   equalFn,
+		InputSequence:             NewNumberToSquareSequence(),
+
+		AggregatorServerIpPortAddr: aggCfg.AggregatorServerIpPortAddr,
+
+		RegistryCoordinatorAddress:    aggCfg.RegistryCoordinatorAddress,
+		OperatorStateRetrieverAddress: aggCfg.OperatorStateRetrieverAddress,
+		AvsAddress:                    opCfg.Registration.AvsAddress,
+
+		OperatorPrivateKey:    "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+		OperatorBlsPrivateKey: "0x2518600ef40ef39cb4ab8b828ce303b3e02ac01ec6ba6bd0d0cf0663e1252ff0",
+
+		TaskSpammerPrivateKey: "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+		AggregatorPrivateKey:  "2a871d0798f97d79848a013d4936a73bf4cc922c825d33c1cf7073dff6d409c6",
+		ChallengerPrivateKey:  testutils.ANVIL_FIRST_PRIVATE_KEY,
+		AmountToMint:          "1000000000000000000000",
+
+		AllocationManagerAddr:       opCfg.Registration.AllocationManagerAddr,
+		DelegationManagerAddress:    opCfg.Registration.DelegationManagerAddress,
+		StrategyAddr:                opCfg.Registration.StrategyAddrs[0],
+		RewardsCoordinatorAddress:   opCfg.Registration.RewardsCoordinatorAddress,
+		PermissionControllerAddress: opCfg.Registration.PermissionControllerAddress,
+
+		AllocatableMagnitude: opCfg.Registration.AllocatableMagnitudes[0],
+		OperatorSetId:        opCfg.Registration.OperatorSetIds[0],
+		OperatorAddr:         opCfg.OperatorAddress,
+
+		TimeBetweenTasks:          tsConfig.TimeBetweenTasks,
+		QuorumThresholdPercentage: tsConfig.QuorumThresholdPercentage,
+		QuorumNumbers:             tsConfig.QuorumNumbers,
 	}
-	go agg.Start(ctx)
-	log.Println("Started aggregator. Sleeping 20 seconds to give operator time to answer task 1...")
-	time.Sleep(20 * time.Second)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	avs := sdkintegration.StartAvs(t, ctx, avsConfig)
+
+	timer := time.NewTimer(32 * time.Second)
+
+	select {
+	case err := <-avs.Aggregator:
+		t.Fatal("Aggregator error:", err)
+	case err := <-avs.Challenger:
+		t.Fatal("Challenger error:", err)
+	case err := <-avs.Operator:
+		t.Fatal("Operator error:", err)
+	case err := <-avs.TaskSpammer:
+		// Here we handle the input generation termination (in that case returns nil but does not imply an error)
+		if err == nil {
+			cancel()
+		} else {
+			t.Fatal("Task Spammer error:", err)
+		}
+	case <-timer.C:
+		// If reached this point, there must be a problem with the tasks generation.
+		t.Fatal("Timer expired before the task spammer finished sending tasks")
+	}
 
 	// get avsRegistry client to interact with the chain
-	avsReader, err := chainio.BuildAvsReaderFromConfig(config)
+	avsReader, err := chainio.BuildAvsReaderFromConfig(opCfg, aggCfg.OperatorStateRetrieverAddress, logger)
 	if err != nil {
 		t.Fatalf("Cannot create AVS Reader: %s", err.Error())
 	}
@@ -206,6 +186,30 @@ func TestIntegration(t *testing.T) {
 	if !received {
 		t.Fatalf("Task response hash is empty")
 	}
+}
+
+// This function computes the square of a number
+func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
+	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
+
+	return numberSquared, nil
+}
+
+// Returns an iterator for the sequence 1, 2, 3, ...
+func NewNumberToSquareSequence() iter.Seq[*big.Int] {
+	acc := big.NewInt(1)
+	delta := big.NewInt(1)
+	count := 0
+	return func(yield func(*big.Int) bool) {
+		for count < 3 {
+			if !yield(acc) {
+				break
+			}
+			acc.Add(acc, delta)
+			count++
+		}
+	}
+
 }
 
 // TODO(samlaf): have to advance chain to a block where the task is answered

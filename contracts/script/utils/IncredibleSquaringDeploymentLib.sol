@@ -151,6 +151,10 @@ library IncredibleSquaringDeploymentLib {
         console2.log(core.avsDirectory);
         console2.log("pauser_registry");
         console2.log(coredata.pauserRegistry);
+        console2.log("operator_state_retriever");
+        console2.log(result.operatorStateRetriever);
+        console2.log("task_manager");
+        console2.log(result.incredibleSquaringTaskManager);
 
         address slashingRegistryCoordinatorImpl = address(
             new SlashingRegistryCoordinator(

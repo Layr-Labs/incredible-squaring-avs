@@ -2,14 +2,24 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/urfave/cli"
 
+	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
+	sdkchallenger "github.com/Layr-Labs/eigensdk-go/challenger"
+	"github.com/Layr-Labs/eigensdk-go/logging"
+	sdkoperator "github.com/Layr-Labs/eigensdk-go/operator"
+	taskmanager "github.com/Layr-Labs/eigensdk-go/task-manager"
 	"github.com/Layr-Labs/incredible-squaring-avs/challenger"
+	commonincredible "github.com/Layr-Labs/incredible-squaring-avs/common"
+	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 )
 
@@ -39,22 +49,66 @@ func main() {
 func challengerMain(ctx *cli.Context) error {
 
 	log.Println("Initializing Challenger...")
-	config, err := config.NewConfig(ctx)
-	if err != nil {
-		return err
-	}
-	configJson, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		config.Logger.Fatalf(err.Error())
-	}
-	fmt.Println("Config:", string(configJson))
+	configPath := ctx.GlobalString(config.ConfigFileFlag.Name)
+	challengerConfig := &challenger.Config{}
+	err := commonincredible.ReadTomlConfig(configPath, challengerConfig)
 
-	chal, err := challenger.NewChallenger(config)
+	logger, err := logging.NewZapLogger(logging.Production) // Change here if want to change logging level
 	if err != nil {
 		return err
 	}
 
-	err = chal.Start(context.Background())
+	ethRpcClient, err := ethclient.Dial(challengerConfig.EthHttpUrl)
+
+	taskManagerAbi, err := cstaskmanager.ContractIncredibleSquaringTaskManagerMetaData.GetAbi()
+	if err != nil {
+		logger.Fatalf(err.Error())
+	}
+
+	privateKeyHex := ctx.String("ecdsa-private-key")
+	if privateKeyHex == "" {
+		logger.Fatal("Missing required flag: --ecdsa-private-key")
+	}
+
+	ecdsaPrivateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		logger.Errorf("Cannot parse ECDSA private key", "err", err)
+		return err
+	}
+
+	txMgr, err := txmgr.NewSimpleTxManagerFromPrivateKey(logger, ethRpcClient, ecdsaPrivateKey)
+
+	taskManagerAddr := challengerConfig.TaskManagerAddress
+	challengerRaiser, err := taskmanager.NewTaskManagerFromAbi[*big.Int, *big.Int](
+		common.HexToAddress(taskManagerAddr),
+		taskManagerAbi,
+		txMgr,
+		ethRpcClient,
+	)
+
+	equalFn := func(a *big.Int, b *big.Int) bool {
+		return a.Cmp(b) == 0
+	}
+	responseCalculator := sdkoperator.NewFunctionResponseCalculator(commonincredible.Square)
+	squareValidation := sdkchallenger.ResponseValidationFunctionFromResponseCalculator(responseCalculator, equalFn)
+
+	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
+		logger,
+		squareValidation,
+		challengerRaiser,
+	)
+
+	challenger, err := sdkchallenger.NewChallenger(
+		logger,
+		challengerConfig.Config,
+		taskManagerAbi,
+		indexingChallengerProcessor,
+	)
+	if err != nil {
+		logger.Fatalf("Failed to create challenger from config: %v", err)
+	}
+
+	err = <-challenger.Start(context.Background())
 	if err != nil {
 		return err
 	}
