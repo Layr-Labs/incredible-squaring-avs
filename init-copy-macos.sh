@@ -10,6 +10,8 @@ SERVICE_MANAGER_CONTRACT_NAME=${AVS_CONTRACTS_NAME}ServiceManager
 AVS_WITH_CAMEL=$(echo "$AVS_CONTRACTS_NAME" | sed 's/\([^A-Z]\)\([A-Z]\)/\1-\2/g')
 MODULE_NAME=$(echo "$AVS_WITH_CAMEL" | tr '[:upper:]' '[:lower:]')-avs
 
+rm -rf .git
+
 git init
 
 rm -rf contracts/lib/eigenlayer-middleware
