@@ -54,7 +54,7 @@ func operatorMain(ctx *cli.Context) error {
 
 	operatorConfig := opConfig.Config
 
-	calculator := sdkoperator.NewFunctionResponseCalculator(square)
+	calculator := sdkoperator.NewFunctionResponseCalculator(commonincredible.Square)
 
 	failingFunction, err := sdkoperator.NewFailingResponseCalculator(calculator, 50, big.NewInt(0))
 	if err != nil {
@@ -86,11 +86,4 @@ func operatorMain(ctx *cli.Context) error {
 
 	return nil
 
-}
-
-// This function computes the square of a number
-func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
-	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
-
-	return numberSquared, nil
 }

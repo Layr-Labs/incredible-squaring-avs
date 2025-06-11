@@ -89,7 +89,7 @@ func challengerMain(ctx *cli.Context) error {
 	equalFn := func(a *big.Int, b *big.Int) bool {
 		return a.Cmp(b) == 0
 	}
-	responseCalculator := sdkoperator.NewFunctionResponseCalculator(square)
+	responseCalculator := sdkoperator.NewFunctionResponseCalculator(commonincredible.Square)
 	squareValidation := sdkchallenger.ResponseValidationFunctionFromResponseCalculator(responseCalculator, equalFn)
 
 	indexingChallengerProcessor, err := sdkchallenger.NewIndexingProcessor(
@@ -115,10 +115,4 @@ func challengerMain(ctx *cli.Context) error {
 
 	return nil
 
-}
-
-func square(taskIndex uint32, numberToSquare *big.Int) (*big.Int, error) {
-	numberSquared := big.NewInt(0).Exp(numberToSquare, big.NewInt(2), nil)
-
-	return numberSquared, nil
 }
