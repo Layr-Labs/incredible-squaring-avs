@@ -137,6 +137,7 @@ library CoreDeploymentLib {
 
         address strategyManagerImpl = address(
             new StrategyManager(
+                IAllocationManager(result.allocationManager),
                 IDelegationManager(result.delegationManager),
                 IPauserRegistry(result.pauserRegistry),
                 EIGENLAYER_VERSION
@@ -154,6 +155,7 @@ library CoreDeploymentLib {
         address allocationManagerImpl = address(
             new AllocationManager(
                 IDelegationManager(result.delegationManager),
+                IStrategy(address(0)), // EigenStrategy not useful for testing.
                 IPauserRegistry(result.pauserRegistry),
                 IPermissionController(result.permissionController),
                 // IAVSDirectory(result.avsDirectory),
@@ -206,13 +208,10 @@ library CoreDeploymentLib {
             )
         );
 
-        uint64 GENESIS_TIME = 1_564_000;
-
         address eigenPodImpl = address(
             new EigenPod(
                 IETHPOSDeposit(ethPOSDeposit),
                 IEigenPodManager(result.eigenPodManager),
-                GENESIS_TIME,
                 EIGENLAYER_VERSION
             )
         );
@@ -232,7 +231,7 @@ library CoreDeploymentLib {
         bytes memory upgradeCall = abi.encodeCall(
             DelegationManager.initialize,
             (
-                proxyAdmin, // initialOwner
+                // proxyAdmin, // initialOwner
                 // IPauserRegistry(result.pauserRegistry), // _pauserRegistry
                 configData.delegationManager.initPausedStatus // initialPausedStatus
             )
@@ -319,7 +318,7 @@ library CoreDeploymentLib {
             AllocationManager.initialize,
             // TODO: Double check this
             (
-                deployer, // initialOwner
+                // deployer, // initialOwner
                 // IPauserRegistry(result.pauserRegistry), // _pauserRegistry
                 configData.delegationManager.initPausedStatus // initialPausedStatus
             )

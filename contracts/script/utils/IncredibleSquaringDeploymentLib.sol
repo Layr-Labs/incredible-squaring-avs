@@ -34,7 +34,7 @@ import {InstantSlasher} from "@eigenlayer-middleware/src/slashers/InstantSlasher
 import {StakeRegistry} from "@eigenlayer-middleware/src/StakeRegistry.sol";
 // import {SocketRegistry} from "@eigenlayer-middleware/src/SocketRegistry.sol"; // todo: socket registry not available
 import {IAllocationManager} from "@eigenlayer/contracts/interfaces/IAllocationManager.sol";
-import {IStrategy} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
+import {IStrategy, IStrategyManager} from "@eigenlayer/contracts/interfaces/IStrategyManager.sol";
 import {CoreDeploymentLib} from "./CoreDeploymentLib.sol";
 
 import {
@@ -133,6 +133,7 @@ library IncredibleSquaringDeploymentLib {
         address instantSlasherImpl = address(
             new InstantSlasher(
                 IAllocationManager(core.allocationManager),
+                IStrategyManager(core.strategyManager),
                 ISlashingRegistryCoordinator(result.slashingRegistryCoordinator),
                 result.incredibleSquaringTaskManager
             )
